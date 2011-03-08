@@ -1,6 +1,29 @@
 = activefacts-api
 
-Description goes here.
+The ActiveFacts API provides the fact-oriented information management API
+for the ActiveFacts project.  It is a Ruby DSL for managing constellations
+of elementary facts.  Each fact is either existential (a value or an entity),
+characteristic (boolean) or binary relational (A rel B). Relational facts are
+consistently co-referenced, so you can traverse them efficiently in any
+direction. Each constellation maintains constraints over the fact population.
+
+Contrary to object-oriented and relational modeling, fact oriented models
+do not use the concept of attributes. Fact types which express one-to-one or
+many-to-one relationships are fully mutual relationships between independent
+objects, which play the respective roles in the fact relationship. In addition,
+all objects are intrinsically identified, not by an external object-id. A
+constellation can not contain more than one instance of an object having the
+same identification. Accordingly there is no 'new' or 'delete' operations,
+just 'assert' and 'retract'. This prevents problems caused by having duplicate
+representations of the same object.
+
+The constellation is a universal and liberating data structure.
+
+* http://dataconstellation.com/ActiveFacts/
+
+== INSTALL:
+
+* sudo gem install activefacts-api
 
 == Contributing to activefacts-api
  
@@ -14,6 +37,5 @@ Description goes here.
 
 == Copyright
 
-Copyright (c) 2011 Clifford Heath. See LICENSE.txt for
-further details.
+Copyright (c) 2008-2011 Clifford Heath. See LICENSE.txt for further details.
 
