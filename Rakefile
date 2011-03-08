@@ -7,18 +7,22 @@ Jeweler::Tasks.new do |gem|
   gem.name = "activefacts-api"
   gem.homepage = "http://github.com/cjheath/activefacts-api"
   gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.summary = "A semantic modeling and query language (CQL) and application runtime (the Constellation API)"
+  gem.description = %q{
+The ActiveFacts API is a Ruby DSL for managing constellations of elementary facts.
+Each fact is either existential (a value or an entity), characteristic (boolean) or
+binary relational (A rel B). Relational facts are consistently co-referenced, so you
+can traverse them efficiently in any direction. Each constellation maintains constraints
+over the fact population.
+}
   gem.email = "clifford.heath@gmail.com"
   gem.authors = ["Clifford Heath"]
   # Include your dependencies below. Runtime dependencies are required when using your gem,
   # and development dependencies are only needed for development (ie running rake tasks, tests, etc)
-  #  gem.add_runtime_dependency 'jabber4r', '> 0.1'
-  #  gem.add_development_dependency 'rspec', '> 1.2.3'
   gem.add_development_dependency "rspec", "~> 2.3.0"
   gem.add_development_dependency "bundler", "~> 1.0.0"
   gem.add_development_dependency "jeweler", "~> 1.5.2"
-  gem.add_development_dependency "rcov", ">= 0"
+  # gem.add_development_dependency "rcov", ">= 0"
 end
 Jeweler::RubygemsDotOrgTasks.new
 
