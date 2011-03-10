@@ -54,6 +54,7 @@ module ActiveFacts
       def populate *args, &block
         # REVISIT: Use args for something? Like options to enable/disable validation?
         instance_eval(&block)
+        self
       end
 
       # Delete instances from the constellation, nullifying (or cascading) the roles each plays

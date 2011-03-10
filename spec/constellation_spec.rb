@@ -57,6 +57,23 @@ describe "A Constellation instance" do
     @constellation = ActiveFacts::API::Constellation.new(Mod)
   end
 
+  describe "Vocabulary" do
+    it "should create the constellation" do
+      Mod.constellation.should be_is_a ActiveFacts::API::Constellation
+    end
+
+    it "should create the constellation by direct populate" do
+      Mod.populate do
+        Name "foo"
+      end.should be_is_a ActiveFacts::API::Constellation
+    end
+
+    it "should verbalise" do
+      s = Mod.verbalise
+      s.should be_is_a String
+    end
+  end
+
   it "should allow creating a constellation" do
     @constellation = ActiveFacts::API::Constellation.new(Mod)
   end
@@ -148,6 +165,20 @@ describe "A Constellation instance" do
     @constellation.Name.keys.sort.should == ["baz"]
 
     @constellation.StringValue.keys.sort.should == ["baz"]
+  end
+
+  describe "instance indices" do
+    it "should support each" do
+      baz = @constellation.Name("baz")
+      count = 0
+      @constellation.Name.each { |rv| count += 1 }
+      count.should == 1
+    end
+
+    it "should support detect" do
+      baz = @constellation.Name("baz")
+      @constellation.Name.detect { |rv| true }.should be_true
+    end
   end
 
   it "should index entity instances, including by its superclass and secondary supertypes" do

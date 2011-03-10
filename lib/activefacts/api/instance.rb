@@ -24,7 +24,6 @@ module ActiveFacts
       # Verbalise this instance
       def verbalise
         # This method should always be overridden in subclasses
-        raise "#{self.class} Instance verbalisation needed"
       end
 
       # De-assign all functional roles and remove from constellation, if any.

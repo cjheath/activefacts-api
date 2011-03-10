@@ -78,8 +78,8 @@ describe "AutoCounter Value Type instances" do
     facets = []
     facets << @constellation.ThingFacet(thing, 0)
     facets << @constellation.ThingFacet(thing, 1)
-    facets[0].thing.object_id.should == facets[1].thing.object_id
-    facets[0].thing.thing_id.object_id.should == facets[1].thing.thing_id.object_id
+    facets[0].thing.should be_eql(facets[1].thing)
+    facets[0].thing.thing_id.should be_eql(facets[1].thing.thing_id)
   end
 
 end

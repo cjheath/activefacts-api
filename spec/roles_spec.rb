@@ -118,7 +118,35 @@ describe "Roles" do
     p = c.Person("Fred", "Bloggs")
     p.related_to = "Bloggs & Co"
     p.related_to.should be_is_a(Mod::LegalEntity)
-    bloggs.object_id.should == p.related_to.object_id
+    p.related_to.should == bloggs
+
+    # REVISIT: The raw instance doesn't override == to compare itself to a RoleProxy unfortunately...
+    # So this test succeeds when we'd like it to fail
+    bloggs.should_not == p.related_to
+  end
+
+  it "should forward missing methods on the role proxies" do
+    c = ActiveFacts::API::Constellation.new(Mod)
+    p = c.Person("Fred", "Bloggs")
+
+    # Make sure that RoleProxy's method_missing delegates, then forwards the send
+    lambda {
+      p.family.foo
+    }.should raise_error(NoMethodError)
+  end
+
+  it "should forward re-raise exceptions from missing methods on the role proxies" do
+    c = ActiveFacts::API::Constellation.new(Mod)
+    p = c.Person("Fred", "Bloggs")
+
+    x = p.family.__getobj__
+    def x.barf
+      raise "Yawning..."
+    end
+    lambda {
+      p.family.barf
+    }.should raise_error(RuntimeError)
+
   end
 
 end

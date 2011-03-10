@@ -24,7 +24,7 @@ module TestValueTypesModule
   BASE_VALUE_TYPE_ROLE_NAMES = VALUE_TYPES.map { |base_type| base_type.name.snakecase }
   VALUE_TYPE_ROLE_NAMES = BASE_VALUE_TYPE_ROLE_NAMES.map { |n| [ :"#{n}_value", :"#{n}_sub_value" ] }.flatten
   VALUE_TYPES.map do |value_type|
-    eval %Q{
+    code = <<-END
       class #{value_type.name}Value < #{value_type.name}
         value_type
       end
@@ -56,13 +56,15 @@ module TestValueTypesModule
         ]
       OBJECT_TYPES.concat(classes)
       classes.each { |klass| VALUE_TYPE_FOR_OBJECT_TYPE[klass] = value_type }
-    }
+    END
+    eval code
   end
   OBJECT_TYPE_NAMES = OBJECT_TYPES.map{|object_type| object_type.basename}
 
   class Octopus
     identified_by :zero
     has_one :zero, :class => IntValue
+    maybe :has_a_unary
     OBJECT_TYPE_NAMES.each do |object_type_name|
       has_one object_type_name.snakecase.to_sym
       one_to_one ("one_"+object_type_name.snakecase).to_sym, :class => object_type_name
@@ -75,12 +77,16 @@ describe "Roles of an Object Type" do
   it "should return a roles collection" do
     roles = TestValueTypesModule::Octopus.roles
     roles.should_not be_nil
-    roles.size.should == 1+VALUE_TYPES.size*5*2
+    roles.size.should == 2+VALUE_TYPES.size*5*2
 
     # Quick check of role metadata:
     roles.each do |role_name, role|
       role.owner.modspace.should == TestValueTypesModule
-      role.counterpart.owner.modspace.should == TestValueTypesModule
+      if !role.counterpart
+        role.should be_unary
+      else
+        role.counterpart.owner.modspace.should == TestValueTypesModule
+      end
     end
   end
 end
@@ -209,98 +215,127 @@ describe "Object type role values" do
         @object.should be_respond_to :"#{role.name}="
       end
 
-      it "should allow its #{role_name} role to be assigned and reassigned a base value" do
-        object_type = role.counterpart.owner
-        required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type]
-        values = VALUES_FOR_TYPE[required_value_type]
-        next unless values
+      if role.unary?
+        it "should allow its #{role_name} unary role to be assigned and reassigned" do
+          @object.has_a_unary.should be_nil
+          @object.has_a_unary = true
+          @object.has_a_unary.should == true
+          @object.has_a_unary = 23
+          @object.has_a_unary.should == true
+          @object.has_a_unary = false
+          @object.has_a_unary.should be_false
+          @object.has_a_unary = nil
+          @object.has_a_unary.should be_nil
+        end
+      else
+        it "should allow its #{role_name} role to be assigned and reassigned a base value" do
+          object_type = role.counterpart.owner
+          required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type]
+          values = VALUES_FOR_TYPE[required_value_type]
+          next unless values
+          value = object_identifying_parameters(object_type.basename, values[0])
 
-        # Set the role to the first value:
-        value = object_identifying_parameters(object_type.basename, values[0])
-        assigned = @object.send(:"#{role_name}=", value)
-        assigned.class.should == object_type
-        fetched = @object.send(role_name)
-        fetched.should == assigned
+          # Set the role to the first value:
+          assigned = @object.send(:"#{role_name}=", value) rescue debugger
+          assigned.class.should == object_type
+          fetched = @object.send(role_name)
+          fetched.should == assigned
 
-        if role.counterpart.unique      # A one-to-one
-          # The counterpart should point back at us
-          assigned.send(role.counterpart.name).should == @object
-        else                                            # A many-to-one
-          # The counterpart should include us in its RoleValues
-          reflection = assigned.send(role.counterpart.name)
-          reflection.size.should == 1
-          reflection.should be_include(@object)
+          if role.counterpart.unique      # A one-to-one
+            # The counterpart should point back at us
+            assigned.send(role.counterpart.name).should == @object
+          else                                            # A many-to-one
+            # The counterpart should include us in its RoleValues
+            reflection = assigned.send(role.counterpart.name)
+            reflection.should_not be_empty
+            reflection.size.should == 1
+            reflection.should be_include(@object)
+          end
+
+          # Update the role to the second value:
+          value = object_identifying_parameters(object_type.basename, values[1])
+          assigned2 = @object.send(:"#{role_name}=", value)
+          assigned2.class.should == object_type
+          fetched = @object.send(role_name)
+          fetched.should == assigned2
+
+          if role.counterpart.unique                      # A one-to-one
+            # REVISIT: The old counterpart role should be nullified
+            #assigned.send(role.counterpart.name).should be_nil
+
+            # The counterpart should point back at us
+            assigned2.send(role.counterpart.name).should == @object
+          else                                            # A many-to-one
+            # REVISIT: The old counterpart RoleValues should be empty
+            reflection = assigned2.send(role.counterpart.name)
+            #reflection.size.should == 0
+
+            # The counterpart should include us in its RoleValues
+            reflection2 = assigned2.send(role.counterpart.name)
+            reflection2.size.should == 1
+            reflection2.should be_include(@object)
+          end
+
+          # Nullify the role
+          nullified = @object.send(:"#{role_name}=", nil)
+          nullified.should be_nil
+          if role.counterpart.unique                      # A one-to-one
+            assigned2.send(role.counterpart.name).should be_nil
+          else                                            # A many-to-one
+            reflection3 = assigned2.send(role.counterpart.name)
+            reflection3.size.should == 0
+          end
         end
 
-        # Update the role to the second value:
-        value = object_identifying_parameters(object_type.basename, values[1])
-        assigned2 = @object.send(:"#{role_name}=", value)
-        assigned2.class.should == object_type
-        fetched = @object.send(role_name)
-        fetched.should == assigned2
+        it "should allow its #{role_name} role to be assigned and reassigned a base value" do
+          object_type = role.counterpart.owner
+          required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type]
+          values = VALUES_FOR_TYPE[required_value_type]
+          next unless values
+          value = object_identifying_parameters(object_type.basename, values[0])
 
-        if role.counterpart.unique                      # A one-to-one
-          # REVISIT: The old counterpart role should be nullified
-          #assigned.send(role.counterpart.name).should be_nil
-
-          # The counterpart should point back at us
-          assigned2.send(role.counterpart.name).should == @object
-        else                                            # A many-to-one
-          # REVISIT: The old counterpart RoleValues should be empty
-          reflection = assigned2.send(role.counterpart.name)
-          #reflection.size.should == 0
-
-          # The counterpart should include us in its RoleValues
-          reflection2 = assigned2.send(role.counterpart.name)
-          reflection2.size.should == 1
-          reflection2.should be_include(@object)
+          # Set the role to the first value:
+          assigned = @object.send(:"#{role_name}=", value) rescue debugger
+          fetched = @object.send(role_name)
+          fetched.class.should == object_type
         end
 
-        # Nullify the role
-        nullified = @object.send(:"#{role_name}=", nil)
-        nullified.should be_nil
-        if role.counterpart.unique                      # A one-to-one
-          assigned2.send(role.counterpart.name).should be_nil
-        else                                            # A many-to-one
-          reflection3 = assigned2.send(role.counterpart.name)
-          reflection3.size.should == 0
+        it "should allow its #{role_name} role to be assigned a value instance" do
+          object_type = role.counterpart.owner
+          required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type]
+          values = VALUES_FOR_TYPE[required_value_type]
+          next unless values
+          value = @constellation.send(object_type.basename, *object_identifying_parameters(object_type.basename, values[0]))
+
+          assigned = @object.send(:"#{role_name}=", value)
+          assigned.class.should == object_type
+          fetched = @object.send(role_name)
+          fetched.should == assigned
+
+          # Nullify the role
+          nullified = @object.send(:"#{role_name}=", nil)
+          nullified.should be_nil
+        end
+
+        it "should allow its #{role_name} role to be assigned a value subtype instance, retaining the subtype" do
+          object_type = role.counterpart.owner
+          required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type] # The raw value type
+          values = VALUES_FOR_TYPE[required_value_type]
+          object_type = VALUE_SUB_FOR_VALUE[object_type]  # The value type subtype
+          next unless values and object_type
+          value = @constellation.send(object_type.basename, *object_identifying_parameters(object_type.basename, values[0]))
+          assigned = @object.send(:"#{role_name}=", value)
+          # This requires the declared type, not the subtype:
+          # assigned.class.should == role.counterpart.owner
+          # This requires the subtype, as the test implies:
+          assigned.class.should == object_type
+          fetched = @object.send(role_name)
+          fetched.should == assigned
         end
       end
 
-      it "should allow its #{role_name} role to be assigned a value instance" do
-        object_type = role.counterpart.owner
-        required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type]
-        values = VALUES_FOR_TYPE[required_value_type]
-        next unless values
-        value = @constellation.send(object_type.basename, *object_identifying_parameters(object_type.basename, values[0]))
-
-        assigned = @object.send(:"#{role_name}=", value)
-        assigned.class.should == object_type
-        fetched = @object.send(role_name)
-        fetched.should == assigned
-
-        # Nullify the role
-        nullified = @object.send(:"#{role_name}=", nil)
-        nullified.should be_nil
-      end
-
-      it "should allow its #{role_name} role to be assigned a value subtype instance, retaining the subtype" do
-        object_type = role.counterpart.owner
-        required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type] # The raw value type
-        values = VALUES_FOR_TYPE[required_value_type]
-        object_type = VALUE_SUB_FOR_VALUE[object_type]  # The value type subtype
-        next unless values and object_type
-        value = @constellation.send(object_type.basename, *object_identifying_parameters(object_type.basename, values[0]))
-        assigned = @object.send(:"#{role_name}=", value)
-        # This requires the declared type, not the subtype:
-        # assigned.class.should == role.counterpart.owner
-        # This requires the subtype, as the test implies:
-        assigned.class.should == object_type
-        fetched = @object.send(role_name)
-        fetched.should == assigned
-      end
-
-      unless role.counterpart.unique or      # A one-to-one
+      unless !role.counterpart or         # A unary
+          role.counterpart.unique or      # A one-to-one
           VALUES_FOR_TYPE[VALUE_TYPE_FOR_OBJECT_TYPE[role.counterpart.owner]] == nil
         describe "Operations on #{role.counterpart.owner.basename} RoleValues collections" do
           before :each do
@@ -324,6 +359,21 @@ describe "Object type role values" do
             counterpart_value = @role_values.single
             (@role_values - [counterpart_value]).should be_empty
           end
+
+          it "should support each" do
+            count = 0
+            @role_values.each { |rv| count += 1 }
+            count.should == 1
+          end
+
+          it "should support detect" do
+            @role_values.detect { |rv| true }.should be_true
+          end
+
+          it "should verbalise" do
+            @role_values.verbalise.should =~ /Octopus.*Zero '0'/
+          end
+
         end
       end
 

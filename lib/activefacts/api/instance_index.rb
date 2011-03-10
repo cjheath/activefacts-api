@@ -18,15 +18,7 @@ module ActiveFacts
       end
 
       def [](*args)
-        a = args
-        #a = naked(args)
-#        p "vvvv",
-#          args,
-#          a,
-#          keys.map{|k| v=super(k); (RoleProxy === k ? "*" : "")+k.to_s+"=>"+(RoleProxy === v ? "*" : "")+v.to_s}*",",
-#          "^^^^"
-        h[*a]
-        #super(*a)
+        h[*naked(args)]
       end
 
       def size
