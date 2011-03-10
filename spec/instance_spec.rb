@@ -2,6 +2,7 @@
 # ActiveFacts tests: Value instances in the Runtime API
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
+require 'rspec'
 require 'activefacts/api'
 
 describe "An instance of every type of ObjectType" do
@@ -198,8 +199,12 @@ describe "An instance of every type of ObjectType" do
         :string_value, :date_value, :date_time_value,
       ]
     @role_values = [
-        3, 3.0, 6, 7,
+        3, 4.0, 5, 6,
         "three", Date.new(2008,4,21), DateTime.new(2008,4,22,10,28,16),
+      ]
+    @role_alternate_values = [
+        4, 5.0, 6, 7,
+        "four", Date.new(2009,4,21), DateTime.new(2009,4,22,10,28,16),
       ]
     @subtype_role_instances = [
         Mod::IntSubValue.new(6), Mod::RealSubValue.new(6.0),
@@ -209,55 +214,63 @@ describe "An instance of every type of ObjectType" do
       ]
   end
 
-  it "if a value type, should verbalise" do
-    @value_types.each do |value_type|
-      #puts "#{value_type} verbalises as #{value_type.verbalise}"
-      value_type.respond_to?(:verbalise).should be_true
-      verbalisation = value_type.verbalise
-      verbalisation.should =~ %r{\b#{value_type.basename}\b}
-      verbalisation.should =~ %r{\b#{value_type.superclass.basename}\b}
+  describe "verbalisation" do
+    it "if a value type, should verbalise" do
+      @value_types.each do |value_type|
+        #puts "#{value_type} verbalises as #{value_type.verbalise}"
+        value_type.respond_to?(:verbalise).should be_true
+        verbalisation = value_type.verbalise
+        verbalisation.should =~ %r{\b#{value_type.basename}\b}
+        verbalisation.should =~ %r{\b#{value_type.superclass.basename}\b}
+      end
     end
-  end
 
-  it "if an entity type, should verbalise" do
-    @entity_types.each do |entity_type|
-      #puts entity_type.verbalise
-      entity_type.respond_to?(:verbalise).should be_true
-      verbalisation = entity_type.verbalise
-      verbalisation.should =~ %r{\b#{entity_type.basename}\b}
+    it "if an entity type, should verbalise" do
+      @entity_types.each do |entity_type|
+        #puts entity_type.verbalise
+        entity_type.respond_to?(:verbalise).should be_true
+        verbalisation = entity_type.verbalise
+        verbalisation.should =~ %r{\b#{entity_type.basename}\b}
 
-      # All identifying roles should be in the verbalisation.
-      # Strictly this should be the role name, but we don't set names here.
-      entity_type.identifying_role_names.each do |ir|
-          role = entity_type.roles(ir)
-          role.should_not be_nil
-          counterpart_object_type = role.counterpart_object_type
-          verbalisation.should =~ %r{\b#{counterpart_object_type.basename}\b}
-        end
+        # All identifying roles should be in the verbalisation.
+        # Strictly this should be the role name, but we don't set names here.
+        entity_type.identifying_role_names.each do |ir|
+            role = entity_type.roles(ir)
+            role.should_not be_nil
+            counterpart_object_type = role.counterpart_object_type
+            verbalisation.should =~ %r{\b#{counterpart_object_type.basename}\b}
+          end
+      end
     end
-  end
 
-  it "if a value, should verbalise" do
-    @value_instances.each do |value|
-      #puts value.verbalise
-      value.respond_to?(:verbalise).should be_true
-      verbalisation = value.verbalise
-      verbalisation.should =~ %r{\b#{value.class.basename}\b}
+    it "should inspect" do
+      (@value_instances+@entities+@entities_by_entity).each do |object|
+        object.inspect
+      end
     end
-  end
 
-  it "if an entity, should respond to verbalise" do
-    (@entities+@entities_by_entity).each do |entity|
-      #puts entity.verbalise
-      entity.respond_to?(:verbalise).should be_true
-      verbalisation = entity.verbalise
-      verbalisation.should =~ %r{\b#{entity.class.basename}\b}
-      entity.class.identifying_role_names.each do |ir|
-          role = entity.class.roles(ir)
-          role.should_not be_nil
-          counterpart_object_type = role.counterpart_object_type
-          verbalisation.should =~ %r{\b#{counterpart_object_type.basename}\b}
-        end
+    it "if a value, should verbalise" do
+      @value_instances.each do |value|
+        #puts value.verbalise
+        value.respond_to?(:verbalise).should be_true
+        verbalisation = value.verbalise
+        verbalisation.should =~ %r{\b#{value.class.basename}\b}
+      end
+    end
+
+    it "if an entity, should respond to verbalise" do
+      (@entities+@entities_by_entity).each do |entity|
+        #puts entity.verbalise
+        entity.respond_to?(:verbalise).should be_true
+        verbalisation = entity.verbalise
+        verbalisation.should =~ %r{\b#{entity.class.basename}\b}
+        entity.class.identifying_role_names.each do |ir|
+            role = entity.class.roles(ir)
+            role.should_not be_nil
+            counterpart_object_type = role.counterpart_object_type
+            verbalisation.should =~ %r{\b#{counterpart_object_type.basename}\b}
+          end
+      end
     end
   end
 
@@ -267,195 +280,9 @@ describe "An instance of every type of ObjectType" do
     end
   end
 
-  it "should respond to all its roles" do
-    @entities.each do |entity|
-      @test_role_names.each do |role_name|
-        entity.respond_to?(role_name).should be_true
-        entity.respond_to?(:"#{role_name}=").should be_true
-        entity.respond_to?(:"one_#{role_name}").should be_true
-        entity.respond_to?(:"one_#{role_name}=").should be_true
-      end
-    end
-    @entities_by_entity.each do |entity|
-      role = entity.class.roles(entity.class.identifying_role_names[0])
-      role_name = role.name
-      entity.respond_to?(role_name).should be_true
-      entity.respond_to?(:"#{role_name}=").should be_true
-    end
-  end
-
-  it "should return the ObjectType in response to .class()" do
-    @value_types.zip(@value_instances).each do |object_type, instance|
-      instance.class.should == object_type
-    end
-    @entity_types.zip(@entities).each do |object_type, instance|
-      instance.class.should == object_type
-      end
-    @entities_by_entity_types.zip(@entities_by_entity).each do |object_type, instance|
-      instance.class.should == object_type
-    end
-  end
-
   it "should return the module in response to .vocabulary()" do
     (@value_types+@entity_types).zip((@value_instances+@entities+@entities_by_entity)).each do |object_type, instance|
       instance.class.vocabulary.should == Mod
-    end
-  end
-
-  it "each entity type should be able to be constructed using simple values" do
-    @entity_types.zip(@values+@values+@values, @classes+@classes+@classes).each do |entity_type, value, klass|
-      # An identifier parameter can be an array containing a simple value too
-      [ value,
-        Array === value ? nil : [value],
-#        entity_type.new(value) # REVISIT: It's not yet the case that an instance of the correct type can be used as a constructor parameter
-      ].compact.each do |value|
-        e = nil
-        lambda {
-            #puts "Constructing #{entity_type} using #{value.class} #{value.inspect}:"
-            e = entity_type.new(value)
-          }.should_not raise_error
-        # Verify that the identifying role has a equivalent value (except AutoCounter):
-        role_name = entity_type.identifying_role_names[0]
-        role = entity_type.roles(role_name)
-        counterpart_object_type = role.counterpart_object_type
-        player_superclasses = [ counterpart_object_type.superclass, counterpart_object_type.superclass.superclass ]
-        e.send(role_name).should == klass.new(*value) unless player_superclasses.include?(AutoCounter)
-      end
-    end
-  end
-
-  it "should allow its non-identifying roles to be assigned values" do
-    @entities.zip(@test_role_names).each do |entity, identifying_role|
-      @test_role_names.zip(@role_values).each do |role_name, value|
-        # No roles of ValueType instances are tested in this file:
-        raise hell unless entity.class.included_modules.include?(ActiveFacts::API::Entity)
-        next if entity.class.identifying_role_names.include?(role_name)
-        lambda {
-            begin
-              entity.send(:"#{role_name}=", value)
-            rescue => e
-              raise
-            end
-          }.should_not raise_error
-        lambda {
-            entity.send(:"one_#{role_name}=", value)
-          }.should_not raise_error
-      end
-    end
-  end
-
-  it "that is an entity type should not allow its identifying roles to be re-assigned" do
-    @entities.zip(@test_role_names).each do |entity, identifying_role|
-      @test_role_names.zip(@role_values).each do |role_name, value|
-        if entity.class.identifying_role_names.include?(role_name) && entity.send(role_name) != nil && value != nil
-          lambda {
-              entity.send(:"#{role_name}=", value)
-            }.should raise_error
-        end
-        one_role = :"one_#{role_name}"
-        if entity.class.identifying_role_names.include?(one_role) && entity.send(one_role) != nil
-          lambda {
-              entity.send(:"one_#{role_name}=", value)
-            }.should raise_error
-        end
-      end
-    end
-  end
-
-  it "that is an entity type should allow its identifying roles to be assigned to and from nil" do
-    @entities.zip(@test_role_names).each do |entity, identifying_role|
-      @test_role_names.zip(@role_values).each do |role_name, value|
-        if entity.class.identifying_role_names.include?(role_name)
-          # Nullify the value first:
-          entity.send(:"#{role_name}=", nil)
-          lambda {
-              entity.send(:"#{role_name}=", value)
-            }.should_not raise_error
-        end
-        one_role = :"one_#{role_name}"
-        if entity.class.identifying_role_names.include?(one_role) && entity.send(one_role) == nil
-          entity.send(one_role, nil)
-          lambda {
-              entity.send(one_role, value)
-            }.should_not raise_error
-        end
-      end
-    end
-  end
-
-  it "should allow its non-identifying roles to be assigned instances" do
-    @entities.zip(@test_role_names).each do |entity, identifying_role|
-      @test_role_names.zip(@value_types, @role_values).each do |role_name, klass, value|
-        next unless value
-        next if role_name == identifying_role
-        instance = klass.new(value)
-        lambda {
-            entity.send(:"#{role_name}=", instance)
-          }.should_not raise_error
-        entity.send(role_name).class.should == klass
-        lambda {
-            entity.send(:"one_#{role_name}=", instance)
-          }.should_not raise_error
-        entity.send(:"one_#{role_name}").class.should == klass
-      end
-    end
-  end
-
-  it "should allow its non-identifying roles to be assigned instances of value subtypes, retaining the subtype" do
-    @entities.zip(@test_role_names).each do |entity, identifying_role|
-      @test_role_names.zip(@subtype_role_instances).each do |role_name, instance|
-        next unless instance
-        next if role_name == identifying_role
-        lambda {
-            entity.send(:"#{role_name}=", instance)
-          }.should_not raise_error
-        entity.send(role_name).class.should == instance.class
-        lambda {
-            entity.send(:"one_#{role_name}=", instance)
-          }.should_not raise_error
-        entity.send(:"one_#{role_name}").class.should == instance.class
-      end
-    end
-  end
-
-  it "should add to has_one's counterpart role when non-identifying roles are assigned values" do
-    @entities.zip(@test_role_names).each do |entity, identifying_role|
-      @test_role_names.zip(@role_values).each do |role_name, value|
-        next if role_name == identifying_role or !value
-
-        # Test the has_one role:
-        role = entity.class.roles(role_name)
-        old_counterpart = entity.send(:"#{role_name}")
-        entity.send(:"#{role_name}=", value)
-        counterpart = entity.send(:"#{role_name}")
-        old_counterpart.should_not == counterpart
-        counterpart.send(role.counterpart.name).should be_include(entity)
-        old_counterpart.send(role.counterpart.name).should_not be_include(entity) if old_counterpart
-
-        # Test the one_to_one role:
-        role = entity.class.roles(:"one_#{role_name}")
-        old_counterpart = entity.send(:"one_#{role_name}")
-        entity.send(:"one_#{role_name}=", value)
-        counterpart = entity.send(:"one_#{role_name}")
-        old_counterpart.should_not == counterpart   # Make sure we changed it!
-        counterpart.send(role.counterpart.name).should == entity
-        old_counterpart.send(role.counterpart.name).should be_nil if old_counterpart
-      end
-    end
-  end
-
-  it "should allow its non-identifying roles to be assigned nil" do
-    @entities.zip(@test_role_names).each do |entity, identifying_role|
-      @test_role_names.zip(@role_values).each do |role_name, value|
-        next if role_name == identifying_role
-        entity.send(:"#{role_name}=", value)
-        lambda {
-            entity.send(:"#{role_name}=", nil)
-          }.should_not raise_error
-        lambda {
-            entity.send(:"one_#{role_name}=", nil)
-          }.should_not raise_error
-      end
     end
   end
 

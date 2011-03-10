@@ -57,7 +57,9 @@ module ActiveFacts
           constellation ? " in #{constellation.inspect}" : ""
         } #{
           # REVISIT: Where there are one-to-one roles, this cycles
-          self.class.identifying_role_names.map{|role| "@#{role}="+send(role).inspect }*" "
+          self.class.identifying_role_names.map do |role|
+            "@#{role}="+send(role).inspect
+          end*" "
         }>"
       end
 
@@ -110,13 +112,11 @@ module ActiveFacts
         end
 
         def identifying_roles
-          debug :persistence, "Identifying roles for #{basename}" do
-            @identifying_role_names.map{|name|
-              role = roles[name] || (!superclass.is_entity_type || superclass.roles[name])
-              debug :persistence, "#{name} -> #{role ? "found" : "NOT FOUND"}"
-              role
-            }
-          end
+          @identifying_role_names.map{|name|
+            role = roles[name] || (!superclass.is_entity_type || superclass.roles[name])
+            # debug :persistence, "#{name} -> #{role ? "found" : "NOT FOUND"}"
+            role
+          }
         end
 
         # Convert the passed arguments into an array of Instance objects that can identify an instance of this Entity type:

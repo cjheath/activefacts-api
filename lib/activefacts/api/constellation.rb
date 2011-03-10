@@ -112,6 +112,8 @@ module ActiveFacts
       # With no parameters, return the collection of all instances of that object_type.
       def method_missing(m, *args)
         if klass = @vocabulary.const_get(m)
+          raise "#{m} is not a class in #{@vocabulary.name}" if !klass.is_a?(Class)
+          raise "#{m} is not a registered object type in #{@vocabulary.name}" unless klass.respond_to?(:assert_instance)
           if args.size == 0
             # Return the collection of all instances of this class in the constellation:
             @instances[klass]

@@ -34,7 +34,7 @@ class Int < SimpleDelegator
   end
 
   def is_a?(k)
-    __getobj__.is_a?(k)
+    __getobj__.is_a?(k) || super
   end
 
   def inspect
@@ -65,7 +65,7 @@ class Real < SimpleDelegator
   end
 
   def is_a?(k)
-    __getobj__.is_a?(k)
+    __getobj__.is_a?(k) || super
   end
 
   def inspect                           #:nodoc:

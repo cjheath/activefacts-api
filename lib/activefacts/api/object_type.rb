@@ -199,9 +199,11 @@ module ActiveFacts
         class_eval do
           define_method "#{role.name}=" do |value|
             #puts "Setting #{self.class.name} #{object_id}.@#{role.name} to #{(value ? true : nil).inspect}"
-            instance_variable_set("@#{role.name}", value ? true : nil)
+            assigned = value ? true : nil
+            instance_variable_set("@#{role.name}", assigned)
             # REVISIT: Provide a way to find all instances playing/not playing this role
             # Analogous to true.all_thing_as_role_name...
+            assigned
           end
         end
         define_single_role_getter(role)
@@ -255,10 +257,10 @@ module ActiveFacts
 
             # Get old value, and jump out early if it's unchanged:
             old = instance_variable_get(role_var) rescue nil
-            return if old == value        # Occurs during one_to_one assignment, for example
+            return value if old.equal?(value)         # Occurs during one_to_one assignment, for example
 
             value = role.adapt(constellation, value) if value
-            return if old == value        # Occurs when same value is assigned
+            return value if old.equal?(value)         # Occurs when same value is assigned
 
             # DEBUG: puts "assign #{self.class.basename}.#{role.name} <-> #{value.inspect}.#{role.counterpart.name}#{old ? " (was #{old.inspect})" : ""}"
 
@@ -278,6 +280,8 @@ module ActiveFacts
 
             # Assign/add "self" at the other end too:
             assign_new.call(value, role.counterpart.name, old, self) if value
+
+            value
           end
         end
       end

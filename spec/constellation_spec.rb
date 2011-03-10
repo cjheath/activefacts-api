@@ -3,6 +3,7 @@
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
 
+require 'rspec'
 require 'activefacts/api'
 
 describe "A Constellation instance" do
@@ -33,7 +34,7 @@ describe "A Constellation instance" do
 
       class LegalEntity
         identified_by :name
-        has_one :name
+        has_one :name, :mandatory => true
       end
 
       class SurrogateId
@@ -50,9 +51,28 @@ describe "A Constellation instance" do
         supertypes SurrogateId
 
         has_one :family_name, :class => Name
+        has_one :employer, :class => Company
       end
     end
     @constellation = ActiveFacts::API::Constellation.new(Mod)
+  end
+
+  it "should allow creating a constellation" do
+    @constellation = ActiveFacts::API::Constellation.new(Mod)
+  end
+
+  it "should complain when accessing a non-class as a method" do
+    Mod::Foo = 23
+    lambda { @constellation.Foo }.should raise_error
+  end
+
+  it "should complain when accessing a class that isn't an object type" do
+    class Mod::Bar; end
+    lambda { @constellation.Bar }.should raise_error
+  end
+
+  it "should allow inspection" do
+    lambda { @constellation.inspect }.should_not raise_error
   end
 
   it "should support fetching its vocabulary" do
@@ -99,6 +119,30 @@ describe "A Constellation instance" do
     fred_fly1.object_id.should == fred_fly2.object_id
   end
 
+  it "should support population blocks" do
+    @constellation.populate do
+      Name("bar")
+      LegalEntity("foo")
+      Person("Fred", "Nerk", :auto_counter_value => :new)
+      Company("Acme, Inc", :auto_counter_value => :new)
+    end
+    @constellation.Name.size.should == 5
+    @constellation.SurrogateId.size.should == 2
+  end
+
+  it "should verbalise itself" do
+    @constellation.populate do
+      Name("bar")
+      LegalEntity("foo")
+      c = Company("Acme, Inc", :auto_counter_value => :new)
+      Person("Fred", "Nerk", :auto_counter_value => :new, :employer => c)
+    end
+    s = @constellation.verbalise
+    names = s.split(/\n/).grep(/\tEvery /).map{|l| l.sub(/.*Every (.*):$/, '\1')}
+    expected = ["Company", "LegalEntity", "Name", "Person", "StringValue", "SurrogateId"]
+    names.sort.should == expected
+  end
+
   it "should index value instances, including by its superclasses" do
     baz = @constellation.Name("baz")
     @constellation.Name.keys.sort.should == ["baz"]
@@ -124,6 +168,20 @@ describe "A Constellation instance" do
 
     @constellation.SurrogateId.values.should be_include(acme)
     @constellation.SurrogateId.values.should be_include(fred_fly)
+  end
+
+  it "should allow retraction of instances, propagating nullification or retraction" do
+    person = @constellation.Person "Fred", "Smith", :auto_counter_value => :new
+
+    @constellation.retract(@constellation.Name("Smith"))
+    @constellation.Name["Smith"].should be_nil
+    @constellation.Name["Fred"].should_not be_nil
+
+    pending "Retraction doesn't propagate"
+    person.family_name.should be_nil
+    @constellation.retract(@constellation.Name("Fred"))
+    @constellation.Name["Fred"].should be_nil
+    @constellation.Person.size.should == 0
   end
 
 end

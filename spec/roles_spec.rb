@@ -2,6 +2,7 @@
 # ActiveFacts tests: Roles of object_type classes in the Runtime API
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
+require 'rspec'
 require 'activefacts/api'
 
 describe "Roles" do
@@ -114,7 +115,6 @@ describe "Roles" do
   it "should instantiate subclasses sensibly" do
     c = ActiveFacts::API::Constellation.new(Mod)
     bloggs = c.LegalEntity("Bloggs & Co")
-    #pending
     p = c.Person("Fred", "Bloggs")
     p.related_to = "Bloggs & Co"
     p.related_to.should be_is_a(Mod::LegalEntity)
