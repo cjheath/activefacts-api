@@ -35,7 +35,11 @@ module ActiveFacts
 
         def initialise_value_type *args, &block #:nodoc:
           # REVISIT: args could be a hash, with keys :length, :scale, :unit, :allow
-          #raise "value_type args unexpected" if args.size > 0
+          options = (args[-1].is_a?(Hash) ? args.pop : {})
+          options.each do |key, value|
+            raise "unknown value type option #{key}" unless respond_to?(key)
+            send(key, value)
+          end
         end
 
         class_eval do
@@ -68,7 +72,7 @@ module ActiveFacts
         def identifying_role_values(*args)  #:nodoc:
           # If the single arg is the correct class or a subclass, use it directly
           #puts "#{basename}.identifying_role_values#{args.inspect}"
-          if (args.size == 1 and (arg = args[0]).is_a?(self.class))   # No secondary supertypes allowed for value types
+          if (args.size == 1 and (arg = args[0]).is_a?(self))   # No secondary supertypes allowed for value types
             arg = arg.__getobj__ if RoleProxy === arg
             return arg
           end
