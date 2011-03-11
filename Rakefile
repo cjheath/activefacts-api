@@ -7,7 +7,7 @@ Jeweler::Tasks.new do |gem|
   gem.name = "activefacts-api"
   gem.homepage = "http://github.com/cjheath/activefacts-api"
   gem.license = "MIT"
-  gem.summary = "A semantic modeling and query language (CQL) and application runtime (the Constellation API)"
+  gem.summary = "A fact-based data model DSL and API"
   gem.description = %q{
 The ActiveFacts API is a Ruby DSL for managing constellations of elementary facts.
 Each fact is either existential (a value or an entity), characteristic (boolean) or
