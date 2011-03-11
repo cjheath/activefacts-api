@@ -118,9 +118,9 @@ end
 # The assigned value will be filled out everywhere it needs to be, upon save.
 class AutoCounter
   def initialize(i = :new)
-    raise "AutoCounter #{self.class} may not be #{i.inspect}" unless i == :new or i.is_a?(Integer)
+    raise "AutoCounter #{self.class} may not be #{i.inspect}" unless i == :new or i.is_a?(Integer) or i.is_a?(AutoCounter)
     # puts "new AutoCounter #{self.class} from\n\t#{caller.select{|s| s !~ %r{rspec}}*"\n\t"}"
-    @value = i == :new ? nil : i
+    @value = i == :new ? nil : i.to_i
   end
 
   # Assign a definite value to an AutoCounter; this may only be done once
@@ -143,7 +143,13 @@ class AutoCounter
   end
 
   # An AutoCounter may only be used in numeric expressions after a definite value has been assigned
-  def self.coerce(i)
+  def to_i
+    raise ArgumentError unless @value
+    @value
+  end
+
+  # Coerce "i" to be of the same type as self
+  def coerce(i)
     raise ArgumentError unless @value
     [ i.to_i, @value ]
   end
