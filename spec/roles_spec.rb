@@ -10,7 +10,7 @@ describe "Roles" do
     Object.send :remove_const, :Mod if Object.const_defined?("Mod")
     module Mod
       class Name < String
-        value_type
+        value_type :length => 40, :scale => 0, :restrict => /^[A-Z][a-z]*/
       end
       class LegalEntity
         identified_by :name
@@ -43,6 +43,11 @@ describe "Roles" do
     role = Mod::Existing1.roles(:name)
     role.should_not be_nil
     role.counterpart_object_type.should == Mod::Name
+  end
+
+  it "should provide value type metadata" do
+    Mod::Name.length.should == 40
+    Mod::Name.scale.should == 0
   end
 
   it "should inject the respective role name into the matching object_type" do

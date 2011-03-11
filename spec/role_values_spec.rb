@@ -185,6 +185,23 @@ describe "Object type role values" do
             object.send(:"#{identifying_role.name}=", values[1])
           end
         end
+      else
+        it "should allow initialising value type #{object_type.name} with an instance of that value type" do
+          bare_value = object_type.new(*object_identifying_parameters(object_type_name, values[0]))
+          object = @constellation.send(object_type_name, bare_value)
+
+          # Now link the bare value to an Octopus:
+          octopus = @constellation.Octopus(0)
+          octopus_role_name = :"octopus_as_one_#{object_type_name.snakecase}"
+          bare_value.send(:"#{octopus_role_name}=", octopus)
+          counterpart_name = bare_value.class.roles[octopus_role_name].counterpart.name
+
+          # Create a reference by assigning the object from a RoleProxy:
+          proxy = octopus.send(counterpart_name)
+          proxy.should be_respond_to(:__getobj__)
+          object2 = @constellation.send(object_type_name, proxy)
+          object2.should == object
+        end
       end
     end
 

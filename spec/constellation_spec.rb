@@ -160,6 +160,21 @@ describe "A Constellation instance" do
     names.sort.should == expected
   end
 
+  it "should support string capitalisation functions" do
+    names = ["Company", "LegalEntity", "Name", "Person", "StringValue", "SurrogateId"]
+    camelwords = names.map{|n| n.camelwords }
+    camelwords.should == [["Company"], ["Legal", "Entity"], ["Name"], ["Person"], ["String", "Value"], ["Surrogate", "Id"]]
+
+    snakes = names.map{|n| n.snakecase }
+    snakes.should == ["company", "legal_entity", "name", "person", "string_value", "surrogate_id"]
+
+    camelupper = snakes.map{|n| n.camelcase }
+    camelupper.should == ["Company", "LegalEntity", "Name", "Person", "StringValue", "SurrogateId"]
+
+    camellower = snakes.map{|n| n.camelcase(:lower) }
+    camellower.should == ["company", "legalEntity", "name", "person", "stringValue", "surrogateId"]
+  end
+
   it "should index value instances, including by its superclasses" do
     baz = @constellation.Name("baz")
     @constellation.Name.keys.sort.should == ["baz"]
