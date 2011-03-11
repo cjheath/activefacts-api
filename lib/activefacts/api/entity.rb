@@ -58,7 +58,7 @@ module ActiveFacts
         } #{
           # REVISIT: Where there are one-to-one roles, this cycles
           self.class.identifying_role_names.map do |role|
-            "@#{role}="+send(role).inspect
+            "@#{role}="+send(role).__getobj__.inspect
           end*" "
         }>"
       end
