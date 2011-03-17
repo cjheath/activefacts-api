@@ -52,9 +52,13 @@ describe "AutoCounter Value Type instances" do
       }.should raise_error
   end
 
-  it "should not allow its identifying roles to be assigned" do
+  it "should not allow its value to be re-assigned" do
     lambda {
-        @thing.thing_id = @thing_id
+        @thing.thing_id.assign(3)
+      }.should_not raise_error
+    lambda {
+        @thing.thing_id.assign(4)
+        #@thing.thing_id.assign(@thing_id)
       }.should raise_error
   end
 

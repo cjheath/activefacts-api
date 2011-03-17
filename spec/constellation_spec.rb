@@ -17,11 +17,11 @@ describe "A Constellation instance" do
       # Create a value type and a subtype of that value type for each base type:
       @base_types.each do |base_type|
         eval %Q{
-          class #{base_type.name}Value < #{base_type.name}
+          class #{base_type.basename}Value < #{base_type.name}
             value_type
           end
 
-          class #{base_type.name}SubValue < #{base_type.name}Value
+          class #{base_type.basename}SubValue < #{base_type.name}Value
             # Note no new "value_type" is required here, it comes through inheritance
           end
         }
@@ -223,11 +223,12 @@ describe "A Constellation instance" do
     @constellation.Name["Smith"].should be_nil
     @constellation.Name["Fred"].should_not be_nil
 
-    pending "Retraction doesn't propagate"
     person.family_name.should be_nil
     @constellation.retract(@constellation.Name("Fred"))
     @constellation.Name["Fred"].should be_nil
-    @constellation.Person.size.should == 0
+    pending "Retraction of identifiers doesn't de/re-index" do
+      @constellation.Person.size.should == 0
+    end
   end
 
 end

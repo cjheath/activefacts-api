@@ -51,6 +51,7 @@ module ActiveFacts
       #end
 
       # REVISIT: Should Proxies hash and eql? the same as their wards?
+      # Since we can't redefine all possible ward's eql? methods, we can't make this symmetric
       def hash                          #:nodoc:
         __getobj__.hash ^ self.class.hash
       end

@@ -65,7 +65,12 @@ module ActiveFacts
 
       # __bind raises an error if the named class doesn't exist yet.
       def __bind(object_type_name)  #:nodoc:
-        object_type = const_get(object_type_name)
+        begin
+          object_type = const_get(object_type_name)
+        rescue => e
+          debugger # if object_type_name =~ /:/
+          raise
+        end
         # puts "#{name}.__bind #{object_type_name} -> #{object_type.name}" if object_type
         if (@delayed && @delayed.include?(object_type_name))
           # $stderr.puts "#{object_type_name} was delayed, binding now"

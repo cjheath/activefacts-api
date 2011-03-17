@@ -13,12 +13,11 @@ module ActiveFacts
     #
     class InstanceIndex
       def []=(key, value)   #:nodoc:
-        raise "Adding RoleProxy to InstanceIndex" if value && RoleProxy === value
         h[key] = value
       end
 
       def [](*args)
-        h[*naked(args)]
+        h[*args]
       end
 
       def size
@@ -59,17 +58,6 @@ module ActiveFacts
     private
       def h
         @hash ||= {}
-      end
-
-      def naked(o)
-        case o
-        when Array
-          o.map{|e| naked(e) }
-        when RoleProxy
-          o.__getobj__
-        else
-          o
-        end
       end
     end
   end

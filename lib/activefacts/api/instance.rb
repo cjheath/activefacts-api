@@ -36,12 +36,19 @@ module ActiveFacts
         ([self.class]+self.class.supertypes_transitive).each do |klass|
           klass.roles.each do |role_name, role|
             next if role.unary?
-            next if !role.unique
-
             counterpart = role.counterpart
-            puts "Nullifying mandatory role #{role.name} of #{role.owner.name}" if counterpart.mandatory
+            if role.unique
+              puts "Nullifying mandatory role #{role.name} of #{role.owner.name}" if counterpart.mandatory
 
-            send "#{role.name}=", nil
+              send "#{role.name}=", nil
+            else
+              # puts "Not removing role #{role_name} from counterpart RoleValues #{counterpart.name}"
+              # REVISIT: This may be unsafe, as the RoleValues here will be modified as we traverse it:
+              send(role.name).each do |v|
+                #puts "Removing #{self.inspect} via role #{role_name} from counterpart #{v.inspect}\##{counterpart.name}"
+                v.send("#{counterpart.name}=", nil)
+              end
+            end
           end
         end
       end

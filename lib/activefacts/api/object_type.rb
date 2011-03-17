@@ -213,8 +213,7 @@ module ActiveFacts
         class_eval do
           define_method role.name do |*a|
             raise "Parameters passed to #{self.class.name}\##{role.name}" if a.size > 0
-            i = instance_variable_get("@#{role.name}") rescue nil
-            i ? RoleProxy.new(role, i) : i
+            instance_variable_get("@#{role.name}") rescue nil
           end
         end
       end
@@ -227,20 +226,26 @@ module ActiveFacts
         if (one_to_one)
           # This gets called to assign nil to the related role in the old correspondent:
           # value is included here so we can check that the correct value is being nullified, if necessary
-          nullify_reference = lambda{|from, role_name, value| from.send("#{role_name}=".to_sym, nil) }
+          nullify_reference = lambda do|from, role_name, value|
+            from.send("#{role_name}=".to_sym, nil)
+          end
 
           # This gets called to replace an old single value for a new one in the related role of a new correspondent
-          assign_reference = lambda{|from, role_name, old_value, value| from.send("#{role_name}=".to_sym, value) }
+          assign_reference = lambda do |from, role_name, old_value, value|
+            from.send("#{role_name}=".to_sym, value)
+          end
 
           define_single_role_setter(role, nullify_reference, assign_reference)
         else
           # This gets called to delete this object from the role value array in the old correspondent
-          delete_reference = lambda{|from, role_name, value| from.send(role_name).update(value, nil) }
+          delete_reference = lambda do |from, role_name, value|
+            from.send(role_name).update(value, nil)
+          end
 
           # This gets called to replace an old value by a new one in the related role value array of a new correspondent
-          replace_reference = lambda{|from, role_name, old_value, value| 
-              from.send(role_name).update(old_value, value)
-            }
+          replace_reference = lambda do |from, role_name, old_value, value| 
+            from.send(role_name).update(old_value, value)
+          end
 
           define_single_role_setter(role, delete_reference, replace_reference)
         end
@@ -269,7 +274,9 @@ module ActiveFacts
             # That would also allow caching the identifying_role_values, a performance win.
 
             # This allows setting and clearing identifying roles, but not changing them.
-            raise "#{self.class.basename}: illegal attempt to modify identifying role #{role.name}" if role.is_identifying && value != nil && old != nil
+            #if role.is_identifying
+            #  raise "#{self.class.basename}: illegal attempt to modify identifying role #{role.name}" if value != nil && old != nil
+            #end
 
             # puts "Setting binary #{role_var} to #{value.verbalise}"
             instance_variable_set(role_var, value)
