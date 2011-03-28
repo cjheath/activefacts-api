@@ -27,7 +27,7 @@ describe "An instance of every type of ObjectType" do
 
       # Create a value type and a subtype of that value type for each base type:
       @base_types.each do |base_type|
-        eval %Q{
+        eval <<-END
           class #{base_type.name}Value < #{base_type.name}
             value_type
           end
@@ -35,14 +35,14 @@ describe "An instance of every type of ObjectType" do
           class #{base_type.name}SubValue < #{base_type.name}Value
             # Note no new "value_type" is required here, it comes through inheritance
           end
-        }
+        END
       end
 
       # Create a TestByX, TestByXSub, and TestSubByX class for all base types X
       # Each class has a has_one and a one_to_one for all roles.
       # and is identified by the has_one :x role
       @base_types.each do |base_type|
-        code = %Q{
+        code = <<-END
           class TestBy#{base_type.name}
             identified_by :#{base_type.name.snakecase}_value#{
               @role_names.map do |role_name|
@@ -70,8 +70,9 @@ describe "An instance of every type of ObjectType" do
           class TestBy#{base_type.name}Entity
             identified_by :test_by_#{base_type.name.snakecase}
             one_to_one :test_by_#{base_type.name.snakecase}
-          end}
-          eval code
+          end
+        END
+        eval code
       end
     end
 

@@ -16,7 +16,7 @@ describe "A Constellation instance" do
 
       # Create a value type and a subtype of that value type for each base type:
       @base_types.each do |base_type|
-        eval %Q{
+        eval <<-END
           class #{base_type.basename}Value < #{base_type.name}
             value_type
           end
@@ -24,7 +24,7 @@ describe "A Constellation instance" do
           class #{base_type.basename}SubValue < #{base_type.name}Value
             # Note no new "value_type" is required here, it comes through inheritance
           end
-        }
+        END
       end
 
       class Name < StringValue
@@ -229,6 +229,64 @@ describe "A Constellation instance" do
     pending "Retraction of identifiers doesn't de/re-index" do
       @constellation.Person.size.should == 0
     end
+  end
+
+  it "should fail to recognise references to unresolved forward referenced classes" do
+    module Mod2
+      class Foo
+        identified_by :name
+        one_to_one :name
+        has_one :bar
+        has_one :baz, :class => "BAZ"
+      end
+
+      class Name < String
+        value_type
+      end
+    end
+
+    @c = ActiveFacts::API::Constellation.new(Mod2)
+    le = @c.Foo("Foo")
+    lambda {
+      le.bar
+    }.should raise_error(NoMethodError)
+    lambda {
+      le.baz
+    }.should raise_error(NoMethodError)
+
+    # Now define the classes and try again:
+    module Mod2
+      class Bar < String
+        value_type
+      end
+      class BAZ < String
+        value_type
+      end
+    end
+    lambda {
+      le.bar
+      le.bar = 'bar'
+    }.should_not raise_error
+    lambda {
+      le.baz
+      le.baz = 'baz'
+    }.should_not raise_error
+  end
+
+  it "should not allow references to classes outside the vocabulary" do
+    module Outside
+      class Other < String
+        value_type
+      end
+    end
+
+    lambda {
+      module Mod
+        class IntValue
+          has_one :thingummy, :class => Outside::Other
+        end
+      end
+    }.should raise_error
   end
 
 end

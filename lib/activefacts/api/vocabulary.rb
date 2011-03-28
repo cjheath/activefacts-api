@@ -20,15 +20,23 @@ module ActiveFacts
         @object_type ||= {}
         return @object_type unless name
 
-        return name if name.is_a? Class
+        if name.is_a? Class
+          raise "#{name} must be an object_type class in #{self.name}" unless name.vocabulary == self
+          return name
+        end
 
         # puts "Looking up object_type #{name} in #{self.name}"
         camel = name.to_s.camelcase
         if (c = @object_type[camel])
           __bind(camel)
-          return c
+          c
+        else
+          begin
+            const_get("#{self.name}::#{camel}")
+          rescue NameError
+            nil
+          end
         end
-        return (const_get("#{name}::#{camel}") rescue nil)
       end
 
       # Create a new constellation over this vocabulary
@@ -65,12 +73,7 @@ module ActiveFacts
 
       # __bind raises an error if the named class doesn't exist yet.
       def __bind(object_type_name)  #:nodoc:
-        begin
-          object_type = const_get(object_type_name)
-        rescue => e
-          debugger # if object_type_name =~ /:/
-          raise
-        end
+        object_type = const_get(object_type_name)
         # puts "#{name}.__bind #{object_type_name} -> #{object_type.name}" if object_type
         if (@delayed && @delayed.include?(object_type_name))
           # $stderr.puts "#{object_type_name} was delayed, binding now"

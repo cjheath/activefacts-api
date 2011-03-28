@@ -353,6 +353,7 @@ module ActiveFacts
           related_name ||= role_name.to_s
         when Class
           related = related_name
+          raise "#{related} must be an object_type class in #{vocabulary.name}" unless related.respond_to?(:vocabulary) and related.vocabulary == self.vocabulary
           related_name = related_name.basename.to_s.snakecase
         when Symbol, String
           related = related_name
