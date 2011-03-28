@@ -14,14 +14,14 @@ module ActiveFacts
     # and can resolve the forward references when the class is finally defined.
     # Construction of a Constellation requires a Vocabuary as argument.
     module Vocabulary
-      # With a parameter, look up a object_type class by name.
+      # With a parameter, look up an object type by name.
       # Without, return the hash (keyed by the class' basename) of all object_types in this vocabulary
       def object_type(name = nil)
         @object_type ||= {}
         return @object_type unless name
 
         if name.is_a? Class
-          raise "#{name} must be an object_type class in #{self.name}" unless name.vocabulary == self
+          raise "#{name} must be an object type in #{self.name}" unless name.vocabulary == self
           return name
         end
 

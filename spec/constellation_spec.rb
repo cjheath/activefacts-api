@@ -37,8 +37,13 @@ describe "A Constellation instance" do
         has_one :name, :mandatory => true
       end
 
+      class Extra < Int
+        value_type
+      end
+
       class SurrogateId
         identified_by :auto_counter_value
+        supertypes :extra
         has_one :auto_counter_value
       end
 
@@ -48,7 +53,7 @@ describe "A Constellation instance" do
 
       class Person < LegalEntity
         identified_by :name, :family_name     # REVISIT: want a way to role_alias :name, :given_name
-        supertypes SurrogateId
+        supertypes :surrogate_id              # Use a Symbol binding this time
 
         has_one :family_name, :class => Name
         has_one :employer, :class => Company
@@ -156,7 +161,7 @@ describe "A Constellation instance" do
     end
     s = @constellation.verbalise
     names = s.split(/\n/).grep(/\tEvery /).map{|l| l.sub(/.*Every (.*):$/, '\1')}
-    expected = ["Company", "LegalEntity", "Name", "Person", "StringValue", "SurrogateId"]
+    expected = ["Company", "Extra", "LegalEntity", "Name", "Person", "StringValue", "SurrogateId"]
     names.sort.should == expected
   end
 
@@ -289,4 +294,61 @@ describe "A Constellation instance" do
     }.should raise_error
   end
 
+  it "should disallow unrecognised supertypes" do
+    lambda {
+      module Mod
+        class LegalEntity
+          supertypes :foo
+        end
+      end
+    }.should raise_error(NameError)
+
+    lambda {
+      module Mod
+        class LegalEntity
+          supertypes Bignum
+        end
+      end
+    }.should raise_error(RuntimeError)
+
+    lambda {
+      module Mod
+        class LegalEntity
+          supertypes 3
+        end
+      end
+    }.should raise_error(RuntimeError)
+  end
+
+  it "should allow supertypes with supertypes" do
+    lambda {
+      module Mod
+        class ListedCompany < Company
+        end
+      end
+    }.should_not raise_error(NameError)
+
+    c = @constellation.Company("foo", :auto_counter_value => 23)
+  end
+
+  it "should error on invalid :class values" do
+    lambda {
+      module Mod
+        class SurrogateId
+          has_one :Name, :class => 3
+        end
+      end
+    }.should raise_error
+  end
+
+  it "should error on misleading :class values" do
+    lambda {
+      module Mod
+        class SurrogateId
+          has_one :Name, :class => Extra
+        end
+      end
+    }.should raise_error
+
+  end
 end

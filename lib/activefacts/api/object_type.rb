@@ -91,15 +91,18 @@ module ActiveFacts
           all_supertypes = supertypes_transitive
           object_types.each do |object_type|
             next if all_supertypes.include? object_type
-            case object_type
-            when Class
-              @supertypes << object_type
-            when Symbol
-              # No late binding here:
-              @supertypes << (object_type = vocabulary.const_get(object_type.to_s.camelcase))
-            else
-              raise "Illegal supertype #{object_type.inspect} for #{self.class.basename}"
-            end
+            supertype =
+              case object_type
+              when Class
+                object_type
+              when Symbol
+                # No late binding here:
+                (object_type = vocabulary.const_get(object_type.to_s.camelcase))
+              else
+                raise "Illegal supertype #{object_type.inspect} for #{self.class.basename}"
+              end
+            raise "#{supertype.name} must be an object type in #{vocabulary.name}" unless supertype.respond_to?(:vocabulary) and supertype.vocabulary == self.vocabulary
+            @supertypes << supertype
 
             # Realise the roles (create accessors) of this supertype.
             # REVISIT: The existing accessors at the other end will need to allow this class as role counterpart
@@ -117,11 +120,12 @@ module ActiveFacts
           supertypes = []
           supertypes << superclass if Module === (superclass.vocabulary rescue nil)
           supertypes += (@supertypes ||= [])
-          supertypes.inject([]) {|a, t|
-              next if a.include?(t)
-              a += [t]
-              a += t.supertypes_transitive rescue []
-            }.uniq
+          sts = supertypes.inject([]) do |a, t|
+            next if a.include?(t)
+            a += [t]
+            a += t.supertypes_transitive rescue []
+          end.uniq
+          sts # The local variable unconfuses rcov
         end
       end
 
@@ -155,12 +159,12 @@ module ActiveFacts
         all_supertypes ||= supertypes_transitive
         s = object_type.supertypes
         #puts "realising #{object_type.basename} supertypes #{s.inspect} of #{basename}"
-        s.each {|t|
-            next if all_supertypes.include? t
-            realise_supertypes(t, all_supertypes)
-            t.subtypes << self
-            all_supertypes << t
-          }
+        s.each do |t|
+          next if all_supertypes.include? t
+          realise_supertypes(t, all_supertypes)
+          t.subtypes << self
+          all_supertypes << t
+        end
         #puts "Realising roles of #{object_type.basename} in #{basename}"
         realise_roles(object_type)
       end
@@ -353,7 +357,6 @@ module ActiveFacts
           related_name ||= role_name.to_s
         when Class
           related = related_name
-          raise "#{related} must be an object_type class in #{vocabulary.name}" unless related.respond_to?(:vocabulary) and related.vocabulary == self.vocabulary
           related_name = related_name.basename.to_s.snakecase
         when Symbol, String
           related = related_name
@@ -366,6 +369,9 @@ module ActiveFacts
         resolved = vocabulary.object_type(related) rescue nil
         #puts "#{related} resolves to #{resolved}"
         related = resolved if resolved
+        if related.is_a?(Class)
+          raise "#{related} must be an object type in #{vocabulary.name}" unless related.respond_to?(:vocabulary) and related.vocabulary == self.vocabulary
+        end
         # puts "related = #{related.inspect}"
 
         if options.delete(:mandatory) == true
@@ -413,8 +419,6 @@ module ActiveFacts
           vocabulary.__delay(object_type.to_s.camelcase, args, &block)
         when String     # Arrange for this to happen later
           vocabulary.__delay(object_type, args, &block)
-        else
-          raise "Delayed binding not possible for #{object_type.class.name} #{object_type.inspect}"
         end
       end
     end

@@ -96,7 +96,7 @@ module ActiveFacts
           return *index_instance(instance)
         end
 
-        def index_instance(instance, key = nil) #:nodoc:
+        def index_instance(instance, key = nil, key_roles = nil) #:nodoc:
           instances = instance.constellation.instances[self]
           key = instance.identifying_role_values
           instances[key] = instance
