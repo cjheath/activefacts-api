@@ -58,7 +58,7 @@ class Decimal < BigDecimal #:nodoc:
   extend ActiveFacts::API::ValueClass
   # The problem here is you can't pass a BigDecimal to BigDecimal.new. Fix it.
   def self.new(v)
-    if v.is_a?(BigDecimal)
+    if v.is_a?(BigDecimal) || v.is_a?(Bignum)
       super(v.to_s)
     else
       super

@@ -83,6 +83,7 @@ describe "An instance of every type of ObjectType" do
     @string = "zero"
     @date = [2008, 04, 19]
     @date_time = [2008, 04, 19, 10, 28, 14]
+    @decimal = BigDecimal.new('98765432109876543210')
 
     # Value Type instances
     @int_value = Mod::IntValue.new(1)
@@ -92,6 +93,8 @@ describe "An instance of every type of ObjectType" do
     @string_value = Mod::StringValue.new("one")
     @date_value = Mod::DateValue.new(2008, 04, 20)
     @date_time_value = Mod::DateTimeValue.new(2008, 04, 20, 10, 28, 14)
+    # This next isn't in the same pattern; it makes a Decimal from a BigDecimal rather than a String (coverage reasons)
+    @decimal_value = Mod::DecimalValue.new(BigDecimal.new('98765432109876543210'))
 
     # Value SubType instances
     @int_sub_value = Mod::IntSubValue.new(4)
@@ -101,6 +104,8 @@ describe "An instance of every type of ObjectType" do
     @string_sub_value = Mod::StringSubValue.new("five")
     @date_sub_value = Mod::DateSubValue.new(2008, 04, 25)
     @date_time_sub_value = Mod::DateTimeSubValue.new(2008, 04, 26, 10, 28, 14)
+    # This next isn't in the same pattern; it makes a Decimal from a BigNum rather than a String (coverage reasons)
+    @decimal_sub_value = Mod::DecimalSubValue.new(98765432109876543210)
 
     # Entities identified by Value Type, SubType and Entity-by-value-type instances
     @test_by_int = Mod::TestByInt.new(2)
@@ -112,6 +117,7 @@ describe "An instance of every type of ObjectType" do
     #@test_by_date = Mod::TestByDate.new(2008,04,28)
     @test_by_date_time = Mod::TestByDateTime.new(2008,04,28,10,28,15)
     #@test_by_date_time = Mod::TestByDateTime.new(DateTime.new(2008,04,28,10,28,15))
+    @test_by_decimal = Mod::TestByDecimal.new('98765432109876543210')
 
     @test_by_int_sub = Mod::TestByIntSub.new(2)
     @test_by_real_sub = Mod::TestByRealSub.new(5.0)
@@ -120,6 +126,7 @@ describe "An instance of every type of ObjectType" do
     @test_by_string_sub = Mod::TestByStringSub.new("six")
     @test_by_date_sub = Mod::TestByDateSub.new(Date.new(2008,04,27))
     @test_by_date_time_sub = Mod::TestByDateTimeSub.new(2008,04,29,10,28,15)
+    @test_by_decimal_sub = Mod::TestByDecimalSub.new('98765432109876543210')
 
     @test_by_int_entity = Mod::TestByIntEntity.new(@test_by_int)
     @test_by_real_entity = Mod::TestByRealEntity.new(@test_by_real)
@@ -128,6 +135,7 @@ describe "An instance of every type of ObjectType" do
     @test_by_string_entity = Mod::TestByStringEntity.new(@test_by_string)
     @test_by_date_entity = Mod::TestByDateEntity.new(@test_by_date)
     @test_by_date_time_entity = Mod::TestByDateTimeEntity.new(@test_by_date_time)
+    @test_by_decimal_entity = Mod::TestByDecimalEntity.new(@test_by_decimal)
 
     # Entity subtypes
     @test_sub_by_int = Mod::TestSubByInt.new(2)
@@ -137,45 +145,46 @@ describe "An instance of every type of ObjectType" do
     @test_sub_by_string = Mod::TestSubByString.new("two")
     @test_sub_by_date = Mod::TestSubByDate.new(Date.new(2008,04,28))
     @test_sub_by_date_time = Mod::TestSubByDateTime.new(2008,04,28,10,28,15)
+    @test_sub_by_decimal = Mod::TestSubByDecimal.new('98765432109876543210')
 
     # These arrays get zipped together in various ways. Keep them aligned.
     @values = [
         @int, @real, @auto_counter, @new_auto_counter,
-        @string, @date, @date_time,
+        @string, @date, @date_time, @decimal
       ]
     @classes = [
         Int, Real, AutoCounter, AutoCounter,
-        String, Date, DateTime,
+        String, Date, DateTime, Decimal
       ]
     @value_types = [
         Mod::IntValue, Mod::RealValue, Mod::AutoCounterValue, Mod::AutoCounterValue,
-        Mod::StringValue, Mod::DateValue, Mod::DateTimeValue,
+        Mod::StringValue, Mod::DateValue, Mod::DateTimeValue, Mod::DecimalValue,
         Mod::IntSubValue, Mod::RealSubValue, Mod::AutoCounterSubValue, Mod::AutoCounterSubValue,
-        Mod::StringSubValue, Mod::DateSubValue, Mod::DateTimeSubValue,
+        Mod::StringSubValue, Mod::DateSubValue, Mod::DateTimeSubValue, Mod::DecimalSubValue,
         ]
     @value_instances = [
         @int_value, @real_value, @auto_counter_value, @new_auto_counter_value,
-        @string_value, @date_value, @date_time_value,
+        @string_value, @date_value, @date_time_value, @decimal_value,
         @int_sub_value, @real_sub_value, @auto_counter_sub_value, @auto_counter_sub_value_new,
-        @string_sub_value, @date_sub_value, @date_time_sub_value,
+        @string_sub_value, @date_sub_value, @date_time_sub_value, @decimal_sub_value,
         @int_value, @real_value, @auto_counter_value, @new_auto_counter_value,
-        @string_value, @date_value, @date_time_value,
+        @string_value, @date_value, @date_time_value, @decimal_value,
       ]
     @entity_types = [
         Mod::TestByInt, Mod::TestByReal, Mod::TestByAutoCounter, Mod::TestByAutoCounter,
-        Mod::TestByString, Mod::TestByDate, Mod::TestByDateTime,
+        Mod::TestByString, Mod::TestByDate, Mod::TestByDateTime, Mod::TestByDecimal,
         Mod::TestByIntSub, Mod::TestByRealSub, Mod::TestByAutoCounterSub, Mod::TestByAutoCounterSub,
-        Mod::TestByStringSub, Mod::TestByDateSub, Mod::TestByDateTimeSub,
+        Mod::TestByStringSub, Mod::TestByDateSub, Mod::TestByDateTimeSub, Mod::TestByDecimalSub,
         Mod::TestSubByInt, Mod::TestSubByReal, Mod::TestSubByAutoCounter, Mod::TestSubByAutoCounter,
-        Mod::TestSubByString, Mod::TestSubByDate, Mod::TestSubByDateTime,
+        Mod::TestSubByString, Mod::TestSubByDate, Mod::TestSubByDateTime, Mod::TestByDecimalEntity,
       ]
     @entities = [
         @test_by_int, @test_by_real, @test_by_auto_counter, @test_by_auto_counter_new,
-        @test_by_string, @test_by_date, @test_by_date_time,
+        @test_by_string, @test_by_date, @test_by_date_time, @test_by_decimal,
         @test_by_int_sub, @test_by_real_sub, @test_by_auto_counter_sub, @test_by_auto_counter_new_sub,
-        @test_by_string_sub, @test_by_date_sub, @test_by_date_time_sub,
+        @test_by_string_sub, @test_by_date_sub, @test_by_date_time_sub, @test_by_decimal_sub,
         @test_sub_by_int, @test_sub_by_real, @test_sub_by_auto_counter, @test_sub_by_auto_counter_new,
-        @test_sub_by_string, @test_sub_by_date, @test_sub_by_date_time,
+        @test_sub_by_string, @test_sub_by_date, @test_sub_by_date_time, @test_sub_by_decimal,
       ]
     @entities_by_entity = [
         @test_by_int_entity,
@@ -185,32 +194,36 @@ describe "An instance of every type of ObjectType" do
         @test_by_string_entity,
         @test_by_date_entity,
         @test_by_date_time_entity,
+        @test_by_decimal_entity,
       ]
     @entities_by_entity_types = [
         Mod::TestByIntEntity, Mod::TestByRealEntity, Mod::TestByAutoCounterEntity, Mod::TestByAutoCounterEntity,
-        Mod::TestByStringEntity, Mod::TestByDateEntity, Mod::TestByDateTimeEntity,
+        Mod::TestByStringEntity, Mod::TestByDateEntity, Mod::TestByDateTimeEntity, Mod::TestByDecimalEntity,
       ]
     @test_role_names = [
         :int_value, :real_value, :auto_counter_value, :auto_counter_value,
-        :string_value, :date_value, :date_time_value,
+        :string_value, :date_value, :date_time_value, :decimal_value,
         :int_sub_value, :real_sub_value, :auto_counter_sub_value, :auto_counter_sub_value,
-        :string_sub_value, :date_sub_value, :date_time_sub_value,
+        :string_sub_value, :date_sub_value, :date_time_sub_value, :decimal_sub_value,
         :int_value, :real_value, :auto_counter_value, :auto_counter_value,
-        :string_value, :date_value, :date_time_value,
+        :string_value, :date_value, :date_time_value, :decimal_value,
       ]
     @role_values = [
         3, 4.0, 5, 6,
         "three", Date.new(2008,4,21), DateTime.new(2008,4,22,10,28,16),
+        '98765432109876543210'
       ]
     @role_alternate_values = [
         4, 5.0, 6, 7,
         "four", Date.new(2009,4,21), DateTime.new(2009,4,22,10,28,16),
+        '98765432109876543211'
       ]
     @subtype_role_instances = [
         Mod::IntSubValue.new(6), Mod::RealSubValue.new(6.0),
         Mod::AutoCounterSubValue.new(:new), Mod::AutoCounterSubValue.new(8),
         Mod::StringSubValue.new("seven"),
-        Mod::DateSubValue.new(2008,4,29), Mod::DateTimeSubValue.new(2008,4,30,10,28,16)
+        Mod::DateSubValue.new(2008,4,29), Mod::DateTimeSubValue.new(2008,4,30,10,28,16),
+        Mod::DecimalSubValue.new('98765432109876543210'),
       ]
   end
 
