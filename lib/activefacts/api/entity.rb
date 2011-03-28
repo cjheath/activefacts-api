@@ -49,18 +49,12 @@ module ActiveFacts
       end
 
       def inspect #:nodoc:
-        "\#<#{
-          self.class.basename
-        }:#{
-          object_id
-        }#{
-          constellation ? " in #{constellation.inspect}" : ""
-        } #{
-          # REVISIT: Where there are one-to-one roles, this cycles
-          self.class.identifying_role_names.map do |role|
-            "@#{role}="+send(role).inspect
-          end*" "
-        }>"
+        inc = constellation ? " in #{constellation.inspect}" : ""
+        # REVISIT: Where there are one-to-one roles, this cycles
+        irnv = self.class.identifying_role_names.map do |role|
+          "@#{role}="+send(role).inspect
+        end
+        "\#<#{self.class.basename}:#{object_id}#{inc} #{ irnv*' ' }>"
       end
 
       # When used as a hash key, the hash key of this entity instance is calculated
@@ -86,13 +80,12 @@ module ActiveFacts
 
       # Verbalise this entity instance
       def verbalise(role_name = nil)
-        "#{role_name || self.class.basename}(#{
-          self.class.identifying_role_names.map{|role_sym|
-              value = send(role_sym)
-              role_name = self.class.roles(role_sym).name.to_s.camelcase
-              value ? value.verbalise(role_name) : "nil"
-            }*", "
-        })"
+        irnv = self.class.identifying_role_names.map do |role_sym|
+            value = send(role_sym)
+            identifying_role_name = self.class.roles(role_sym).name.to_s.camelcase
+            value ? value.verbalise(identifying_role_name) : "nil"
+          end
+        "#{role_name || self.class.basename}(#{ irnv*', ' })"
       end
 
       # Return the array of the values of this entity instance's identifying roles
@@ -165,28 +158,38 @@ module ActiveFacts
           instances = constellation.instances[self]   # All instances of this class in this constellation
           instance = instances[key]
           # DEBUG: puts "assert #{self.basename} #{key.inspect} #{instance ? "exists" : "new"}"
+          # REVISIT: This ignores any additional attribute assignments
           return instance, key if instance      # A matching instance of this class
 
           # Now construct each of this object's identifying roles
           ir = identifying_role_names
-          args, arg_hash = ActiveFacts::extract_hash_args(ir, args)
-          role_values = ir.map{|role_sym| roles(role_sym)}.zip(args)
-          key = []    # Gather the actual key (AutoCounters are special)
-          values = role_values.map do |role, arg|
-              if !arg
-                value = role_key = nil          # No value
-              elsif !role.counterpart
-                value = role_key = !!arg        # Unary
-              elsif arg.is_a?(role.counterpart_object_type)      # REVISIT: or a secondary supertype
-                raise "Connecting values across constellations" unless arg.constellation == constellation
-                value, role_key = arg, arg.identifying_role_values
-              else
-                value, role_key = role.counterpart_object_type.assert_instance(constellation, Array(arg))
+
+          if args.size == 1 and args[0].is_a?(self)
+            values = args[0].identifying_role_values
+            key = ir
+          else
+            args, arg_hash = ActiveFacts::extract_hash_args(ir, args)
+            role_values = ir.map{|role_sym| roles(role_sym)}.zip(args)
+            key = []    # Gather the actual key (AutoCounters are special)
+            values = role_values.map do |role, arg|
+                if !arg
+                  if role.unary?
+                    value = role_key = arg
+                  else
+                    value = role_key = nil
+                  end
+                elsif !role.counterpart
+                  value = role_key = !!arg        # Unary
+                elsif arg.is_a?(role.counterpart_object_type)      # REVISIT: or a secondary supertype
+                  value, role_key = arg, arg.identifying_role_values
+                else
+                  value, role_key = role.counterpart_object_type.assert_instance(constellation, Array(arg))
+                end
+                key << role_key
+                value
               end
-              key << role_key
-              value
-            end
-          values << arg_hash if arg_hash and !arg_hash.empty?
+            values << arg_hash if arg_hash and !arg_hash.empty?
+          end
 
           #puts "Creating new #{basename} using #{values.inspect}"
           instance = new(*values)

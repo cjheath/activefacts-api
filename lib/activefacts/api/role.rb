@@ -39,20 +39,15 @@ module ActiveFacts
         counterpart == nil
       end
 
-      def resolve_counterpart(vocabulary)  #:nodoc:
-        return @counterpart_object_type if @counterpart_object_type.is_a?(Class)   # Done already
-        klass = vocabulary.object_type(@counterpart_object_type)   # Trigger the binding
-        raise "Cannot resolve role counterpart_object_type #{@counterpart_object_type.inspect} for role #{name} in vocabulary #{vocabulary.basename}; still forward-declared?" unless klass
-        @counterpart_object_type = klass                       # Memoize a successful result
-      end
-
       def adapt(constellation, value) #:nodoc:
         # If the value is a compatible class, use it (if in another constellation, clone it),
         # else create a compatible object using the value as constructor parameters.
         if value.is_a?(@counterpart_object_type)  # REVISIT: may be a non-primary subtype of counterpart_object_type
           # Check that the value is in a compatible constellation, clone if not:
           if constellation && (vc = value.constellation) && vc != constellation
-            value = value.clone   # REVISIT: There's sure to be things we should reset/clone here, like non-identifying roles
+            # Cross-constellation assignment!
+            # Just take the identifying_role_values to make a new object
+            value = constellation.send(value.class.basename, value.identifying_role_values)
           end
           value.constellation = constellation if constellation
         else

@@ -101,7 +101,7 @@ class ::DateTime
       if (DateTime === a)
         civil(a.year, a.month, a.day, a.hour, a.min, a.sec, a.start)
       elsif (Date === a)
-        civil(a.year, a.month, a.day, a.start)
+        civil(a.year, a.month, a.day, 0, 0, 0, a.start)
       else
         civil(*a, &b)
       end
@@ -174,7 +174,6 @@ class AutoCounter
     super
   end
 
-private
   def clone
     raise "Not allowed to clone AutoCounters"
   end

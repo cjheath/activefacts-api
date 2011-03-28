@@ -38,7 +38,7 @@ module ActiveFacts
             next if role.unary?
             counterpart = role.counterpart
             if role.unique
-              puts "Nullifying mandatory role #{role.name} of #{role.owner.name}" if counterpart.mandatory
+              # puts "Nullifying mandatory role #{role.name} of #{role.owner.name}" if counterpart.mandatory
 
               send "#{role.name}=", nil
             else

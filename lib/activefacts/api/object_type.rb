@@ -36,8 +36,6 @@ module ActiveFacts
               end
           end
           raise "Role #{basename}.#{name} is not defined" unless role
-          # Bind the role if possible, but don't require it:
-          role.resolve_counterpart(vocabulary) rescue nil unless role.counterpart_object_type.is_a?(Class)
           role
         else
           nil
@@ -203,7 +201,12 @@ module ActiveFacts
         class_eval do
           define_method "#{role.name}=" do |value|
             #puts "Setting #{self.class.name} #{object_id}.@#{role.name} to #{(value ? true : nil).inspect}"
-            assigned = value ? true : nil
+            #assigned = value ? true : nil
+            assigned = case value
+              when nil; nil
+              when false; false
+              else true
+              end
             instance_variable_set("@#{role.name}", assigned)
             # REVISIT: Provide a way to find all instances playing/not playing this role
             # Analogous to true.all_thing_as_role_name...
@@ -259,9 +262,6 @@ module ActiveFacts
         class_eval do
           define_method "#{role.name}=" do |value|
             role_var = "@#{role.name}"
-
-            # If role.counterpart_object_type isn't bound to a class yet, bind it.
-            role.resolve_counterpart(self.class.vocabulary) unless role.counterpart_object_type.is_a?(Class)
 
             # Get old value, and jump out early if it's unchanged:
             old = instance_variable_get(role_var) rescue nil

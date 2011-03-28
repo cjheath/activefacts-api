@@ -47,7 +47,9 @@ describe "An instance of every type of ObjectType" do
             identified_by :#{base_type.name.snakecase}_value#{
               @role_names.map do |role_name|
                 %Q{
-            has_one :#{role_name}
+            has_one :#{role_name}#{
+              mandatory = (role_name == (base_type.name.snakecase+'_value').to_sym ? ', :mandatory => true' : '')
+            }
             one_to_one :one_#{role_name}, :class => #{role_name.to_s.camelcase}}
               end*""
             }
@@ -93,7 +95,10 @@ describe "An instance of every type of ObjectType" do
     @new_auto_counter_value = Mod::AutoCounterValue.new(:new)
     @string_value = Mod::StringValue.new("one")
     @date_value = Mod::DateValue.new(2008, 04, 20)
-    @date_time_value = Mod::DateTimeValue.new(2008, 04, 20, 10, 28, 14)
+    # Parse the date:
+    @date_value = Mod::DateValue.new '2nd Nov 2001'
+    d = ::Date.civil(2008, 04, 20)
+    @date_time_value = Mod::DateTimeValue.new d # 2008, 04, 20, 10, 28, 14
     # This next isn't in the same pattern; it makes a Decimal from a BigDecimal rather than a String (coverage reasons)
     @decimal_value = Mod::DecimalValue.new(BigDecimal.new('98765432109876543210'))
 
@@ -104,7 +109,7 @@ describe "An instance of every type of ObjectType" do
     @auto_counter_sub_value_new = Mod::AutoCounterSubValue.new(:new)
     @string_sub_value = Mod::StringSubValue.new("five")
     @date_sub_value = Mod::DateSubValue.new(2008, 04, 25)
-    @date_time_sub_value = Mod::DateTimeSubValue.new(2008, 04, 26, 10, 28, 14)
+    @date_time_sub_value = Mod::DateTimeSubValue.new(::DateTime.civil(2008, 04, 26, 10, 28, 14))
     # This next isn't in the same pattern; it makes a Decimal from a BigNum rather than a String (coverage reasons)
     @decimal_sub_value = Mod::DecimalSubValue.new(98765432109876543210)
 
@@ -116,7 +121,8 @@ describe "An instance of every type of ObjectType" do
     @test_by_string = Mod::TestByString.new("two")
     @test_by_date = Mod::TestByDate.new(Date.new(2008,04,28))
     #@test_by_date = Mod::TestByDate.new(2008,04,28)
-    @test_by_date_time = Mod::TestByDateTime.new(2008,04,28,10,28,15)
+    # Pass an array of values directly to DateTime.civil:
+    @test_by_date_time = Mod::TestByDateTime.new([[2008,04,28,10,28,15]])
     #@test_by_date_time = Mod::TestByDateTime.new(DateTime.new(2008,04,28,10,28,15))
     @test_by_decimal = Mod::TestByDecimal.new('98765432109876543210')
 
@@ -298,6 +304,81 @@ describe "An instance of every type of ObjectType" do
     (@value_types+@entity_types).zip((@value_instances+@entities+@entities_by_entity)).each do |object_type, instance|
       instance.class.vocabulary.should == Mod
     end
+  end
+
+  it "should disallow treating an unresolved AutoCounter as an integer" do
+    c = ActiveFacts::API::Constellation.new(Mod)
+    a = c.AutoCounterValue(:new)
+    lambda {
+      b = 2 + a
+    }.should raise_error
+    a.assign(3)
+    lambda {
+      b = 2 + a
+      a.to_i
+    }.should_not raise_error
+  end
+
+  it "should complain when not enough identifying values are provided for an entity" do
+    c = ActiveFacts::API::Constellation.new(Mod)
+    lambda {
+      c.TestByInt(:int_value => nil)
+    }.should raise_error
+  end
+
+  it "should complain when too many identifying values are provided for an entity" do
+    c = ActiveFacts::API::Constellation.new(Mod)
+    lambda {
+      c.TestByInt(2, 3)
+    }.should raise_error
+  end
+
+  it "should handle a non-mandatory missing identifying role" do
+    module Mod2
+      class Word
+        identified_by :singular, :plural
+        has_one :singular, :class => "Spelling", :mandatory => true
+        has_one :plural, :class => "Spelling"
+      end
+      class Spelling < String
+        value_type
+      end
+    end
+    c = ActiveFacts::API::Constellation.new(Mod2)
+    s = c.Word('sheep')
+    f = c.Word('fish', :plural => nil)
+    a = c.Word('aircraft', nil)
+    s.plural.should be_nil
+    f.plural.should be_nil
+    a.plural.should be_nil
+  end
+
+  it "should handle a unary as an identifying role" do
+    module Mod2
+      class Status
+        identified_by :is_ok
+        maybe :is_ok
+      end
+    end
+    c = ActiveFacts::API::Constellation.new(Mod2)
+
+    n = c.Status(:is_ok => nil)
+    t = c.Status(:is_ok => true)
+    f = c.Status(:is_ok => false)
+    s = c.Status(:is_ok => 'foo')
+    n.is_ok.should == nil
+    t.is_ok.should == true
+    f.is_ok.should == false
+    s.is_ok.should == true
+
+    n.is_ok = nil
+    t.is_ok = true
+    f.is_ok = false
+    s.is_ok = true
+    n.is_ok.should == nil
+    t.is_ok.should == true
+    f.is_ok.should == false
+    s.is_ok.should == true
   end
 
 end

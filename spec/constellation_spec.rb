@@ -57,6 +57,7 @@ describe "A Constellation instance" do
 
         has_one :family_name, :class => Name
         has_one :employer, :class => Company
+        one_to_one :birth_name, :class => Name
       end
     end
     @constellation = ActiveFacts::API::Constellation.new(Mod)
@@ -113,15 +114,24 @@ describe "A Constellation instance" do
         foo = @constellation.LegalEntity("foo")
         acme = @constellation.Company("Acme, Inc")
         fred_fly = @constellation.Person("fred", "fly")
-      }.should_not raise_error
+    }.should_not raise_error
     name.class.should == Mod::Name
     name.constellation.should == @constellation
+
     foo.class.should == Mod::LegalEntity
     foo.constellation.should == @constellation
+    foo.inspect.should =~ / in Conste/
+    foo.verbalise.should =~ /LegalEntity\(/
+
     acme.class.should == Mod::Company
     acme.constellation.should == @constellation
+    acme.inspect.should =~ / in Conste/
+    acme.verbalise.should =~ /Company\(/
+
     fred_fly.class.should == Mod::Person
     fred_fly.constellation.should == @constellation
+    fred_fly.inspect.should =~ / in Conste/
+    fred_fly.verbalise.should =~ /Person\(/
   end
 
   it "should re-use instances constructed the same way" do
@@ -221,8 +231,23 @@ describe "A Constellation instance" do
     @constellation.SurrogateId.values.should be_include(fred_fly)
   end
 
-  it "should allow retraction of instances, propagating nullification or retraction" do
-    person = @constellation.Person "Fred", "Smith", :auto_counter_value => :new
+  it "should handle one-to-ones correctly" do
+    person = @constellation.Person "Fred", "Smith", :auto_counter_value => :new, :birth_name => "Nerk"
+
+    pending "Extra parameters on an assert get processed in Role#adapt before @constellation gets set" do
+      #person.birth_name = "Nerk"
+
+      nerk = @constellation.Name["Nerk"]
+      nerk.should_not be_nil
+      nerk.person_as_birth_name.should == person
+      person.birth_name = nil
+      nerk.person_as_birth_name.should be_nil
+      @constellation.Name["Nerk"].should_not be_nil
+    end
+  end
+
+  it "should allow retraction of instances" do
+    person = @constellation.Person "Fred", "Smith", :auto_counter_value => :new, :birth_name => "Nerk"
 
     @constellation.retract(@constellation.Name("Smith"))
     @constellation.Name["Smith"].should be_nil
@@ -326,9 +351,8 @@ describe "A Constellation instance" do
         class ListedCompany < Company
         end
       end
+      c = @constellation.ListedCompany("foo", :auto_counter_value => 23)
     }.should_not raise_error(NameError)
-
-    c = @constellation.Company("foo", :auto_counter_value => 23)
   end
 
   it "should error on invalid :class values" do
@@ -349,6 +373,31 @@ describe "A Constellation instance" do
         end
       end
     }.should raise_error
-
   end
+
+  it "should allow assert using an object of the same type" do
+    c = @constellation.Company("foo", :auto_counter_value => 23)
+    lambda {
+      c2 = ActiveFacts::API::Constellation.new(Mod)
+      c2.Company(c)
+    }.should_not raise_error
+  end
+
+  it "should allow cross-constellation construction" do
+    c = @constellation.Company("foo", :auto_counter_value => 23)
+    lambda {
+      c2 = ActiveFacts::API::Constellation.new(Mod)
+      c2.Company(c.name)
+    }.should_not raise_error
+  end
+
+  it "should allow cross-constellation assignment" do
+    c = @constellation.Company("foo", :auto_counter_value => 23)
+    lambda {
+      c2 = ActiveFacts::API::Constellation.new(Mod)
+      p = c2.Person('Fred', 'Smith')
+      p.employer = c
+    }.should_not raise_error
+  end
+
 end
