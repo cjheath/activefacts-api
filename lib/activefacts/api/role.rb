@@ -39,6 +39,10 @@ module ActiveFacts
         counterpart == nil
       end
 
+      def inspect
+        "#{owner.name}.#{name}"
+      end
+
       def adapt(constellation, value) #:nodoc:
         # If the value is a compatible class, use it (if in another constellation, clone it),
         # else create a compatible object using the value as constructor parameters.
