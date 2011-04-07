@@ -68,7 +68,7 @@ module ActiveFacts
       # non-identifying role values as well
       def verbalise
         "Constellation over #{vocabulary.name}:\n" +
-        vocabulary.object_type.keys.sort.map{|object_type|
+        vocabulary.object_type.keys.sort.map do |object_type|
             klass = vocabulary.const_get(object_type)
 
             # REVISIT: It would be better not to rely on the role name pattern here:
@@ -79,7 +79,7 @@ module ActiveFacts
             instances = send(object_type.to_sym)
             next nil unless instances.size > 0
             "\tEvery #{object_type}:\n" +
-              instances.map{|key, instance|
+              instances.map do |key, instance|
                   s = "\t\t" + instance.verbalise
                   if (single_roles.size > 0)
                     role_values = 
@@ -94,8 +94,8 @@ module ActiveFacts
                     s += " where " + role_values*", " if role_values.size > 0
                   end
                   s
-                } * "\n"
-          }.compact*"\n"
+                end * "\n"
+          end.compact*"\n"
       end
 
       # This method removes the given instance from this constellation's indexes
