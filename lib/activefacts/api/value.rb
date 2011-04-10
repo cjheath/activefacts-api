@@ -23,9 +23,9 @@ module ActiveFacts
         "#{role_name || self.class.basename} '#{to_s}'"
       end
 
-      # A value is its own key
+      # A value is its own key, unless it's a delegate for a raw value
       def identifying_role_values #:nodoc:
-        self
+        __getobj__ rescue self
       end
 
       # All ValueType classes include the methods defined here
@@ -72,9 +72,9 @@ module ActiveFacts
           # If the single arg is the correct class or a subclass, use it directly
           #puts "#{basename}.identifying_role_values#{args.inspect}"
           if (args.size == 1 and (arg = args[0]).is_a?(self))   # No secondary supertypes allowed for value types
-            return arg
+            return arg.identifying_role_values
           end
-          new(*args)
+          new(*args).identifying_role_values
         end
 
         def assert_instance(constellation, args)  #:nodoc:

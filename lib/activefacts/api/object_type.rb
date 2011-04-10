@@ -145,8 +145,6 @@ module ActiveFacts
         end
       end
 
-      # REVISIT: Use method_missing to catch all_some_role_as_other_role_and_third_role, to sort_by those roles?
-
       def is_a? klass
         super || supertypes_transitive.include?(klass)
       end

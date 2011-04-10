@@ -43,8 +43,8 @@ module ActiveFacts
               send "#{role.name}=", nil
             else
               # puts "Not removing role #{role_name} from counterpart RoleValues #{counterpart.name}"
-              # REVISIT: This may be unsafe, as the RoleValues here will be modified as we traverse it:
-              send(role.name).each do |v|
+              # Duplicate the array using to_a, as the RoleValues here will be modified as we traverse it:
+              send(role.name).to_a.each do |v|
                 #puts "Removing #{self.inspect} via role #{role_name} from counterpart #{v.inspect}\##{counterpart.name}"
                 v.send("#{counterpart.name}=", nil)
               end

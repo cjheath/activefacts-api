@@ -91,7 +91,7 @@ module ActiveFacts
       # Return the array of the values of this entity instance's identifying roles
       def identifying_role_values
         self.class.identifying_role_names.map{|role|
-            send(role)
+            send(role).identifying_role_values
           }
       end
 
@@ -169,19 +169,14 @@ module ActiveFacts
             key = ir
           else
             args, arg_hash = ActiveFacts::extract_hash_args(ir, args)
-            role_values = ir.map{|role_sym| roles(role_sym)}.zip(args)
+            roles_and_values = ir.map{|role_sym| roles(role_sym)}.zip(args)
             key = []    # Gather the actual key (AutoCounters are special)
-            values = role_values.map do |role, arg|
-                if !arg
-                  if role.unary?
-                    value = role_key = arg
-                  else
-                    value = role_key = nil
-                  end
-                elsif !role.counterpart
-                  value = role_key = !!arg        # Unary
-                elsif arg.is_a?(role.counterpart_object_type)      # REVISIT: or a secondary supertype
-                  value, role_key = arg, arg.identifying_role_values
+            values = roles_and_values.map do |role, arg|
+                if role.unary?
+                  # REVISIT: This could be absorbed into a special counterpart_object_type.assert_instance
+                  value = role_key = arg ? true : arg   # Preserve false and nil
+                elsif !arg
+                  value = role_key = nil
                 else
                   value, role_key = role.counterpart_object_type.assert_instance(constellation, Array(arg))
                 end
@@ -225,10 +220,11 @@ module ActiveFacts
         # inherited from a superclass.
         def initialise_entity_type(*args) #:nodoc:
           #puts "Initialising entity type #{self} using #{args.inspect}"
-          @identifying_role_names = superclass.identifying_role_names if superclass.is_entity_type
-          # REVISIT: @identifying_role_names here are the symbols passed in, not the Role objects we should use.
-          # We'd need late binding to use Role objects...
-          @identifying_role_names = args if args.size > 0 || !@identifying_role_names
+          raise "You must list the roles which will identify #{self.basename}" unless args.size > 0
+
+          # @identifying_role_names here are the symbols passed in, not the Role
+          # objects we should use.  We'd need late binding to use Role objects...
+          @identifying_role_names = args
         end
 
         def inherited(other) #:nodoc:

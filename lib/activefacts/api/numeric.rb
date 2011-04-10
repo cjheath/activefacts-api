@@ -22,15 +22,15 @@ class Int < SimpleDelegator
   end
 
   def hash                              #:nodoc:
-    __getobj__.hash ^ self.class.hash
+    __getobj__.hash
   end
 
   def eql?(o)                           #:nodoc:
-    self.class == o.class and __getobj__.eql?(Integer(o))
-  end
-
-  def ==(o)                             #:nodoc:
-    __getobj__.==(o)
+    # Note: This and #hash do not work the way you'd expect,
+    # and differently in each Ruby interpreter. If you store
+    # an Int or Real in a hash, you cannot reliably retrieve
+    # them with the corresponding Integer or Real.
+    __getobj__.eql?(Integer(o))
   end
 
   def is_a?(k)
@@ -49,7 +49,7 @@ class Real < SimpleDelegator
   end
 
   def hash                              #:nodoc:
-    __getobj__.hash ^ self.class.hash
+    __getobj__.hash
   end
 
   def to_s                              #:nodoc:
@@ -57,11 +57,8 @@ class Real < SimpleDelegator
   end
 
   def eql?(o)                           #:nodoc:
-    self.class == o.class and __getobj__.eql?(Float(o))
-  end
-
-  def ==(o)                             #:nodoc:
-    __getobj__.==(o)
+    # Note: See the note above on Int#eql?
+    __getobj__.eql?(Float(o))
   end
 
   def is_a?(k)
@@ -159,11 +156,15 @@ class AutoCounter
   end
 
   def hash                              #:nodoc:
-    to_s.hash ^ self.class.hash
+    if self.defined?
+      @value.hash
+    else
+      0
+    end
   end
 
   def eql?(o)                           #:nodoc:
-    self.class == o.class and to_s.eql?(o.to_s)
+    to_s.eql?(o.to_s)
   end
 
   def self.inherited(other)             #:nodoc:

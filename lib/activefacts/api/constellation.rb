@@ -112,6 +112,7 @@ module ActiveFacts
       # With parameters, assert an instance of the object_type whose name is the missing method, identified by the values passed as *args*.
       # With no parameters, return the collection of all instances of that object_type.
       def method_missing(m, *args)
+        # REVISIT: Create an accessor method and call it instead, so it's not missing next time
         if klass = @vocabulary.const_get(m)
           raise "#{m} is not a class in #{@vocabulary.name}" if !klass.is_a?(Class)
           raise "#{m} is not a registered object type in #{@vocabulary.name}" unless klass.respond_to?(:assert_instance)
@@ -120,7 +121,6 @@ module ActiveFacts
             @instances[klass]
           else
             # Assert a new ground fact (object_type instance) of the specified class, identified by args:
-            # REVISIT: create a constructor method here instead?
             instance, key = klass.assert_instance(self, args)
             instance
           end
