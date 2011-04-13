@@ -146,8 +146,13 @@ describe "Object type role values" do
         object.class.should == object_type
 
         # Make sure the instance index contains this single object:
-        @constellation.send(object_type_name).size.should == 1
-        @constellation.send(object_type_name).map{|k,o| o}.first.should == object
+        instances = @constellation.send(object_type_name)
+        instances.size.should == 1
+        instances.map{|k,o| o}.first.should == object
+        unless object.class.is_entity_type
+          # Look up value types using the value instance, not just the raw value:
+          instances[object].should == object
+        end
 
         # Make sure all the identifying roles are populated correctly:
         if object_type.respond_to?(:identifying_roles)
@@ -257,7 +262,7 @@ describe "Object type role values" do
           value = object_identifying_parameters(object_type.basename, values[0])
 
           # Set the role to the first value:
-          assigned = @object.send(:"#{role_name}=", value) rescue debugger
+          assigned = @object.send(:"#{role_name}=", value)
           assigned.class.should == object_type
           fetched = @object.send(role_name)
           fetched.should == assigned
@@ -316,7 +321,7 @@ describe "Object type role values" do
           value = object_identifying_parameters(object_type.basename, values[0])
 
           # Set the role to the first value:
-          assigned = @object.send(:"#{role_name}=", value) rescue debugger
+          assigned = @object.send(:"#{role_name}=", value)
           fetched = @object.send(role_name)
           fetched.class.should == object_type
         end

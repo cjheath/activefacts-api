@@ -32,7 +32,7 @@ module ActiveFacts
       module ClassMethods
         include Instance::ClassMethods
 
-        def initialise_value_type *args, &block #:nodoc:
+        def value_type *args, &block #:nodoc:
           # REVISIT: args could be a hash, with keys :length, :scale, :unit, :allow
           options = (args[-1].is_a?(Hash) ? args.pop : {})
           options.each do |key, value|

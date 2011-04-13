@@ -15,8 +15,7 @@ module ActiveFacts
     module ValueClass #:nodoc:
       def value_type *args, &block #:nodoc:
         include ActiveFacts::API::Value
-        # the included method adds the Value::ClassMethods
-        initialise_value_type(*args, &block)
+        value_type(*args, &block)
       end
     end
   end
@@ -42,10 +41,10 @@ end
 class Class
   # Make this Class into a ObjectType and if necessary its module into a Vocabulary.
   # The parameters are the names (Symbols) of the identifying roles.
-  def identified_by *args
+  def identified_by *args, &b
     raise "#{basename} is not an entity type" if respond_to? :value_type  # Don't make a ValueType into an EntityType
     include ActiveFacts::API::Entity
-    initialise_entity_type(*args)
+    identified_by(*args, &b)
   end
 
   def is_entity_type

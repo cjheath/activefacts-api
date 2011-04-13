@@ -42,7 +42,7 @@ module ActiveFacts
         @vocabulary = vocabulary
         @instances = Hash.new do |h,k|
           raise "A constellation over #{@vocabulary.name} can only index instances of object_types in that vocabulary, not #{k.inspect}" unless k.is_a?(Class) and k.modspace == vocabulary
-          h[k] = InstanceIndex.new
+          h[k] = InstanceIndex.new(self, k)
         end
       end
 
@@ -51,8 +51,7 @@ module ActiveFacts
       end
 
       # Evaluate assertions against the population of this Constellation
-      def populate *args, &block
-        # REVISIT: Use args for something? Like options to enable/disable validation?
+      def populate &block
         instance_eval(&block)
         self
       end
@@ -62,7 +61,29 @@ module ActiveFacts
         Array(instances).each do |i|
           i.retract
         end
+        self
       end
+
+=begin
+      def assert *args
+        case
+        when args.size >= 1
+          args.each do |arg|
+            assert arg
+          end
+        when args[0].is_a?(Hash)
+          args[0].each do |key, value|
+            klass_name = key.is_a?(Symbol) ? key.to_s.camelcase : key.to_s
+            klass = vocabulary.const_get(klass_name)
+            send(klass_name).assert(*Array(value))
+          end
+        else
+          args.each do |arg|
+            assert(arg)
+          end
+        end
+      end
+=end
 
       # Constellations verbalise all members of all classes in alphabetical order, showing
       # non-identifying role values as well

@@ -81,8 +81,11 @@ module ActiveFacts
       end
 
       # Access supertypes or add new supertypes; multiple inheritance.
-      # With parameters (Class objects), it adds new supertypes to this class. Instances of this class will then have role methods for any new superclasses (transitively). Superclasses must be Ruby classes which are existing ObjectTypes.
-      # Without parameters, it returns the array of ObjectType supertypes (one by Ruby inheritance, any others as defined using this method)
+      # With parameters (Class objects), it adds new supertypes to this class.
+      # Instances of this class will then have role methods for any new superclasses (transitively).
+      # Superclasses must be Ruby classes which are existing ObjectTypes.
+      # Without parameters, it returns the array of ObjectType supertypes
+      # (one by Ruby inheritance, any others as defined using this method)
       def supertypes(*object_types)
         class_eval do
           @supertypes ||= []
@@ -158,7 +161,7 @@ module ActiveFacts
         s.each do |t|
           next if all_supertypes.include? t
           realise_supertypes(t, all_supertypes)
-          t.subtypes << self
+          t.subtypes << self unless t.subtypes.include?(self)
           all_supertypes << t
         end
         #puts "Realising roles of #{object_type.basename} in #{basename}"

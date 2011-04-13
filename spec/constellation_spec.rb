@@ -107,7 +107,7 @@ describe "A Constellation instance" do
 #    @constellation.query.should == Mod
 #  end
 
-  it "should support methods to construct instances of any object_type" do
+  it "should support methods to assert instances via the instance index for that type" do
     name = foo = acme = fred_fly = nil
     lambda {
         name = @constellation.Name("foo")
@@ -151,6 +151,33 @@ describe "A Constellation instance" do
     fred_fly1.object_id.should == fred_fly2.object_id
   end
 
+  it "should support methods to assert instances via the class for that type" do
+    name = foo = acme = fred_fly = nil
+    lambda {
+        name = @constellation.Name.assert("foo")
+        foo = @constellation.LegalEntity.assert("foo")
+        acme = @constellation.Company.assert("Acme, Inc")
+        fred_fly = @constellation.Person.assert("fred", "fly")
+    }.should_not raise_error
+    name.class.should == Mod::Name
+    name.constellation.should == @constellation
+
+    foo.class.should == Mod::LegalEntity
+    foo.constellation.should == @constellation
+    foo.inspect.should =~ / in Conste/
+    foo.verbalise.should =~ /LegalEntity\(/
+
+    acme.class.should == Mod::Company
+    acme.constellation.should == @constellation
+    acme.inspect.should =~ / in Conste/
+    acme.verbalise.should =~ /Company\(/
+
+    fred_fly.class.should == Mod::Person
+    fred_fly.constellation.should == @constellation
+    fred_fly.inspect.should =~ / in Conste/
+    fred_fly.verbalise.should =~ /Person\(/
+  end
+
   it "should support population blocks" do
     @constellation.populate do
       Name("bar")
@@ -159,7 +186,9 @@ describe "A Constellation instance" do
       Company("Acme, Inc", :auto_counter_value => :new)
     end
     @constellation.Name.size.should == 5
-    @constellation.SurrogateId.size.should == 2
+    pending "Overridden identification is not yet performed" do
+      @constellation.SurrogateId.size.should == 2
+    end
   end
 
   it "should verbalise itself" do
@@ -167,7 +196,8 @@ describe "A Constellation instance" do
       Name("bar")
       LegalEntity("foo")
       c = Company("Acme, Inc", :auto_counter_value => :new)
-      Person("Fred", "Nerk", :auto_counter_value => :new, :employer => c)
+      p = Person("Fred", "Nerk", :auto_counter_value => :new, :employer => c)
+      p.birth_name = "Nerk"
     end
     s = @constellation.verbalise
     names = s.split(/\n/).grep(/\tEvery /).map{|l| l.sub(/.*Every (.*):$/, '\1')}
@@ -190,11 +220,18 @@ describe "A Constellation instance" do
     camellower.should == ["company", "legalEntity", "name", "person", "stringValue", "surrogateId"]
   end
 
+  it "should allow inspection of instance indices" do
+    baz = @constellation.Name("baz")
+    @constellation.Name.inspect.class.should == String
+  end
+
   it "should index value instances, including by its superclasses" do
     baz = @constellation.Name("baz")
     @constellation.Name.keys.sort.should == ["baz"]
 
     @constellation.StringValue.keys.sort.should == ["baz"]
+    @constellation.StringValue.include?(baz).should == baz
+    @constellation.StringValue.include?("baz").should == baz
   end
 
   describe "instance indices" do
@@ -215,8 +252,8 @@ describe "A Constellation instance" do
     name = "Acme, Inc"
     fred = "Fred"
     fly = "Fly"
-    acme = @constellation.Company name, :auto_counter_value => :new
-    fred_fly = @constellation.Person fred, fly, :auto_counter_value => :new
+    acme = @constellation.Company name, :auto_counter_value => :new, :extra => 14
+    fred_fly = @constellation.Person fred, fly, :auto_counter_value => :new, :extra => 19
 
     # REVISIT: This should be illegal:
     #fred_fly.auto_counter_value = :new
@@ -227,8 +264,10 @@ describe "A Constellation instance" do
     @constellation.LegalEntity.keys.sort.should be_include([name])
     @constellation.LegalEntity.keys.sort.should be_include([fred])
 
-    @constellation.SurrogateId.values.should be_include(acme)
-    @constellation.SurrogateId.values.should be_include(fred_fly)
+    pending "Overridden identification is not yet performed" do
+      @constellation.SurrogateId.values.should be_include(acme)
+      @constellation.SurrogateId.values.should be_include(fred_fly)
+    end
   end
 
   it "should handle one-to-ones correctly" do
@@ -377,10 +416,11 @@ describe "A Constellation instance" do
 
   it "should allow assert using an object of the same type" do
     c = @constellation.Company("foo", :auto_counter_value => 23)
+    c2 = ActiveFacts::API::Constellation.new(Mod)
     lambda {
-      c2 = ActiveFacts::API::Constellation.new(Mod)
       c2.Company(c)
     }.should_not raise_error
+    c2.Company.keys.should == [["foo"]]
   end
 
   it "should allow cross-constellation construction" do

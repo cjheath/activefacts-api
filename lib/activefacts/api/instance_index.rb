@@ -12,52 +12,71 @@ module ActiveFacts
     # arguments (where ObjectType is the object_type name you're interested in)
     #
     class InstanceIndex
+      def initialize(constellation, klass)
+        @constellation = constellation
+        @klass = klass
+        @hash = {}
+      end
+
+      def inspect
+        "<Index of #{@klass.name} in #{@constellation.inspect}>"
+      end
+
+      def assert(*args)
+        instance, key = *@klass.assert_instance(@constellation, args)
+        instance
+      end
+
+      def include?(*args)
+        if args.size == 1 && args[0].is_a?(@klass)
+          key = args[0].identifying_role_values
+        else
+          key = @klass.identifying_role_values(*args)
+        end
+        return @hash[key]
+      end
+
       def []=(key, value)   #:nodoc:
-        h[key] = value
+        @hash[key] = value
       end
 
       def [](*args)
-        h[*args]
+        @hash[*args]
       end
 
       def size
-        h.size
+        @hash.size
       end
 
       def empty?
-        h.size == 0
+        @hash.size == 0
       end
 
       def each &b
-        h.each &b
+        @hash.each &b
       end
 
       def map &b
-        h.map &b
+        @hash.map &b
       end
 
       def detect &b
-        r = h.detect &b
+        r = @hash.detect &b
         r ? r[1] : nil
       end
 
       # Return an array of all the instances of this object_type
       def values
-        h.values
+        @hash.values
       end
 
       # Return an array of the identifying role values arrays for all the instances of this object_type
       def keys
-        h.keys
+        @hash.keys
       end
 
       def delete_if(&b)   #:nodoc:
-        h.delete_if &b
-      end
-
-    private
-      def h
-        @hash ||= {}
+        @hash.delete_if &b
       end
     end
   end

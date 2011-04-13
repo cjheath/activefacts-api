@@ -28,7 +28,7 @@ module ActiveFacts
 
       # De-assign all functional roles and remove from constellation, if any.
       def retract
-        # Delete from the constellation first, so it can remember our identifying role values
+        # Delete from the constellation first, while it remembers our identifying role values
         @constellation.__retract(self) if @constellation
 
         # Now, for all roles (from this class and all supertypes), assign nil to all functional roles

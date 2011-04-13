@@ -42,6 +42,7 @@ describe "Roles" do
     end
     role = Mod::Existing1.roles(:name)
     role.should_not be_nil
+    role.inspect.class.should == String
     role.counterpart_object_type.should == Mod::Name
   end
 

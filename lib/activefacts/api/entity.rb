@@ -19,33 +19,56 @@ module ActiveFacts
       # A value must be provided for every identifying role, but if the
       # last argument is a hash, they may come from there.
       #
-      # Any additional (non-identifying) roles may also be passed in the final hash.
+      # If a supertype (including a secondary supertype) has a different
+      # identifier, the identifying roles must be provided in the hash.
+      #
+      # Any additional (non-identifying) roles in the hash are ignored
       def initialize(*args)
-        super(args)
         klass = self.class
-        hash = {}
-        hash = args.pop.clone if Hash === args[-1]
+        while klass.identification_inherited_from
+          klass = klass.superclass
+        end
+
+#        if (o = klass.overrides_identification_of and !(o.identifying_role_names-klass.identifying_role_names).empty?)
+          # This is a class which must initialise its superclass' identifying roles
+          # The hash can provide the values, but those values must already be asserted
+          # in the constellation this object will exist in, since they won't get
+          # attached to/cloned into that constellation merely by being assigned here.
+          # REVISIT: Nothing takes care of that, currently.
+          #
+          # The solution to this is to have an empty initialize, add the new instance
+          # to the Constellation, then initialise_roles using normal assignment.
+#        end
+
+        hash = args[-1].is_a?(Hash) ? args.pop.clone : nil
+
+        # Pass just the hash, if there is one, else no arguments:
+        super(*(hash ? [hash] : []))
 
         # Pick any missing identifying roles out of the hash if possible:
-        while args.size < (ir = klass.identifying_role_names).size
-          value = hash[role = ir[args.size]]
+        irns = klass.identifying_role_names
+        while hash && args.size < irns.size
+          value = hash[role = irns[args.size]]
           hash.delete(role)
           args.push value
         end
 
-        # If one arg is expected but more are passed, they might be the args for the object that plays the identifying role:
+        # If one arg is expected but more are passed, they might be the
+        # args for the object that plays a single identifying role:
         args = [args] if klass.identifying_role_names.size == 1 && args.size > 1
 
-        # This should now only occur when there are too many args passed:
+        # This occur when there are too many args passed, or too few
+        # and no hash. Otherwise the missing ones will be nil.
         raise "Wrong number of parameters to #{klass}.new, " +
             "expect (#{klass.identifying_role_names*","}) " +
             "got (#{args.map{|a| a.to_s.inspect}*", "})" if args.size != klass.identifying_role_names.size
 
-        # Assign the identifying roles in order, then the other roles passed as a hash:
-        (klass.identifying_role_names.zip(args) + hash.entries).each do |role_name, value|
+        # Assign the identifying roles in order
+        klass.identifying_role_names.zip(args).each do |role_name, value|
           role = klass.roles(role_name)
           send("#{role_name}=", value)
         end
+
       end
 
       def inspect #:nodoc:
@@ -90,29 +113,39 @@ module ActiveFacts
 
       # Return the array of the values of this entity instance's identifying roles
       def identifying_role_values
-        self.class.identifying_role_names.map{|role|
-            send(role).identifying_role_values
-          }
+        self.class.identifying_role_names.map do |role|
+          send(role).identifying_role_values
+        end
       end
 
       # All classes that become Entity types receive the methods of this class as class methods:
       module ClassMethods
         include Instance::ClassMethods
 
+        attr_accessor :identification_inherited_from
+        attr_accessor :overrides_identification_of
+
         # Return the array of Role objects that define the identifying relationships of this Entity type:
         def identifying_role_names
-          @identifying_role_names ||= []
+          if identification_inherited_from
+            superclass.identifying_role_names
+          else
+            @identifying_role_names ||= []
+          end
         end
 
         def identifying_roles
-          @identifying_role_names.map{|name|
-            role = roles[name] || (!superclass.is_entity_type || superclass.roles[name])
-            # debug :persistence, "#{name} -> #{role ? "found" : "NOT FOUND"}"
-            role
-          }
+          # REVISIT: Should this return nil if identification_inherited_from?
+          @identifying_roles ||=
+            identifying_role_names.map do |name|
+              role = roles[name] || (!superclass.is_entity_type || superclass.roles[name])
+              # debug :persistence, "#{name} -> #{role ? "found" : "NOT FOUND"}"
+              role
+            end
         end
 
-        # Convert the passed arguments into an array of Instance objects that can identify an instance of this Entity type:
+        # Convert the passed arguments into an array of raw values (or arrays of values, transitively)
+        # that identify an instance of this Entity type:
         def identifying_role_values(*args)
           #puts "Getting identifying role values #{identifying_role_names.inspect} of #{basename} using #{args.inspect}"
 
@@ -123,18 +156,18 @@ module ActiveFacts
             return arg.identifying_role_values
           end
 
-          ir = identifying_role_names
-          args, arg_hash = ActiveFacts::extract_hash_args(ir, args)
+          irns = identifying_role_names
+          args, arg_hash = ActiveFacts::extract_hash_args(irns, args)
 
-          if args.size > ir.size
-            raise "You've provided too many values for the identifier of #{basename}, which expects (#{ir*', '})"
+          if args.size > irns.size
+            raise "You've provided too many values for the identifier of #{basename}, which expects (#{irns*', '})"
           end
 
-          role_args = ir.map{|role_sym| roles(role_sym)}.zip(args)
+          role_args = irns.map{|role_sym| roles(role_sym)}.zip(args)
           role_args.map do |role, arg|
             #puts "Getting identifying_role_value for #{role.counterpart_object_type.basename} using #{arg.inspect}"
             next !!arg unless role.counterpart  # Unary
-            if arg.is_a?(role.counterpart_object_type)              # REVISIT: or a secondary supertype
+            if arg.is_a?(role.counterpart_object_type)              # includes secondary supertypes
               # Note that with a secondary supertype, it must still return the values of these identifying_role_names
               next arg.identifying_role_values
             end
@@ -148,6 +181,10 @@ module ActiveFacts
           end
         end
 
+        # REVISIT: This method should verify that all identifying roles (including
+        # those required to identify any superclass) are present (if mandatory)
+        # and are unique... BEFORE it creates any new object(s)
+        # This is a hard problem because its recursive.
         def assert_instance(constellation, args) #:nodoc:
           # Build the key for this instance from the args
           # The key of an instance is the value or array of keys of the identifying values.
@@ -162,14 +199,15 @@ module ActiveFacts
           return instance, key if instance      # A matching instance of this class
 
           # Now construct each of this object's identifying roles
-          ir = identifying_role_names
+          irns = identifying_role_names
 
           if args.size == 1 and args[0].is_a?(self)
-            values = args[0].identifying_role_values
-            key = ir
+            # We received a single argument of the same type being constructed
+            key = 
+              values = args[0].identifying_role_values
           else
-            args, arg_hash = ActiveFacts::extract_hash_args(ir, args)
-            roles_and_values = ir.map{|role_sym| roles(role_sym)}.zip(args)
+            args, arg_hash = ActiveFacts::extract_hash_args(irns, args)
+            roles_and_values = irns.map{|role_sym| roles(role_sym)}.zip(args)
             key = []    # Gather the actual key (AutoCounters are special)
             values = roles_and_values.map do |role, arg|
                 if role.unary?
@@ -191,7 +229,10 @@ module ActiveFacts
 
           # Make the new entity instance a member of this constellation:
           instance.constellation = constellation
-          return *index_instance(instance, key, ir)
+
+          # REVISIT: Now we should assign any extra args in the hash which weren't identifiers.
+
+          return *index_instance(instance, key, irns)
         end
 
         def index_instance(instance, key = nil, key_roles = nil) #:nodoc:
@@ -218,9 +259,20 @@ module ActiveFacts
         # A object_type that isn't a ValueType must have an identification scheme,
         # which is a list of roles it plays. The identification scheme may be
         # inherited from a superclass.
-        def initialise_entity_type(*args) #:nodoc:
+        def identified_by(*args) #:nodoc:
           #puts "Initialising entity type #{self} using #{args.inspect}"
           raise "You must list the roles which will identify #{self.basename}" unless args.size > 0
+
+          # Catch the case where we state the same identification as our superclass:
+          inherited_role_names = identifying_role_names
+          if !inherited_role_names.empty?
+            self.overrides_identification_of = superclass
+            while from = self.overrides_identification_of.identification_inherited_from
+              self.overrides_identification_of = from
+            end
+          end
+          return if inherited_role_names == args
+          self.identification_inherited_from = nil
 
           # @identifying_role_names here are the symbols passed in, not the Role
           # objects we should use.  We'd need late binding to use Role objects...
@@ -228,7 +280,7 @@ module ActiveFacts
         end
 
         def inherited(other) #:nodoc:
-          other.identified_by *identifying_role_names
+          other.identification_inherited_from = self
           subtypes << other unless subtypes.include? other
           #puts "#{self.name} inherited by #{other.name}"
           vocabulary.__add_object_type(other)

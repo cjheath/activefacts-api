@@ -40,7 +40,7 @@ module ActiveFacts
       end
 
       def inspect
-        "#{owner.name}.#{name}"
+        "<Role #{owner.name}.#{name}>"
       end
 
       def adapt(constellation, value) #:nodoc:
