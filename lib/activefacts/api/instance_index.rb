@@ -19,7 +19,7 @@ module ActiveFacts
       end
 
       def inspect
-        "<Index of #{@klass.name} in #{@constellation.inspect}>"
+        "<InstanceIndex for #{@klass.name} in #{@constellation.inspect}>"
       end
 
       def assert(*args)

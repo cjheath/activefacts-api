@@ -130,21 +130,29 @@ module ActiveFacts
         # If mandatory on the counterpart side, this may/must propagate the delete (without mutual recursion!)
       end
 
-      # With parameters, assert an instance of the object_type whose name is the missing method, identified by the values passed as *args*.
+      # If a missing method is the name of a class in the vocabulary module for this constellation,
+      # then we want to access the collection of instances of that class, and perhaps assert new ones.
       # With no parameters, return the collection of all instances of that object_type.
-      def method_missing(m, *args)
-        # REVISIT: Create an accessor method and call it instead, so it's not missing next time
-        if klass = @vocabulary.const_get(m)
-          raise "#{m} is not a class in #{@vocabulary.name}" if !klass.is_a?(Class)
-          raise "#{m} is not a registered object type in #{@vocabulary.name}" unless klass.respond_to?(:assert_instance)
-          if args.size == 0
-            # Return the collection of all instances of this class in the constellation:
-            @instances[klass]
-          else
-            # Assert a new ground fact (object_type instance) of the specified class, identified by args:
-            instance, key = klass.assert_instance(self, args)
-            instance
-          end
+      # With parameters, assert an instance of the object_type identified by the values passed as args.
+      def method_missing(m, *args, &b)
+        if klass = @vocabulary.const_get(m) and klass.is_a?(Class) and klass.respond_to?(:assert_instance)
+
+          (class << self; self; end).
+            send(:define_method, sym = m.to_sym) do |*args|
+              instance_index = @instances[klass]
+              if args.size == 0
+                # Return the collection of all instances of this class in the constellation:
+                instance_index
+              else
+                # Assert a new ground fact (object_type instance) of the specified class, identified by args:
+                instance_index.assert(*args)
+              end
+            end
+
+          # This is the last time it'll be missing, so call it.
+          send(sym, *args, &b)
+        else
+          super
         end
       end
     end
