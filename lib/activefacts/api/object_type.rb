@@ -142,9 +142,13 @@ module ActiveFacts
           # Unary role
           define_unary_role_accessor(role)
         elsif (role.unique)
-          define_single_role_accessor(role, role.counterpart.unique)
+          if role.counterpart.unique
+            define_one_to_one_accessor(role)
+          else
+            define_one_to_many_accessor(role)
+          end
         else
-          define_array_role_accessor(role)
+          define_many_to_one_accessor(role)
         end
       end
 
@@ -226,40 +230,42 @@ module ActiveFacts
         end
       end
 
-      # REVISIT: Add __add_to(constellation) and __remove(constellation) here?
-      def define_single_role_accessor(role, one_to_one)
-        # puts "Defining #{basename}.#{role.name} to #{role.counterpart_object_type.basename} (#{one_to_one ? "assigning" : "populating"} #{role.counterpart.name})"
+      def define_one_to_one_accessor(role)
         define_single_role_getter(role)
 
-        if (one_to_one)
-          # This gets called to assign nil to the related role in the old correspondent:
-          # value is included here so we can check that the correct value is being nullified, if necessary
-          nullify_reference = lambda do|from, role_name, value|
-            from.send("#{role_name}=".to_sym, nil)
-          end
+        class_eval do
+          define_method "#{role.name}=" do |value|
+            role_var = "@#{role.name}"
 
-          # This gets called to replace an old single value for a new one in the related role of a new correspondent
-          assign_reference = lambda do |from, role_name, old_value, value|
-            from.send("#{role_name}=".to_sym, value)
-          end
+            # Get old value, and jump out early if it's unchanged:
+            old = instance_variable_get(role_var) rescue nil
+            return value if old.equal?(value)         # Occurs when another instance having the same value is assigned
 
-          define_single_role_setter(role, nullify_reference, assign_reference)
-        else
-          # This gets called to delete this object from the role value array in the old correspondent
-          delete_reference = lambda do |from, role_name, value|
-            from.send(role_name).update(value, nil)
-          end
+            value = role.adapt(constellation, value) if value
+            return value if old.equal?(value)         # Occurs when same value but not same instance is assigned
 
-          # This gets called to replace an old value by a new one in the related role value array of a new correspondent
-          replace_reference = lambda do |from, role_name, old_value, value| 
-            from.send(role_name).update(old_value, value)
-          end
+            # REVISIT: A frozen-key solution could be used to allow changing identifying roles.
+            # If this object plays an identifying role in other objects, they also need re-indexing
+#            if role.is_identifying
+#              raise "#{self.class.basename}: illegal attempt to modify identifying role #{role.name}" if value != nil && old != nil
+#            end
 
-          define_single_role_setter(role, delete_reference, replace_reference)
+            instance_variable_set(role_var, value)
+
+            # Remove self from the old counterpart:
+            old.send("#{role.counterpart.name}=".to_sym, nil) if old
+
+            # Assign self to the new counterpart
+            value.send("#{role.counterpart.name}=".to_sym, self) if value
+
+            value
+          end
         end
       end
 
-      def define_single_role_setter(role, deassign_old, assign_new)
+      def define_one_to_many_accessor(role)
+        define_single_role_getter(role)
+
         class_eval do
           define_method "#{role.name}=" do |value|
             role_var = "@#{role.name}"
@@ -269,35 +275,33 @@ module ActiveFacts
             return value if old.equal?(value)         # Occurs during one_to_one assignment, for example
 
             value = role.adapt(constellation, value) if value
-            return value if old.equal?(value)         # Occurs when same value is assigned
-
-            # DEBUG: puts "assign #{self.class.basename}.#{role.name} <-> #{value.inspect}.#{role.counterpart.name}#{old ? " (was #{old.inspect})" : ""}"
+            return value if old.equal?(value)         # Occurs when another instance having the same value is assigned
 
             # REVISIT: A frozen-key solution could be used to allow changing identifying roles.
+            # If this object plays an identifying role in other objects, they need re-indexing
             # The key would be frozen, allowing indices and counterparts to de-assign,
             # but delay re-assignment until defrosted.
             # That would also allow caching the identifying_role_values, a performance win.
 
             # This allows setting and clearing identifying roles, but not changing them.
-            #if role.is_identifying
-            #  raise "#{self.class.basename}: illegal attempt to modify identifying role #{role.name}" if value != nil && old != nil
-            #end
+#            if role.is_identifying
+#              raise "#{self.class.basename}: illegal attempt to modify identifying role #{role.name}" if value != nil && old != nil
+#            end
 
-            # puts "Setting binary #{role_var} to #{value.verbalise}"
             instance_variable_set(role_var, value)
 
-            # De-assign/remove "self" at the old other end too:
-            deassign_old.call(old, role.counterpart.name, self) if old
+            # Remove "self" from the old counterpart:
+            old.send(role.counterpart.name).update(self, nil) if old
 
-            # Assign/add "self" at the other end too:
-            assign_new.call(value, role.counterpart.name, old, self) if value
+            # Add "self" into the counterpart
+            value.send(role.counterpart.name).update(old, self) if value
 
             value
           end
         end
       end
 
-      def define_array_role_accessor(role)
+      def define_many_to_one_accessor(role)
         class_eval do
           define_method "#{role.name}" do
             unless (r = instance_variable_get(role_var = "@#{role.name}") rescue nil)
