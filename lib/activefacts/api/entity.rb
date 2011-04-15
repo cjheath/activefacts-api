@@ -149,14 +149,18 @@ module ActiveFacts
         def identifying_role_values(*args)
           #puts "Getting identifying role values #{identifying_role_names.inspect} of #{basename} using #{args.inspect}"
 
+          irns = identifying_role_names
+
           # If the single arg is an instance of the correct class or a subclass,
           # use the instance's identifying_role_values
-          if (args.size == 1 and
-              (arg = args[0]).is_a?(self))       # REVISIT: or a secondary supertype
-            return arg.identifying_role_values
+          if (args.size == 1 and (arg = args[0]).is_a?(self))
+            # With a secondary supertype or a subtype having separate identification,
+            # we would get the wrong identifier from arg.identifying_role_values:
+            return irns.map do |role_name|
+              arg.send(role_name).identifying_role_values
+            end
           end
 
-          irns = identifying_role_names
           args, arg_hash = ActiveFacts::extract_hash_args(irns, args)
 
           if args.size > irns.size
@@ -168,8 +172,9 @@ module ActiveFacts
             #puts "Getting identifying_role_value for #{role.counterpart_object_type.basename} using #{arg.inspect}"
             next !!arg unless role.counterpart  # Unary
             if arg.is_a?(role.counterpart_object_type)              # includes secondary supertypes
-              # Note that with a secondary supertype, it must still return the values of these identifying_role_names
-              next arg.identifying_role_values
+              # With a secondary supertype or a type having separate identification,
+              # we would get the wrong identifier from arg.identifying_role_values:
+              next role.counterpart_object_type.identifying_role_values(arg)
             end
             if arg == nil # But not false
               if role.mandatory
@@ -202,9 +207,11 @@ module ActiveFacts
           irns = identifying_role_names
 
           if args.size == 1 and args[0].is_a?(self)
-            # We received a single argument of the same type being constructed
+            # We received a single argument of a compatible type
+            # With a secondary supertype or a type having separate identification,
+            # we would get the wrong identifier from arg.identifying_role_values:
             key = 
-              values = args[0].identifying_role_values
+              values = identifying_role_values(args[0])
           else
             args, arg_hash = ActiveFacts::extract_hash_args(irns, args)
             roles_and_values = irns.map{|role_sym| roles(role_sym)}.zip(args)
