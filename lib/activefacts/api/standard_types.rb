@@ -32,10 +32,12 @@ ValueClasses.each{|c|
 
 class TrueClass #:nodoc:
   def verbalise(role_name = nil); role_name ? "#{role_name}: true" : "true"; end
+  def identifying_role_values; self; end
 end
 
 class NilClass #:nodoc:
   def verbalise; "nil"; end
+  def identifying_role_values; self; end
 end
 
 class Class
