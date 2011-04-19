@@ -34,6 +34,7 @@ end
 
 RSpec::Core::RakeTask.new(:rcov) do |spec|
   spec.pattern = 'spec/**/*_spec.rb'
+  spec.rcov_opts = [ '--exclude', 'spec', '--exclude', 'lib/activefacts/tracer.rb' ]
   spec.rcov = true
 end
 

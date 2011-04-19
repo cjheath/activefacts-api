@@ -37,13 +37,8 @@ describe "A Constellation instance" do
         has_one :name, :mandatory => true
       end
 
-      class Extra < Int
-        value_type
-      end
-
       class SurrogateId
         identified_by :auto_counter_value
-        supertypes :extra
         has_one :auto_counter_value
       end
 
@@ -112,8 +107,8 @@ describe "A Constellation instance" do
     lambda {
         name = @constellation.Name("foo")
         foo = @constellation.LegalEntity("foo")
-        acme = @constellation.Company("Acme, Inc")
-        fred_fly = @constellation.Person("fred", "fly")
+        acme = @constellation.Company("Acme, Inc", :auto_counter_value => :new)
+        fred_fly = @constellation.Person("fred", "fly", :auto_counter_value => :new)
     }.should_not raise_error
     name.class.should == Mod::Name
     name.constellation.should == @constellation
@@ -137,13 +132,13 @@ describe "A Constellation instance" do
   it "should re-use instances constructed the same way" do
     name1 = @constellation.Name("foo")
     foo1 = @constellation.LegalEntity("foo")
-    acme1 = @constellation.Company("Acme, Inc")
-    fred_fly1 = @constellation.Person("fred", "fly")
+    acme1 = @constellation.Company("Acme, Inc", :auto_counter_value => :new)
+    fred_fly1 = @constellation.Person("fred", "fly", :auto_counter_value => :new)
 
     name2 = @constellation.Name("foo")
     foo2 = @constellation.LegalEntity("foo")
-    acme2 = @constellation.Company("Acme, Inc")
-    fred_fly2 = @constellation.Person("fred", "fly")
+    acme2 = @constellation.Company("Acme, Inc", :auto_counter_value => :new)
+    fred_fly2 = @constellation.Person("fred", "fly", :auto_counter_value => :new)
 
     name1.object_id.should == name2.object_id
     foo1.object_id.should == foo2.object_id
@@ -156,8 +151,8 @@ describe "A Constellation instance" do
     lambda {
         name = @constellation.Name.assert("foo")
         foo = @constellation.LegalEntity.assert("foo")
-        acme = @constellation.Company.assert("Acme, Inc")
-        fred_fly = @constellation.Person.assert("fred", "fly")
+        acme = @constellation.Company.assert("Acme, Inc", :auto_counter_value => :new)
+        fred_fly = @constellation.Person.assert("fred", "fly", :auto_counter_value => :new)
     }.should_not raise_error
     name.class.should == Mod::Name
     name.constellation.should == @constellation
@@ -186,9 +181,7 @@ describe "A Constellation instance" do
       Company("Acme, Inc", :auto_counter_value => :new)
     end
     @constellation.Name.size.should == 5
-    pending "Overridden identification is not yet performed" do
-      @constellation.SurrogateId.size.should == 2
-    end
+    @constellation.SurrogateId.size.should == 2
   end
 
   it "should verbalise itself" do
@@ -201,7 +194,7 @@ describe "A Constellation instance" do
     end
     s = @constellation.verbalise
     names = s.split(/\n/).grep(/\tEvery /).map{|l| l.sub(/.*Every (.*):$/, '\1')}
-    expected = ["Company", "Extra", "LegalEntity", "Name", "Person", "StringValue", "SurrogateId"]
+    expected = ["AutoCounterValue", "Company", "LegalEntity", "Name", "Person", "StringValue", "SurrogateId"]
     names.sort.should == expected
   end
 
@@ -252,8 +245,8 @@ describe "A Constellation instance" do
     name = "Acme, Inc"
     fred = "Fred"
     fly = "Fly"
-    acme = @constellation.Company name, :auto_counter_value => :new, :extra => 14
-    fred_fly = @constellation.Person fred, fly, :auto_counter_value => :new, :extra => 19
+    acme = @constellation.Company name, :auto_counter_value => :new
+    fred_fly = @constellation.Person fred, fly, :auto_counter_value => :new
 
     # REVISIT: This should be illegal:
     #fred_fly.auto_counter_value = :new
@@ -264,10 +257,8 @@ describe "A Constellation instance" do
     @constellation.LegalEntity.keys.sort.should be_include([name])
     @constellation.LegalEntity.keys.sort.should be_include([fred])
 
-    pending "Overridden identification is not yet performed" do
-      @constellation.SurrogateId.values.should be_include(acme)
-      @constellation.SurrogateId.values.should be_include(fred_fly)
-    end
+    @constellation.SurrogateId.values.should be_include(acme)
+    @constellation.SurrogateId.values.should be_include(fred_fly)
   end
 
   it "should handle one-to-ones correctly" do
@@ -418,7 +409,7 @@ describe "A Constellation instance" do
     c = @constellation.Company("foo", :auto_counter_value => 23)
     c2 = ActiveFacts::API::Constellation.new(Mod)
     lambda {
-      c2.Company(c)
+      c2.Company(c, :auto_counter_value => :new)
     }.should_not raise_error
     c2.Company.keys.should == [["foo"]]
   end
@@ -427,7 +418,7 @@ describe "A Constellation instance" do
     c = @constellation.Company("foo", :auto_counter_value => 23)
     lambda {
       c2 = ActiveFacts::API::Constellation.new(Mod)
-      c2.Company(c.name)
+      c2.Company(c.name, :auto_counter_value => :new)
     }.should_not raise_error
   end
 
@@ -435,8 +426,8 @@ describe "A Constellation instance" do
     c = @constellation.Company("foo", :auto_counter_value => 23)
     lambda {
       c2 = ActiveFacts::API::Constellation.new(Mod)
-      p = c2.Person('Fred', 'Smith')
-      p.employer = c
+      p = c2.Person('Fred', 'Smith', :auto_counter_value => :new)
+      p.employer = [c, {:auto_counter_value => :new}]
     }.should_not raise_error
   end
 

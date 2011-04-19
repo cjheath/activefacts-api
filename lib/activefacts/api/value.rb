@@ -15,7 +15,14 @@ module ActiveFacts
 
       # Value instance methods:
       def initialize(*args) #:nodoc:
-        super(args)   # Do I really mean to pass an array here?
+        hash = args[-1].is_a?(Hash) ? args.pop.clone : nil
+
+        super(args)
+
+        (hash ? hash.entries : []).each do |role_name, value|
+          role = self.class.roles(role_name)
+          send("#{role_name}=", value)
+        end
       end
 
       # verbalise this Value
@@ -70,7 +77,6 @@ module ActiveFacts
 
         def identifying_role_values(*args)  #:nodoc:
           # If the single arg is the correct class or a subclass, use it directly
-          #puts "#{basename}.identifying_role_values#{args.inspect}"
           if (args.size == 1 and (arg = args[0]).is_a?(self))   # No secondary supertypes allowed for value types
             return arg.identifying_role_values
           end
@@ -82,15 +88,15 @@ module ActiveFacts
           # The key of an instance is the value or array of keys of the identifying values.
           # The key values aren't necessarily present in the constellation, even after this.
           key = identifying_role_values(*args)
-          #puts "#{klass} key is #{key.inspect}"
 
           # Find and return an existing instance matching this key
           instances = constellation.instances[self]   # All instances of this class in this constellation
           instance = instances[key]
-          # DEBUG: puts "assert #{self.basename} #{key.inspect} #{instance ? "exists" : "new"}"
           return instance, key if instance      # A matching instance of this class
 
-          instance = new(*args)
+          #trace :assert, "Constructing new #{self} with #{args.inspect}" do
+            instance = new(*args)
+          #end
 
           instance.constellation = constellation
           return *index_instance(instance)
@@ -100,7 +106,6 @@ module ActiveFacts
           instances = instance.constellation.instances[self]
           key = instance.identifying_role_values
           instances[key] = instance
-          # DEBUG: puts "indexing value #{basename} using #{key.inspect} in #{constellation.object_id}"
 
           # Index the instance for each supertype:
           supertypes.each do |supertype|
@@ -111,7 +116,6 @@ module ActiveFacts
         end
 
         def inherited(other)  #:nodoc:
-          #puts "REVISIT: ValueType #{self} < #{self.superclass} was inherited by #{other}; not implemented" #+"from #{caller*"\n\t"}"
           # Copy the type parameters here, etc?
           other.send :realise_supertypes, self
           vocabulary.__add_object_type(other)
@@ -122,11 +126,8 @@ module ActiveFacts
       def self.included other #:nodoc:
         other.send :extend, ClassMethods
 
-        #puts "ValueType included in #{other.basename} from #{caller*"\n\t"}"
-
         # Register ourselves with the parent module, which has become a Vocabulary:
         vocabulary = other.modspace
-        # puts "ValueType.included(#{other.inspect})"
         unless vocabulary.respond_to? :object_type  # Extend module with Vocabulary if necessary
           vocabulary.send :extend, Vocabulary
         end

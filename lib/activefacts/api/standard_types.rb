@@ -33,11 +33,19 @@ ValueClasses.each{|c|
 class TrueClass #:nodoc:
   def verbalise(role_name = nil); role_name ? "#{role_name}: true" : "true"; end
   def identifying_role_values; self; end
+  def self.identifying_role_values(*a); true; end
+end
+
+class FalseClass #:nodoc:
+  def verbalise(role_name = nil); role_name ? "#{role_name}: false" : "false"; end
+  def identifying_role_values; self; end
+  def self.identifying_role_values(*a); false; end
 end
 
 class NilClass #:nodoc:
   def verbalise; "nil"; end
   def identifying_role_values; self; end
+  def self.identifying_role_values(*a); nil; end
 end
 
 class Class

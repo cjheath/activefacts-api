@@ -24,9 +24,10 @@ describe "Roles" do
       class Person < LegalEntity
         # identified_by         # No identifier needed, inherit from superclass
         # New identifier:
-        identified_by :family, :given
+        identified_by :family, :name
         has_one :family, :class => Name
-        has_one :given, :class => Name
+        alias :given :name
+        alias :given= :name=
         has_one :related_to, :class => LegalEntity
       end
     end

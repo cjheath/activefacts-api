@@ -33,6 +33,10 @@ class Int < SimpleDelegator
     __getobj__.eql?(Integer(o))
   end
 
+  def ==(o)                             #:nodoc:
+    __getobj__.==(o)
+  end
+
   def is_a?(k)
     __getobj__.is_a?(k) || super
   end
@@ -61,6 +65,10 @@ class Real < SimpleDelegator
     __getobj__.eql?(Float(o))
   end
 
+  def ==(o)                             #:nodoc:
+    __getobj__.==(o)
+  end
+
   def is_a?(k)
     __getobj__.is_a?(k) || super
   end
@@ -75,7 +83,6 @@ class ::Date
   class << self; alias_method :old_new, :new end
   # Date.new cannot normally be called passing a Date as the parameter. This allows that.
   def self.new(*a, &b)
-    #puts "Constructing date with #{a.inspect} from #{caller*"\n\t"}"
     if (a.size == 1 && a[0].is_a?(Date))
       a = a[0]
       civil(a.year, a.month, a.day, a.start)
@@ -92,7 +99,6 @@ class ::DateTime
   class << self; alias_method :old_new, :new end
   # DateTime.new cannot normally be called passing a Date or DateTime as the parameter. This allows that.
   def self.new(*a, &b)
-    #puts "Constructing DateTime with #{a.inspect} from #{caller*"\n\t"}"
     if (a.size == 1)
       a = a[0]
       if (DateTime === a)
@@ -116,13 +122,12 @@ end
 class AutoCounter
   def initialize(i = :new)
     raise "AutoCounter #{self.class} may not be #{i.inspect}" unless i == :new or i.is_a?(Integer) or i.is_a?(AutoCounter)
-    # puts "new AutoCounter #{self.class} from\n\t#{caller.select{|s| s !~ %r{rspec}}*"\n\t"}"
     @value = i == :new ? nil : i.to_i
   end
 
   # Assign a definite value to an AutoCounter; this may only be done once
   def assign(i)
-    raise ArgumentError if @value
+    raise ArgumentError, "Illegal attempt to assign integer value of a committed AutoCounter" if @value
     @value = i.to_i
   end
 
@@ -141,13 +146,13 @@ class AutoCounter
 
   # An AutoCounter may only be used in numeric expressions after a definite value has been assigned
   def to_i
-    raise ArgumentError unless @value
+    raise ArgumentError, "Illegal attempt to get integer value of an uncommitted AutoCounter" unless @value
     @value
   end
 
   # Coerce "i" to be of the same type as self
   def coerce(i)
-    raise ArgumentError unless @value
+    raise ArgumentError, "Illegal attempt to use the value of an uncommitted AutoCounter" unless @value
     [ i.to_i, @value ]
   end
 
@@ -170,6 +175,7 @@ class AutoCounter
   def self.inherited(other)             #:nodoc:
     def other.identifying_role_values(*args)
       return nil if args == [:new]  # A new object has no identifying_role_values
+      return args[0] if args.size == 1 and args[0].is_a?(AutoCounter)
       return new(*args)
     end
     super

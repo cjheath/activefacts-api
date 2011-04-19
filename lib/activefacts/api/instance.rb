@@ -15,9 +15,12 @@ module ActiveFacts
 
       def initialize(args = []) #:nodoc:
         unless (self.class.is_entity_type)
-        #if (self.class.superclass != Object)
-          # puts "constructing #{self.class.superclass} with #{args.inspect}"
-          super(*args)
+          begin
+            super(*args)
+          rescue ArgumentError => e
+            e.message << " constructing a #{self.class}"
+            raise
+          end
         end
       end
 
@@ -45,7 +48,6 @@ module ActiveFacts
               # puts "Not removing role #{role_name} from counterpart RoleValues #{counterpart.name}"
               # Duplicate the array using to_a, as the RoleValues here will be modified as we traverse it:
               send(role.name).to_a.each do |v|
-                #puts "Removing #{self.inspect} via role #{role_name} from counterpart #{v.inspect}\##{counterpart.name}"
                 v.send("#{counterpart.name}=", nil)
               end
             end

@@ -63,12 +63,11 @@ module ActiveFacts
             "expect (#{klass.identifying_role_names*","}) " +
             "got (#{args.map{|a| a.to_s.inspect}*", "})" if args.size != klass.identifying_role_names.size
 
-        # Assign the identifying roles in order
+        # Assign the identifying roles in order. Any other roles will be assigned by our caller
         klass.identifying_role_names.zip(args).each do |role_name, value|
-          role = klass.roles(role_name)
+          role = self.class.roles(role_name)
           send("#{role_name}=", value)
         end
-
       end
 
       def inspect #:nodoc:
@@ -139,7 +138,6 @@ module ActiveFacts
           @identifying_roles ||=
             identifying_role_names.map do |name|
               role = roles[name] || (!superclass.is_entity_type || superclass.roles[name])
-              # debug :persistence, "#{name} -> #{role ? "found" : "NOT FOUND"}"
               role
             end
         end
@@ -147,18 +145,19 @@ module ActiveFacts
         # Convert the passed arguments into an array of raw values (or arrays of values, transitively)
         # that identify an instance of this Entity type:
         def identifying_role_values(*args)
-          #puts "Getting identifying role values #{identifying_role_names.inspect} of #{basename} using #{args.inspect}"
-
           irns = identifying_role_names
 
           # If the single arg is an instance of the correct class or a subclass,
           # use the instance's identifying_role_values
-          if (args.size == 1 and (arg = args[0]).is_a?(self))
+          has_hash = args[-1].is_a?(Hash)
+          if (args.size == 1+(has_hash ?1:0) and (arg = args[0]).is_a?(self))
             # With a secondary supertype or a subtype having separate identification,
             # we would get the wrong identifier from arg.identifying_role_values:
             return irns.map do |role_name|
-              arg.send(role_name).identifying_role_values
-            end
+                # Use the identifier for the class expected, not the actual:
+                value = arg.send(role_name)
+                value && arg.class.roles(role_name).counterpart_object_type.identifying_role_values(value)
+              end
           end
 
           args, arg_hash = ActiveFacts::extract_hash_args(irns, args)
@@ -169,7 +168,6 @@ module ActiveFacts
 
           role_args = irns.map{|role_sym| roles(role_sym)}.zip(args)
           role_args.map do |role, arg|
-            #puts "Getting identifying_role_value for #{role.counterpart_object_type.basename} using #{arg.inspect}"
             next !!arg unless role.counterpart  # Unary
             if arg.is_a?(role.counterpart_object_type)              # includes secondary supertypes
               # With a secondary supertype or a type having separate identification,
@@ -199,19 +197,20 @@ module ActiveFacts
           # Find and return an existing instance matching this key
           instances = constellation.instances[self]   # All instances of this class in this constellation
           instance = instances[key]
-          # DEBUG: puts "assert #{self.basename} #{key.inspect} #{instance ? "exists" : "new"}"
           # REVISIT: This ignores any additional attribute assignments
           return instance, key if instance      # A matching instance of this class
 
           # Now construct each of this object's identifying roles
           irns = identifying_role_names
 
-          if args.size == 1 and args[0].is_a?(self)
+          has_hash = args[-1].is_a?(Hash)
+          if args.size == 1+(has_hash ?1:0) and args[0].is_a?(self)
             # We received a single argument of a compatible type
             # With a secondary supertype or a type having separate identification,
             # we would get the wrong identifier from arg.identifying_role_values:
             key = 
               values = identifying_role_values(args[0])
+            values = values + [arg_hash = args.pop] if has_hash
           else
             args, arg_hash = ActiveFacts::extract_hash_args(irns, args)
             roles_and_values = irns.map{|role_sym| roles(role_sym)}.zip(args)
@@ -223,7 +222,9 @@ module ActiveFacts
                 elsif !arg
                   value = role_key = nil
                 else
-                  value, role_key = role.counterpart_object_type.assert_instance(constellation, Array(arg))
+                  #trace :assert, "Asserting #{role.counterpart_object_type} with #{Array(arg).inspect} for #{self}.#{role.name}" do
+                    value, role_key = role.counterpart_object_type.assert_instance(constellation, Array(arg))
+                  #end
                 end
                 key << role_key
                 value
@@ -231,13 +232,18 @@ module ActiveFacts
             values << arg_hash if arg_hash and !arg_hash.empty?
           end
 
-          #puts "Creating new #{basename} using #{values.inspect}"
-          instance = new(*values)
+          #trace :assert, "Constructing new #{self} with #{values.inspect}" do
+            instance = new(*values)
+          #end
 
           # Make the new entity instance a member of this constellation:
           instance.constellation = constellation
 
-          # REVISIT: Now we should assign any extra args in the hash which weren't identifiers.
+          # Now assign any extra args in the hash which weren't identifiers (extra identifiers will be assigned again)
+          (arg_hash ? arg_hash.entries : []).each do |role_name, value|
+            role = roles(role_name)
+            instance.send("#{role_name}=", value)
+          end
 
           return *index_instance(instance, key, irns)
         end
@@ -248,12 +254,12 @@ module ActiveFacts
             key = (key_roles = identifying_role_names).map do |role_name|
               instance.send role_name
             end
+            raise "You must pass values for #{key_roles.inspect} to identify a #{self.name}" if key.compact == []
           end
 
           # Index the instance for this class in the constellation
           instances = instance.constellation.instances[self]
           instances[key] = instance
-          # DEBUG: puts "indexing entity #{basename} using #{key.inspect} in #{constellation.object_id}"
 
           # Index the instance for each supertype:
           supertypes.each do |supertype|
@@ -267,7 +273,6 @@ module ActiveFacts
         # which is a list of roles it plays. The identification scheme may be
         # inherited from a superclass.
         def identified_by(*args) #:nodoc:
-          #puts "Initialising entity type #{self} using #{args.inspect}"
           raise "You must list the roles which will identify #{self.basename}" unless args.size > 0
 
           # Catch the case where we state the same identification as our superclass:
@@ -289,7 +294,6 @@ module ActiveFacts
         def inherited(other) #:nodoc:
           other.identification_inherited_from = self
           subtypes << other unless subtypes.include? other
-          #puts "#{self.name} inherited by #{other.name}"
           vocabulary.__add_object_type(other)
         end
 
@@ -304,7 +308,6 @@ module ActiveFacts
 
         # Register ourselves with the parent module, which has become a Vocabulary:
         vocabulary = other.modspace
-        # puts "Entity.included(#{other.inspect})"
         unless vocabulary.respond_to? :object_type  # Extend module with Vocabulary if necessary
           vocabulary.send :extend, Vocabulary
         end

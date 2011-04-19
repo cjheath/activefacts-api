@@ -32,13 +32,13 @@
 
 require 'activefacts/api/support'               # General support code and core patches
 require 'activefacts/api/vocabulary'            # A Ruby module may become a Vocabulary
-#require 'activefacts/api/role_proxy'            # Experimental proxy for has_one/one_to_one role accessors
 require 'activefacts/api/instance_index'        # The index used by a constellation to record every instance
 require 'activefacts/api/constellation'         # A Constellation is a query result or fact population
-require 'activefacts/api/object_type'               # A Ruby class may become a ObjectType in a Vocabulary
+require 'activefacts/api/object_type'           # A Ruby class may become a ObjectType in a Vocabulary
 require 'activefacts/api/role'                  # A ObjectType has a collection of Roles
 require 'activefacts/api/role_values'           # The container used for sets of role players in many_one's
 require 'activefacts/api/instance'              # An Instance is an instance of a ObjectType class
 require 'activefacts/api/value'                 # A Value is an Instance of a value class (String, Numeric, etc)
 require 'activefacts/api/entity'                # An Entity class is an Instance not of a value class
 require 'activefacts/api/standard_types'        # Value classes are augmented so their subclasses may become Value Types
+require 'activefacts/tracer'

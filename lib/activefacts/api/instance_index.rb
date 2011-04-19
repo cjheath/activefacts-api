@@ -23,8 +23,10 @@ module ActiveFacts
       end
 
       def assert(*args)
-        instance, key = *@klass.assert_instance(@constellation, args)
-        instance
+        #trace :assert, "Asserting #{@klass} with #{args.inspect}" do
+          instance, key = *@klass.assert_instance(@constellation, args)
+          instance
+        #end
       end
 
       def include?(*args)

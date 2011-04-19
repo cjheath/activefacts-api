@@ -103,12 +103,16 @@ module ActiveFacts
                 raise "Illegal supertype #{object_type.inspect} for #{self.class.basename}"
               end
             raise "#{supertype.name} must be an object type in #{vocabulary.name}" unless supertype.respond_to?(:vocabulary) and supertype.vocabulary == self.vocabulary
+
+            if is_entity_type != supertype.is_entity_type
+              raise "#{self} < #{supertype}: A value type may not be a supertype of an entity type, and vice versa"
+            end
+
             @supertypes << supertype
 
             # Realise the roles (create accessors) of this supertype.
             # REVISIT: The existing accessors at the other end will need to allow this class as role counterpart
             # REVISIT: Need to check all superclass roles recursively, unless we hit a common supertype
-            #puts "Realising object_type #{object_type.name} in #{basename}"
             realise_supertypes(object_type, all_supertypes)
           end
           [(superclass.vocabulary && superclass rescue nil), *@supertypes].compact
@@ -136,8 +140,6 @@ module ActiveFacts
 
       # Every new role added or inherited comes through here:
       def realise_role(role) #:nodoc:
-        #puts "Realising role #{role.counterpart_object_type.basename rescue role.counterpart_object_type}.#{role.name} in #{basename}"
-
         if (!role.counterpart)
           # Unary role
           define_unary_role_accessor(role)
@@ -161,14 +163,12 @@ module ActiveFacts
       def realise_supertypes(object_type, all_supertypes = nil)
         all_supertypes ||= supertypes_transitive
         s = object_type.supertypes
-        #puts "realising #{object_type.basename} supertypes #{s.inspect} of #{basename}"
         s.each do |t|
           next if all_supertypes.include? t
           realise_supertypes(t, all_supertypes)
           t.subtypes << self unless t.subtypes.include?(self)
           all_supertypes << t
         end
-        #puts "Realising roles of #{object_type.basename} in #{basename}"
         realise_roles(object_type)
       end
 
@@ -181,8 +181,6 @@ module ActiveFacts
 
       # Shared code for both kinds of binary fact type (has_one and one_to_one)
       def define_binary_fact_type(one_to_one, role_name, related, mandatory, related_role_name)
-        # puts "#{self}.#{role_name} is to #{related.inspect}, #{mandatory ? :mandatory : :optional}, related role is #{related_role_name}"
-
         raise "#{name} cannot have more than one role named #{role_name}" if roles[role_name]
         roles[role_name] = role = Role.new(self, related, nil, role_name, mandatory)
 
@@ -195,18 +193,14 @@ module ActiveFacts
             target.roles[related_role_name] = role.counterpart = Role.new(target, definer, role, related_role_name, false, false)
           end
           role.counterpart_object_type = target
-          #puts "Realising role pair #{definer.basename}.#{role_name} <-> #{target.basename}.#{related_role_name}"
           realise_role(role)
           target.realise_role(role.counterpart)
         end
       end
 
       def define_unary_role_accessor(role)
-        # puts "Defining #{basename}.#{role_name} as unary"
         class_eval do
           define_method "#{role.name}=" do |value|
-            #puts "Setting #{self.class.name} #{object_id}.@#{role.name} to #{(value ? true : nil).inspect}"
-            #assigned = value ? true : nil
             assigned = case value
               when nil; nil
               when false; false
@@ -307,7 +301,6 @@ module ActiveFacts
             unless (r = instance_variable_get(role_var = "@#{role.name}") rescue nil)
               r = instance_variable_set(role_var, RoleValues.new)
             end
-            # puts "fetching #{self.class.basename}.#{role.name} array, got #{r.class}, first is #{r[0] ? r[0].verbalise : "nil"}"
             r
           end
         end
@@ -372,12 +365,10 @@ module ActiveFacts
 
         # resolve the Symbol to a Class now if possible:
         resolved = vocabulary.object_type(related) rescue nil
-        #puts "#{related} resolves to #{resolved}"
         related = resolved if resolved
         if related.is_a?(Class)
           raise "#{related} must be an object type in #{vocabulary.name}" unless related.respond_to?(:vocabulary) and related.vocabulary == self.vocabulary
         end
-        # puts "related = #{related.inspect}"
 
         if options.delete(:mandatory) == true
           mandatory = true
@@ -407,7 +398,6 @@ module ActiveFacts
             (!related_role_name || related_role_name == role_player)
           other_role_method += "_as_#{role_name}"
         end
-        #puts "On #{basename}: have related_role_name=#{related_role_name.inspect}, role_player=#{role_player}, role_name=#{role_name}, related_name=#{related_name.inspect} -> #{related_name}.#{other_role_method}"
 
         [ role_name,
           related,

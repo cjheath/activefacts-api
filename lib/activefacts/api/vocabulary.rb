@@ -25,7 +25,6 @@ module ActiveFacts
           return name
         end
 
-        # puts "Looking up object_type #{name} in #{self.name}"
         camel = name.to_s.camelcase
         if (c = @object_type[camel])
           __bind(camel)
@@ -60,13 +59,11 @@ module ActiveFacts
       def __add_object_type(klass)  #:nodoc:
         name = klass.basename
         __bind(name)
-        # puts "Adding object_type #{name} to #{self.name}"
         @object_type ||= {}
         @object_type[klass.basename] = klass
       end
 
       def __delay(object_type_name, args, &block) #:nodoc:
-        # puts "Arranging for delayed binding on #{object_type_name.inspect}"
         @delayed ||= Hash.new { |h,k| h[k] = [] }
         @delayed[object_type_name] << [args, block]
       end
@@ -74,9 +71,7 @@ module ActiveFacts
       # __bind raises an error if the named class doesn't exist yet.
       def __bind(object_type_name)  #:nodoc:
         object_type = const_get(object_type_name)
-        # puts "#{name}.__bind #{object_type_name} -> #{object_type.name}" if object_type
         if (@delayed && @delayed.include?(object_type_name))
-          # $stderr.puts "#{object_type_name} was delayed, binding now"
           d = @delayed[object_type_name]
           d.each{|(a,b)|
               b.call(object_type, *a)

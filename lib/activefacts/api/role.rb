@@ -60,7 +60,9 @@ module ActiveFacts
           if constellation
             value = constellation.send(@counterpart_object_type.basename.to_sym, *value)
           else
-            value = @counterpart_object_type.new(*value)
+            #trace :assert, "Constructing new #{@counterpart_object_type} with #{value.inspect}" do
+              value = @counterpart_object_type.new(*value)
+            #end
           end
         end
         value
