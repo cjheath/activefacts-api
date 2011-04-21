@@ -160,7 +160,7 @@ describe "Object type role values" do
             identifying_value = object.send(identifying_role.name)
             identifying_value.should_not be_nil
 
-            counterpart_object_type = identifying_role.counterpart_object_type
+            counterpart_object_type = identifying_role.counterpart.object_type
             role_superclasses = [ counterpart_object_type.superclass, counterpart_object_type.superclass.superclass ]
             # Autocounter values do not compare to Integers:
             unless role_superclasses.include?(AutoCounter) or identifying_role.object_type.basename =~ /Entity/

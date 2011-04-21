@@ -257,7 +257,7 @@ describe "An instance of every type of ObjectType" do
         entity_type.identifying_role_names.each do |ir|
             role = entity_type.roles(ir)
             role.should_not be_nil
-            counterpart_object_type = role.counterpart_object_type
+            counterpart_object_type = role.counterpart.object_type
             verbalisation.should =~ %r{\b#{counterpart_object_type.basename}\b}
           end
       end
@@ -287,7 +287,7 @@ describe "An instance of every type of ObjectType" do
         entity.class.identifying_role_names.each do |ir|
             role = entity.class.roles(ir)
             role.should_not be_nil
-            counterpart_object_type = role.counterpart_object_type
+            counterpart_object_type = role.counterpart.object_type
             verbalisation.should =~ %r{\b#{counterpart_object_type.basename}\b}
           end
       end

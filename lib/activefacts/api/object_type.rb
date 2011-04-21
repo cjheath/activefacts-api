@@ -46,7 +46,7 @@ module ActiveFacts
       #
       # Example: maybe :is_ceo
       def maybe(role_name)
-        realise_role(roles[role_name] = Role.new(self, TrueClass, nil, role_name))
+        realise_role(roles[role_name] = Role.new(self, nil, role_name))
       end
 
       # Define a binary fact type relating this object_type to another,
@@ -182,17 +182,16 @@ module ActiveFacts
       # Shared code for both kinds of binary fact type (has_one and one_to_one)
       def define_binary_fact_type(one_to_one, role_name, related, mandatory, related_role_name)
         raise "#{name} cannot have more than one role named #{role_name}" if roles[role_name]
-        roles[role_name] = role = Role.new(self, related, nil, role_name, mandatory)
+        roles[role_name] = role = Role.new(self, nil, role_name, mandatory)
 
         # There may be a forward reference here where role_name is a Symbol,
         # and the block runs later when that Symbol is bound to the object_type.
         when_bound(related, self, role_name, related_role_name) do |target, definer, role_name, related_role_name|
           if (one_to_one)
-            target.roles[related_role_name] = role.counterpart = Role.new(target, definer, role, related_role_name, false)
+            target.roles[related_role_name] = role.counterpart = Role.new(target, role, related_role_name, false)
           else
-            target.roles[related_role_name] = role.counterpart = Role.new(target, definer, role, related_role_name, false, false)
+            target.roles[related_role_name] = role.counterpart = Role.new(target, role, related_role_name, false, false)
           end
-          role.counterpart_object_type = target
           realise_role(role)
           target.realise_role(role.counterpart)
         end
@@ -331,12 +330,11 @@ module ActiveFacts
       #   Role Name
       # else:
       #   Leading Adjective
-      #   Role counterpart_object_type name (not role name)
+      #   Role counterpart object_type name (not role name)
       #   Trailing Adjective
-      # "_as_<other_role_name>" if other_role_name != this role counterpart_object_type's name, and not other_player_this_player
+      # "_as_<other_role_name>" if other_role_name != this role's counterpart' object_type name, and not other_player_this_player
       def extract_binary_params(one_to_one, role_name, options)
         # Options:
-        #   other counterpart_object_type (Symbol or Class)
         #   mandatory (:mandatory)
         #   other end role name if any (Symbol),
         related = nil

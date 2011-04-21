@@ -169,14 +169,14 @@ module ActiveFacts
           role_args = irns.map{|role_sym| roles(role_sym)}.zip(args)
           role_args.map do |role, arg|
             next !!arg unless role.counterpart  # Unary
-            if arg.is_a?(role.counterpart_object_type)              # includes secondary supertypes
+            if arg.is_a?(role.counterpart.object_type)              # includes secondary supertypes
               # With a secondary supertype or a type having separate identification,
               # we would get the wrong identifier from arg.identifying_role_values:
               next role.counterpart_object_type.identifying_role_values(arg)
             end
             if arg == nil # But not false
               if role.mandatory
-                raise "You must provide a #{role.counterpart_object_type.name} to identify a #{basename}"
+                raise "You must provide a #{role.counterpart.object_type.name} to identify a #{basename}"
               end
             else
               role.counterpart_object_type.identifying_role_values(*arg)
@@ -217,13 +217,13 @@ module ActiveFacts
             key = []    # Gather the actual key (AutoCounters are special)
             values = roles_and_values.map do |role, arg|
                 if role.unary?
-                  # REVISIT: This could be absorbed into a special counterpart_object_type.assert_instance
+                  # REVISIT: This could be absorbed into a special counterpart.object_type.assert_instance
                   value = role_key = arg ? true : arg   # Preserve false and nil
                 elsif !arg
                   value = role_key = nil
                 else
-                  #trace :assert, "Asserting #{role.counterpart_object_type} with #{Array(arg).inspect} for #{self}.#{role.name}" do
-                    value, role_key = role.counterpart_object_type.assert_instance(constellation, Array(arg))
+                  #trace :assert, "Asserting #{role.counterpart.object_type} with #{Array(arg).inspect} for #{self}.#{role.name}" do
+                    value, role_key = role.counterpart.object_type.assert_instance(constellation, Array(arg))
                   #end
                 end
                 key << role_key

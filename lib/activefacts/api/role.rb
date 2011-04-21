@@ -16,16 +16,14 @@ module ActiveFacts
     class Role
       attr_accessor :object_type      # The ObjectType to which this role belongs
       attr_accessor :name             # The name of the role (a Symbol)
-      attr_accessor :counterpart_object_type  # A ObjectType Class (may be temporarily a Symbol before the class is defined)
       attr_accessor :counterpart      # All roles except unaries have a binary counterpart
       attr_accessor :unique           # Is this role played by at most one instance, or more?
       attr_accessor :mandatory        # In a valid fact population, is this role required to be played?
       attr_accessor :value_constraint  # Counterpart Instances playing this role must meet this constraint
       attr_reader :is_identifying     # Is this an identifying role for object_type?
 
-      def initialize(object_type, counterpart_object_type, counterpart, name, mandatory = false, unique = true)
+      def initialize(object_type, counterpart, name, mandatory = false, unique = true)
         @object_type = object_type
-        @counterpart_object_type = counterpart_object_type
         @counterpart = counterpart
         @name = name
         @mandatory = mandatory
@@ -48,6 +46,11 @@ module ActiveFacts
         @variable ||= "@#{@name}"
       end
 
+      def counterpart_object_type
+        # This method is sometimes used when unaries are used in an entity's identifier.
+        counterpart == nil ? TrueClass : counterpart.object_type
+      end
+
       # Is this role a unary (created by maybe)? If so, it has no counterpart
       def unary?
         # N.B. A role with a forward reference looks unary until it is resolved.
@@ -61,7 +64,7 @@ module ActiveFacts
       def adapt(constellation, value) #:nodoc:
         # If the value is a compatible class, use it (if in another constellation, clone it),
         # else create a compatible object using the value as constructor parameters.
-        if value.is_a?(@counterpart_object_type)  # REVISIT: may be a non-primary subtype of counterpart_object_type
+        if value.is_a?(counterpart.object_type)
           # Check that the value is in a compatible constellation, clone if not:
           if constellation && (vc = value.constellation) && vc != constellation
             # Cross-constellation assignment!
@@ -71,12 +74,12 @@ module ActiveFacts
           value.constellation = constellation if constellation
         else
           value = [value] unless Array === value
-          raise "No parameters were provided to identify an #{@counterpart_object_type.basename} instance" if value == []
+          raise "No parameters were provided to identify an #{counterpart.object_type.basename} instance" if value == []
           if constellation
-            value = constellation.send(@counterpart_object_type.basename.to_sym, *value)
+            value = constellation.send(counterpart.object_type.basename.to_sym, *value)
           else
-            #trace :assert, "Constructing new #{@counterpart_object_type} with #{value.inspect}" do
-              value = @counterpart_object_type.new(*value)
+            #trace :assert, "Constructing new #{counterpart.object_type} with #{value.inspect}" do
+              value = counterpart.object_type.new(*value)
             #end
           end
         end

@@ -44,7 +44,7 @@ describe "Roles" do
     role = Mod::Existing1.roles(:name)
     role.should_not be_nil
     role.inspect.class.should == String
-    role.counterpart_object_type.should == Mod::Name
+    role.counterpart.object_type.should == Mod::Name
   end
 
   it "should provide value type metadata" do
@@ -73,7 +73,7 @@ describe "Roles" do
     # print "Mod::Existing2.roles = "; p Mod::Existing2.roles
     r = Mod::Existing2.roles(:given_name)
     r.should_not be_nil
-    Symbol.should === r.counterpart_object_type
+    r.counterpart.should be_nil
     module Mod
       class GivenName < String
         value_type
@@ -82,7 +82,7 @@ describe "Roles" do
     # puts "Should resolve now:"
     r = Mod::Existing2.roles(:given_name)
     r.should_not be_nil
-    r.counterpart_object_type.should == Mod::GivenName
+    r.counterpart.object_type.should == Mod::GivenName
   end
 
   it "should handle subtyping a value type" do
@@ -94,8 +94,8 @@ describe "Roles" do
     end
     r = Mod::FamilyName.roles(:patriarch)
     r.should_not be_nil
-    r.counterpart_object_type.should == Mod::Person
-    r.counterpart_object_type.roles(:family_name_as_patriarch).counterpart_object_type.should == Mod::FamilyName
+    r.counterpart.object_type.should == Mod::Person
+    r.counterpart.object_type.roles(:family_name_as_patriarch).counterpart.object_type.should == Mod::FamilyName
   end
 
   it "should instantiate the matching object_type on assignment" do
