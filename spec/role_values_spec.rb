@@ -81,11 +81,11 @@ describe "Roles of an Object Type" do
 
     # Quick check of role metadata:
     roles.each do |role_name, role|
-      role.owner.modspace.should == TestValueTypesModule
+      role.object_type.modspace.should == TestValueTypesModule
       if !role.counterpart
         role.should be_unary
       else
-        role.counterpart.owner.modspace.should == TestValueTypesModule
+        role.counterpart.object_type.modspace.should == TestValueTypesModule
       end
     end
   end
@@ -163,8 +163,8 @@ describe "Object type role values" do
             counterpart_object_type = identifying_role.counterpart_object_type
             role_superclasses = [ counterpart_object_type.superclass, counterpart_object_type.superclass.superclass ]
             # Autocounter values do not compare to Integers:
-            unless role_superclasses.include?(AutoCounter) or identifying_role.owner.basename =~ /Entity/
-              identifying_value.should == identifying_role.owner.new(*values[0])
+            unless role_superclasses.include?(AutoCounter) or identifying_role.object_type.basename =~ /Entity/
+              identifying_value.should == identifying_role.object_type.new(*values[0])
             end
           end
         end
@@ -255,7 +255,7 @@ describe "Object type role values" do
         end
       else
         it "should allow its #{role_name} role to be assigned and reassigned a base value" do
-          object_type = role.counterpart.owner
+          object_type = role.counterpart.object_type
           required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type]
           values = VALUES_FOR_TYPE[required_value_type]
           next unless values
@@ -314,7 +314,7 @@ describe "Object type role values" do
         end
 
         it "should allow its #{role_name} role to be assigned and reassigned a base value" do
-          object_type = role.counterpart.owner
+          object_type = role.counterpart.object_type
           required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type]
           values = VALUES_FOR_TYPE[required_value_type]
           next unless values
@@ -327,7 +327,7 @@ describe "Object type role values" do
         end
 
         it "should allow its #{role_name} role to be assigned a value instance" do
-          object_type = role.counterpart.owner
+          object_type = role.counterpart.object_type
           required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type]
           values = VALUES_FOR_TYPE[required_value_type]
           next unless values
@@ -344,7 +344,7 @@ describe "Object type role values" do
         end
 
         it "should allow its #{role_name} role to be assigned a value subtype instance, retaining the subtype" do
-          object_type = role.counterpart.owner
+          object_type = role.counterpart.object_type
           required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type] # The raw value type
           values = VALUES_FOR_TYPE[required_value_type]
           object_type = VALUE_SUB_FOR_VALUE[object_type]  # The value type subtype
@@ -352,7 +352,7 @@ describe "Object type role values" do
           value = @constellation.send(object_type.basename, *object_identifying_parameters(object_type.basename, values[0]))
           assigned = @object.send(:"#{role_name}=", value)
           # This requires the declared type, not the subtype:
-          # assigned.class.should == role.counterpart.owner
+          # assigned.class.should == role.counterpart.object_type
           # This requires the subtype, as the test implies:
           assigned.class.should == object_type
           fetched = @object.send(role_name)
@@ -362,10 +362,10 @@ describe "Object type role values" do
 
       unless !role.counterpart or         # A unary
           role.counterpart.unique or      # A one-to-one
-          VALUES_FOR_TYPE[VALUE_TYPE_FOR_OBJECT_TYPE[role.counterpart.owner]] == nil
-        describe "Operations on #{role.counterpart.owner.basename} RoleValues collections" do
+          VALUES_FOR_TYPE[VALUE_TYPE_FOR_OBJECT_TYPE[role.counterpart.object_type]] == nil
+        describe "Operations on #{role.counterpart.object_type.basename} RoleValues collections" do
           before :each do
-            object_type = role.counterpart.owner
+            object_type = role.counterpart.object_type
             required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type]
             values = VALUES_FOR_TYPE[required_value_type]
             return unless values

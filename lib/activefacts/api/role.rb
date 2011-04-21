@@ -14,23 +14,38 @@ module ActiveFacts
     # or _one_to_one_, and the other is created on the counterpart class. Each ObjectType class maintains
     # an array of the roles it plays.
     class Role
-      attr_accessor :owner            # The ObjectType to which this role belongs
+      attr_accessor :object_type      # The ObjectType to which this role belongs
       attr_accessor :name             # The name of the role (a Symbol)
       attr_accessor :counterpart_object_type  # A ObjectType Class (may be temporarily a Symbol before the class is defined)
       attr_accessor :counterpart      # All roles except unaries have a binary counterpart
       attr_accessor :unique           # Is this role played by at most one instance, or more?
       attr_accessor :mandatory        # In a valid fact population, is this role required to be played?
       attr_accessor :value_constraint  # Counterpart Instances playing this role must meet this constraint
-      attr_reader :is_identifying     # Is this an identifying role for owner?
+      attr_reader :is_identifying     # Is this an identifying role for object_type?
 
-      def initialize(owner, counterpart_object_type, counterpart, name, mandatory = false, unique = true)
-        @owner = owner
+      def initialize(object_type, counterpart_object_type, counterpart, name, mandatory = false, unique = true)
+        @object_type = object_type
         @counterpart_object_type = counterpart_object_type
         @counterpart = counterpart
         @name = name
         @mandatory = mandatory
         @unique = unique
-        @is_identifying = @owner.is_entity_type && @owner.identifying_role_names.include?(@name)
+        @is_identifying = @object_type.is_entity_type && @object_type.identifying_role_names.include?(@name)
+      end
+
+      # Return the name of the getter method
+      def getter
+        @getter ||= @name.to_sym
+      end
+
+      # Return the name of the setter method
+      def setter
+        @setter ||= :"#{@name}="
+      end
+
+      # Return the name of the instance variable
+      def variable
+        @variable ||= "@#{@name}"
       end
 
       # Is this role a unary (created by maybe)? If so, it has no counterpart
@@ -40,7 +55,7 @@ module ActiveFacts
       end
 
       def inspect
-        "<Role #{owner.name}.#{name}>"
+        "<Role #{object_type.name}.#{name}>"
       end
 
       def adapt(constellation, value) #:nodoc:

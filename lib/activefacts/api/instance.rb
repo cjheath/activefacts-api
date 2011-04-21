@@ -41,14 +41,14 @@ module ActiveFacts
             next if role.unary?
             counterpart = role.counterpart
             if role.unique
-              # puts "Nullifying mandatory role #{role.name} of #{role.owner.name}" if counterpart.mandatory
+              # puts "Nullifying mandatory role #{role.name} of #{role.object_type.name}" if counterpart.mandatory
 
-              send "#{role.name}=", nil
+              send role.setter, nil
             else
               # puts "Not removing role #{role_name} from counterpart RoleValues #{counterpart.name}"
               # Duplicate the array using to_a, as the RoleValues here will be modified as we traverse it:
               send(role.name).to_a.each do |v|
-                v.send("#{counterpart.name}=", nil)
+                v.send(counterpart.setter, nil)
               end
             end
           end

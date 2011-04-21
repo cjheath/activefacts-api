@@ -17,25 +17,25 @@ module ActiveFacts
       end
 
       # Each ObjectType maintains a list of the Roles it plays:
-      def roles(name = nil)
+      def roles(role_name = nil)
         unless instance_variable_defined? "@roles"
           @roles = RoleCollection.new     # Initialize and extend without warnings.
         end
-        case name
+        case role_name
         when nil
           @roles
         when Symbol, String
           # Search this class then all supertypes:
-          unless role = @roles[name.to_sym]
+          unless role = @roles[role_name.to_sym]
             role = nil
             supertypes.each do |supertype|
-                r = supertype.roles(name) rescue nil
+                r = supertype.roles(role_name) rescue nil
                 next unless r
                 role = r
                 break
               end
           end
-          raise "Role #{basename}.#{name} is not defined" unless role
+          raise "Role #{basename}.#{role_name} is not defined" unless role
           role
         else
           nil
@@ -200,13 +200,13 @@ module ActiveFacts
 
       def define_unary_role_accessor(role)
         class_eval do
-          define_method "#{role.name}=" do |value|
+          define_method role.setter do |value|
             assigned = case value
               when nil; nil
               when false; false
               else true
               end
-            instance_variable_set("@#{role.name}", assigned)
+            instance_variable_set(role.variable, assigned)
             # REVISIT: Provide a way to find all instances playing/not playing this role
             # Analogous to true.all_thing_as_role_name...
             assigned
@@ -217,9 +217,9 @@ module ActiveFacts
 
       def define_single_role_getter(role)
         class_eval do
-          define_method role.name do |*a|
+          define_method role.getter do |*a|
             raise "Parameters passed to #{self.class.name}\##{role.name}" if a.size > 0
-            instance_variable_get("@#{role.name}") rescue nil
+            instance_variable_get(role.variable) rescue nil
           end
         end
       end
@@ -228,8 +228,8 @@ module ActiveFacts
         define_single_role_getter(role)
 
         class_eval do
-          define_method "#{role.name}=" do |value|
-            role_var = "@#{role.name}"
+          define_method role.setter do |value|
+            role_var = role.variable
 
             # Get old value, and jump out early if it's unchanged:
             old = instance_variable_get(role_var) rescue nil
@@ -247,10 +247,10 @@ module ActiveFacts
             instance_variable_set(role_var, value)
 
             # Remove self from the old counterpart:
-            old.send("#{role.counterpart.name}=".to_sym, nil) if old
+            old.send(role.counterpart.setter, nil) if old
 
             # Assign self to the new counterpart
-            value.send("#{role.counterpart.name}=".to_sym, self) if value
+            value.send(role.counterpart.setter, self) if value
 
             value
           end
@@ -261,8 +261,8 @@ module ActiveFacts
         define_single_role_getter(role)
 
         class_eval do
-          define_method "#{role.name}=" do |value|
-            role_var = "@#{role.name}"
+          define_method role.setter do |value|
+            role_var = role.variable
 
             # Get old value, and jump out early if it's unchanged:
             old = instance_variable_get(role_var) rescue nil
@@ -285,10 +285,10 @@ module ActiveFacts
             instance_variable_set(role_var, value)
 
             # Remove "self" from the old counterpart:
-            old.send(role.counterpart.name).update(self, nil) if old
+            old.send(getter = role.counterpart.getter).update(self, nil) if old
 
             # Add "self" into the counterpart
-            value.send(role.counterpart.name).update(old, self) if value
+            value.send(getter ||= role.counterpart.getter).update(old, self) if value
 
             value
           end
@@ -297,8 +297,8 @@ module ActiveFacts
 
       def define_many_to_one_accessor(role)
         class_eval do
-          define_method "#{role.name}" do
-            unless (r = instance_variable_get(role_var = "@#{role.name}") rescue nil)
+          define_method role.getter do
+            unless (r = instance_variable_get(role_var = role.variable) rescue nil)
               r = instance_variable_set(role_var, RoleValues.new)
             end
             r
@@ -344,8 +344,7 @@ module ActiveFacts
         related_role_name = nil
         role_player = self.basename.snakecase
 
-        role_name = a.name.snakecase.to_sym if Class === role_name
-        role_name = role_name.to_sym
+        role_name = (Class === role_name ? a.name.snakecase : role_name).to_sym
 
         # The related class might be forward-referenced, so handle a Symbol/String instead of a Class.
         related_name = options.delete(:class)

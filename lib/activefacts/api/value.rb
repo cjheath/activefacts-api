@@ -21,7 +21,7 @@ module ActiveFacts
 
         (hash ? hash.entries : []).each do |role_name, value|
           role = self.class.roles(role_name)
-          send("#{role_name}=", value)
+          send(role.setter, value)
         end
       end
 

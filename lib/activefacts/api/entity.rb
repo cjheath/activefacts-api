@@ -66,15 +66,15 @@ module ActiveFacts
         # Assign the identifying roles in order. Any other roles will be assigned by our caller
         klass.identifying_role_names.zip(args).each do |role_name, value|
           role = self.class.roles(role_name)
-          send("#{role_name}=", value)
+          send(role.setter, value)
         end
       end
 
       def inspect #:nodoc:
         inc = constellation ? " in #{constellation.inspect}" : ""
         # REVISIT: Where there are one-to-one roles, this cycles
-        irnv = self.class.identifying_role_names.map do |role|
-          "@#{role}="+send(role).inspect
+        irnv = self.class.identifying_role_names.map do |role_name|
+          "@#{role_name}="+send(role_name).inspect
         end
         "\#<#{self.class.basename}:#{object_id}#{inc} #{ irnv*' ' }>"
       end
@@ -82,8 +82,8 @@ module ActiveFacts
       # When used as a hash key, the hash key of this entity instance is calculated
       # by hashing the values of its identifying roles
       def hash
-        self.class.identifying_role_names.map{|role|
-            instance_variable_get("@#{role}")
+        self.class.identifying_role_names.map{|role_name|
+            instance_variable_get("@#{role_name}")
           }.inject(0) { |h,v|
             h ^= v.hash
             h
@@ -94,8 +94,8 @@ module ActiveFacts
       # comparing the values of its identifying roles
       def eql?(other)
         return false unless self.class == other.class
-        self.class.identifying_role_names.each{|role|
-            return false unless send(role).eql?(other.send(role))
+        self.class.identifying_role_names.each{|role_name|
+            return false unless send(role_name).eql?(other.send(role_name))
           }
         return true
       end
@@ -112,8 +112,8 @@ module ActiveFacts
 
       # Return the array of the values of this entity instance's identifying roles
       def identifying_role_values
-        self.class.identifying_role_names.map do |role|
-          send(role).identifying_role_values
+        self.class.identifying_role_names.map do |role_name|
+          send(role_name).identifying_role_values
         end
       end
 
@@ -136,8 +136,8 @@ module ActiveFacts
         def identifying_roles
           # REVISIT: Should this return nil if identification_inherited_from?
           @identifying_roles ||=
-            identifying_role_names.map do |name|
-              role = roles[name] || (!superclass.is_entity_type || superclass.roles[name])
+            identifying_role_names.map do |role_name|
+              role = roles[role_name] || (!superclass.is_entity_type || superclass.roles[role_name])
               role
             end
         end
@@ -242,7 +242,7 @@ module ActiveFacts
           # Now assign any extra args in the hash which weren't identifiers (extra identifiers will be assigned again)
           (arg_hash ? arg_hash.entries : []).each do |role_name, value|
             role = roles(role_name)
-            instance.send("#{role_name}=", value)
+            instance.send(role.setter, value)
           end
 
           return *index_instance(instance, key, irns)
