@@ -23,6 +23,7 @@ over the fact population.
   gem.add_development_dependency "bundler", "~> 1.0.0"
   gem.add_development_dependency "jeweler", "~> 1.5.2"
   # gem.add_development_dependency "rcov", ">= 0"
+  gem.add_development_dependency "rdoc", ">= 2.4.2"
 end
 Jeweler::RubygemsDotOrgTasks.new
 
@@ -40,7 +41,7 @@ end
 
 task :default => :spec
 
-require 'rake/rdoctask'
+require 'rdoc/task'
 Rake::RDocTask.new do |rdoc|
   version = File.exist?('VERSION') ? File.read('VERSION') : ""
 

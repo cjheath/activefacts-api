@@ -187,7 +187,7 @@ module ActiveFacts
         # REVISIT: This method should verify that all identifying roles (including
         # those required to identify any superclass) are present (if mandatory)
         # and are unique... BEFORE it creates any new object(s)
-        # This is a hard problem because its recursive.
+        # This is a hard problem because it's recursive.
         def assert_instance(constellation, args) #:nodoc:
           # Build the key for this instance from the args
           # The key of an instance is the value or array of keys of the identifying values.

@@ -181,6 +181,7 @@ module ActiveFacts
 
       # Shared code for both kinds of binary fact type (has_one and one_to_one)
       def define_binary_fact_type(one_to_one, role_name, related, mandatory, related_role_name)
+        # REVISIT: What if the role exists on a supertype? This won't prevent that:
         raise "#{name} cannot have more than one role named #{role_name}" if roles[role_name]
         roles[role_name] = role = Role.new(self, nil, role_name, mandatory)
 
