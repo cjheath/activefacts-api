@@ -59,6 +59,9 @@ describe "Roles" do
         has_one :name
       end
     end
+    # REVISIT: need to make more tests for the class's role accessor methods:
+    Mod::Name.roles(:all_existing1).should == Mod::Name.all_existing1_role
+
     Mod::Name.roles(:all_existing1).should_not be_nil
     Mod::LegalEntity.roles(:all_contract_as_first).should_not be_nil
   end
