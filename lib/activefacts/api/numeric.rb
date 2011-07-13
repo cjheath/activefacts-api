@@ -21,6 +21,10 @@ class Int < SimpleDelegator
     __getobj__.to_s
   end
 
+  def to_json c = {}                    #:nodoc
+    __getobj__.to_json
+  end
+
   def hash                              #:nodoc:
     __getobj__.hash
   end
@@ -58,6 +62,10 @@ class Real < SimpleDelegator
 
   def to_s                              #:nodoc:
     __getobj__.to_s
+  end
+
+  def to_json c = {}                    #:nodoc
+    __getobj__.to_json
   end
 
   def eql?(o)                           #:nodoc:
@@ -122,7 +130,13 @@ end
 class AutoCounter
   def initialize(i = :new)
     raise "AutoCounter #{self.class} may not be #{i.inspect}" unless i == :new or i.is_a?(Integer) or i.is_a?(AutoCounter)
-    @value = i == :new ? nil : i.to_i
+    @@placeholder ||= 0
+    if i == :new
+      @value = nil
+      @initially = (@@placeholder+=1)
+    else
+      @initially = @value = i.to_i;
+    end
   end
 
   # Assign a definite value to an AutoCounter; this may only be done once
@@ -140,7 +154,7 @@ class AutoCounter
     if self.defined?
       @value.to_s 
     else
-      "new_#{object_id}"
+      "new_#{@initially}"
     end
   end
 
