@@ -24,6 +24,7 @@ Gem::Specification.new do |s|
     "README.rdoc",
     "Rakefile",
     "VERSION",
+    "activefacts-api.gemspec",
     "lib/activefacts/api.rb",
     "lib/activefacts/api/constellation.rb",
     "lib/activefacts/api/entity.rb",
