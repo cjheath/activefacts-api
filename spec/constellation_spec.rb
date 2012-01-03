@@ -264,16 +264,12 @@ describe "A Constellation instance" do
   it "should handle one-to-ones correctly" do
     person = @constellation.Person "Fred", "Smith", :auto_counter_value => :new, :birth_name => "Nerk"
 
-    pending "Extra parameters on an assert get processed in Role#adapt before @constellation gets set" do
-      #person.birth_name = "Nerk"
-
-      nerk = @constellation.Name["Nerk"]
-      nerk.should_not be_nil
-      nerk.person_as_birth_name.should == person
-      person.birth_name = nil
-      nerk.person_as_birth_name.should be_nil
-      @constellation.Name["Nerk"].should_not be_nil
-    end
+    nerk = @constellation.Name["Nerk"]
+    nerk.should_not be_nil
+    nerk.person_as_birth_name.should == person
+    person.birth_name = nil
+    nerk.person_as_birth_name.should be_nil
+    @constellation.Name["Nerk"].should_not be_nil
   end
 
   it "should allow retraction of instances" do
