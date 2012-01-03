@@ -5,6 +5,14 @@
 # Copyright (c) 2009 Clifford Heath. Read the LICENSE file.
 #
 
+# Define Infinity as a constant, if it's not already defined:
+# We use this to define open-ended ranges.
+begin
+  Object.const_get("Infinity")
+rescue
+  Infinity = 1.0/0.0
+end
+
 class Symbol #:nodoc:
   def to_proc
     Proc.new{|*args| args.shift.__send__(self, *args)}
