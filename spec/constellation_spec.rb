@@ -60,18 +60,18 @@ describe "A Constellation instance" do
 
   describe "Vocabulary" do
     it "should create the constellation" do
-      Mod.constellation.should be_is_a ActiveFacts::API::Constellation
+      Mod.constellation.should be_an_instance_of ActiveFacts::API::Constellation
     end
 
     it "should create the constellation by direct populate" do
       Mod.populate do
         Name "foo"
-      end.should be_is_a ActiveFacts::API::Constellation
+      end.should be_an_instance_of ActiveFacts::API::Constellation
     end
 
     it "should verbalise" do
       s = Mod.verbalise
-      s.should be_is_a String
+      s.should be_an_instance_of String
     end
   end
 
@@ -254,11 +254,11 @@ describe "A Constellation instance" do
     @constellation.Person.keys.sort.should == [[fred, fly]]
     @constellation.Company.keys.sort.should == [[name]]
 
-    @constellation.LegalEntity.keys.sort.should be_include([name])
-    @constellation.LegalEntity.keys.sort.should be_include([fred])
+    @constellation.LegalEntity.keys.sort.should include [name]
+    @constellation.LegalEntity.keys.sort.should include [fred]
 
-    @constellation.SurrogateId.values.should be_include(acme)
-    @constellation.SurrogateId.values.should be_include(fred_fly)
+    @constellation.SurrogateId.values.should include acme
+    @constellation.SurrogateId.values.should include fred_fly
   end
 
   it "should handle one-to-ones correctly" do
