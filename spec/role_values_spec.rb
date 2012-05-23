@@ -275,7 +275,7 @@ describe "Object type role values" do
             reflection = assigned.send(role.counterpart.name)
             reflection.should_not be_empty
             reflection.size.should == 1
-            reflection.should be_include(@object)
+            reflection.should include @object
           end
 
           # Update the role to the second value:
@@ -299,7 +299,7 @@ describe "Object type role values" do
             # The counterpart should include us in its RoleValues
             reflection2 = assigned2.send(role.counterpart.name)
             reflection2.size.should == 1
-            reflection2.should be_include(@object)
+            reflection2.should include @object
           end
 
           # Nullify the role

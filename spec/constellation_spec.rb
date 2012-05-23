@@ -254,11 +254,11 @@ describe "A Constellation instance" do
     @constellation.Person.keys.sort.should == [[fred, fly]]
     @constellation.Company.keys.sort.should == [[name]]
 
-    @constellation.LegalEntity.keys.sort.should be_include([name])
-    @constellation.LegalEntity.keys.sort.should be_include([fred])
+    @constellation.LegalEntity.keys.sort.should include [name]
+    @constellation.LegalEntity.keys.sort.should include [fred]
 
-    @constellation.SurrogateId.values.should be_include(acme)
-    @constellation.SurrogateId.values.should be_include(fred_fly)
+    @constellation.SurrogateId.values.should include acme
+    @constellation.SurrogateId.values.should include fred_fly
   end
 
   it "should handle one-to-ones correctly" do
