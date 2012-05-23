@@ -60,18 +60,18 @@ describe "A Constellation instance" do
 
   describe "Vocabulary" do
     it "should create the constellation" do
-      Mod.constellation.should be_is_a ActiveFacts::API::Constellation
+      Mod.constellation.should be_an_instance_of ActiveFacts::API::Constellation
     end
 
     it "should create the constellation by direct populate" do
       Mod.populate do
         Name "foo"
-      end.should be_is_a ActiveFacts::API::Constellation
+      end.should be_an_instance_of ActiveFacts::API::Constellation
     end
 
     it "should verbalise" do
       s = Mod.verbalise
-      s.should be_is_a String
+      s.should be_an_instance_of String
     end
   end
 

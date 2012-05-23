@@ -127,7 +127,7 @@ describe "Roles" do
     bloggs = c.LegalEntity("Bloggs & Co")
     p = c.Person("Fred", "Bloggs")
     p.related_to = "Bloggs & Co"
-    p.related_to.should be_is_a(Mod::LegalEntity)
+    p.related_to.should be_an_instance_of Mod::LegalEntity
     p.related_to.should == bloggs
 
     # REVISIT: The raw instance doesn't override == to compare itself to a RoleProxy unfortunately...
