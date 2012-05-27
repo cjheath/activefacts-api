@@ -2,8 +2,8 @@ source 'https://rubygems.org'
 
 group :development do
   gem 'jeweler'
-  gem 'rspec'
   gem 'rake'
+  gem 'rspec', '~>2.6.0'
 end
 
 group :test do

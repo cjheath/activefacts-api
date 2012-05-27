@@ -50,6 +50,10 @@ RSpec::Core::RakeTask.new(:coverage) do |spec|
   end
 end
 
+task :cov => :coverage
+task :rcov => :coverage
+task :simplecov => :coverage
+
 Rake::RDocTask.new do |rdoc|
   version = File.exist?('VERSION') ? File.read('VERSION') : ""
 
