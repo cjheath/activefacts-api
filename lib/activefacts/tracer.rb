@@ -107,3 +107,5 @@ class Object
     (ActiveFacts.tracer ||= ActiveFacts::Tracer.new).trace(*args, &block)
   end
 end
+
+trace ''
