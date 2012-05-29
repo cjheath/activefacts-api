@@ -29,19 +29,31 @@ Jeweler::RubygemsDotOrgTasks.new
 
 require 'rspec/core'
 require 'rspec/core/rake_task'
-RSpec::Core::RakeTask.new(:spec) do |spec|
-  spec.pattern = FileList['spec/**/*_spec.rb']
-end
-
-RSpec::Core::RakeTask.new(:rcov) do |spec|
-  spec.pattern = 'spec/**/*_spec.rb'
-  spec.rcov_opts = [ '--exclude', 'spec', '--exclude', 'lib/activefacts/tracer.rb' ]
-  spec.rcov = true
-end
+require 'rdoc/task'
 
 task :default => :spec
 
-require 'rdoc/task'
+desc "Run Rspec tests"
+RSpec::Core::RakeTask.new(:spec)
+
+desc "Run RSpec tests and produce coverage files (results viewable in coverage/index.html)"
+RSpec::Core::RakeTask.new(:coverage) do |spec|
+  if RUBY_VERSION < '1.9'
+    spec.rcov_opts = [
+        '--exclude', 'spec',
+        '--exclude', 'lib/activefacts/tracer.rb',
+        '--exclude', 'gem/*'
+      ]
+    spec.rcov = true
+  else
+    spec.rspec_opts = ['--require', 'simplecov_helper']
+  end
+end
+
+task :cov => :coverage
+task :rcov => :coverage
+task :simplecov => :coverage
+
 Rake::RDocTask.new do |rdoc|
   version = File.exist?('VERSION') ? File.read('VERSION') : ""
 
