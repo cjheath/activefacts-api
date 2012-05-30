@@ -10,7 +10,11 @@ describe "Roles" do
     Object.send :remove_const, :Mod if Object.const_defined?("Mod")
     module Mod
       class Name < String
-        value_type :length => 40, :scale => 0, :restrict => /^[A-Z][a-z]*/
+        value_type :length => 40, :scale => 0, :restrict => /^[A-Z][a-z0-9]*/
+      end
+      class Identifier
+        identified_by :name
+        has_one :name
       end
       class LegalEntity
         identified_by :name
@@ -29,6 +33,11 @@ describe "Roles" do
         alias :given :name
         alias :given= :name=
         has_one :related_to, :class => LegalEntity
+      end
+      class Employee
+        identified_by :name
+        one_to_one :identifier
+        has_one :name
       end
     end
     # print "object_type: "; p Mod.object_type
@@ -136,28 +145,55 @@ describe "Roles" do
   end
 
   it "should forward missing methods on the role proxies" do
-    c = ActiveFacts::API::Constellation.new(Mod)
-    p = c.Person("Fred", "Bloggs")
-
-    # Make sure that RoleProxy's method_missing delegates, then forwards the send
-    lambda {
-      p.family.foo
-    }.should raise_error(NoMethodError)
+   c = ActiveFacts::API::Constellation.new(Mod)
+   p = c.Person("Fred", "Bloggs")
+   lambda {p.family.foo}.should raise_error(NoMethodError)
   end
 
   it "should forward re-raise exceptions from missing methods on the role proxies" do
     c = ActiveFacts::API::Constellation.new(Mod)
     p = c.Person("Fred", "Bloggs")
+    class String
+      def foo
+        raise "Yawning"
+      end
+    end
 
-    # x = p.family.__getobj__
-    #def x.barf
-    #  raise "Yawning..."
-    #end
-    lambda {
-      p.family.barf
-    #}.should raise_error(RuntimeError)
-    }.should raise_error(NoMethodError)
-
+    lambda {p.family.foo}.should raise_error(RuntimeError)
   end
 
+  it "should keep a trace of the overwritten class when changing identification" do
+    pending
+    c = ActiveFacts::API::Constellation.new(Mod)
+    e = c.Employee(:identifier => "Project2501")
+    e.overrides_identification_of.is_a?(Mod::LegalEntity).should be_true
+  end
+
+  it "should be able to import an entity from another constellation" do
+    c1 = ActiveFacts::API::Constellation.new(Mod)
+    c2 = ActiveFacts::API::Constellation.new(Mod)
+
+    e = c1.Employee("PuppetMaster")
+    identifier = c2.Identifier("Project2501", :employee => e)
+    identifier.employee.name.should == "PuppetMaster"
+  end
+
+  it "should be able to import an entity from another constellation which subclass another entity" do
+    pending "fails because identify_role_values get only the current class identifying roles" do
+      # in this example, it returns :identifier, but not :name from LegalEntity
+      module Mod
+        class Person2 < LegalEntity
+          identified_by :identifier
+          one_to_one :identifier
+        end
+      end
+
+      c1 = ActiveFacts::API::Constellation.new(Mod)
+      c2 = ActiveFacts::API::Constellation.new(Mod)
+
+      p = c1.Person2("Person2Name", :identifier => "Project2501")
+      identifier = c2.Identifier("Project2501", :person2 => p)
+      identifier.person2.name.should == "Person2Name"
+    end
+  end
 end

@@ -112,4 +112,9 @@ describe "Value Type class definitions" do
       end
     }.should raise_error
   end
+
+  it "should allow configuration of Role value through constructor using role name" do
+    w = Mod::Weight.new(9.0, :name => "pounds")
+    w.name.should == "pounds"
+  end
 end
