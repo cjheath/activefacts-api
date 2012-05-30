@@ -23,7 +23,7 @@ describe "Value Type class definitions" do
       end
     end
 
-    @classes = [Mod::Name, Mod::Year,Mod::Weight]
+    @classes = [Mod::Name, Mod::Year, Mod::Weight]
     @attrs = [:name, :name, :name]
 
   end

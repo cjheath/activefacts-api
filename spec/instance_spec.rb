@@ -387,5 +387,4 @@ describe "An instance of every type of ObjectType" do
     f.is_ok.should == false
     s.is_ok.should == true
   end
-
 end
