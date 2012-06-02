@@ -17,6 +17,10 @@ class Int < SimpleDelegator
     __setobj__(Integer(i))
   end
 
+  def ==(o)                             #:nodoc:
+    __getobj__.==(o)
+  end
+
   def to_s                              #:nodoc:
     __getobj__.to_s
   end
@@ -54,6 +58,10 @@ class Real < SimpleDelegator
 
   def hash                              #:nodoc:
     __getobj__.hash
+  end
+
+  def ==(o)                             #:nodoc:
+    __getobj__.==(o)
   end
 
   def to_s                              #:nodoc:
