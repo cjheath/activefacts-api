@@ -15,6 +15,7 @@ describe Int do
   end
 
   it "should behave like an Integer" do
+    1.should == @i
     @i.should == 1
     @i.to_s.should == "1"
     @i.eql?(1).should be_true
@@ -37,6 +38,7 @@ describe Real do
   end
 
   it "should behave like a Float" do
+    1.0.should == @r
     @r.should == 1.0
     @r.to_s.should == "1.0"
     @r.eql?(1.0).should be_true
