@@ -381,6 +381,66 @@ describe "A Constellation instance" do
     }.should_not raise_error(NameError)
   end
 
+  it "should be able to attach a new supertype on an entity type to make it a (sub-)subtype" do
+    module Mod
+      class Dad
+        identified_by :name
+      end
+      class Son < Dad
+        identified_by :name
+      end
+      # the grand son will be linked on the fly
+      class GrandSon
+        identified_by :name
+      end
+    end
+    Mod::GrandSon.supertypes(Mod::Son)
+    Mod::GrandSon.supertypes.should include Mod::Son
+    Mod::Son.supertypes.should include Mod::Dad
+  end
+
+  it "should keep information on where the identification came from" do
+    module Mod
+      class Dad
+        identified_by :name
+      end
+      class Son < Dad
+        identified_by :name
+      end
+      # Note the inheritance.
+      class GrandSon < Son
+        identified_by :name
+      end
+    end
+
+    Mod::Son.identification_inherited_from.should == Mod::Dad
+    Mod::Son.identification_inherited_from.should == Mod::Dad
+    Mod::GrandSon.identification_inherited_from.should == Mod::Son
+    Mod::GrandSon.overrides_identification_of.should == Mod::Dad
+  end
+
+  it "should disallow using a value type as a supertypes for an entity type" do
+    lambda {
+      module Mod
+        class CompanyName
+          identified_by :name
+          supertypes :name
+        end
+      end
+    }.should raise_error
+  end
+
+  it "should complain when role name and counter part mismatch" do
+    lambda {
+      module Mod
+        class CompanyName
+          identified_by :name
+          has_one :company, :class => :person
+        end
+      end
+    }.should raise_error(Exception, /indicates a different counterpart object_type/)
+  end
+
   it "should error on invalid :class values" do
     lambda {
       module Mod
@@ -426,5 +486,4 @@ describe "A Constellation instance" do
       p.employer = [c, {:auto_counter_value => :new}]
     }.should_not raise_error
   end
-
 end

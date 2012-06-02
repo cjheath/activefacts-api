@@ -23,7 +23,7 @@ describe "Value Type class definitions" do
       end
     end
 
-    @classes = [Mod::Name, Mod::Year,Mod::Weight]
+    @classes = [Mod::Name, Mod::Year, Mod::Weight]
     @attrs = [:name, :name, :name]
 
   end
@@ -111,5 +111,10 @@ describe "Value Type class definitions" do
         value_type
       end
     }.should raise_error
+  end
+
+  it "should allow configuration of Role value through constructor using role name" do
+    w = Mod::Weight.new(9.0, :name => "pounds")
+    w.name.should == "pounds"
   end
 end
