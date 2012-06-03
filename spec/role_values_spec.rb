@@ -57,7 +57,7 @@ module TestValueTypesModule
       OBJECT_TYPES.concat(classes)
       classes.each { |klass| VALUE_TYPE_FOR_OBJECT_TYPE[klass] = value_type }
     END
-    eval code
+    TestValueTypesModule.module_eval code
   end
   OBJECT_TYPE_NAMES = OBJECT_TYPES.map{|object_type| object_type.basename}
 

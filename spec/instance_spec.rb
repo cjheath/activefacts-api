@@ -27,7 +27,7 @@ describe "An instance of every type of ObjectType" do
 
       # Create a value type and a subtype of that value type for each base type:
       @base_types.each do |base_type|
-        eval <<-END
+        Mod.module_eval <<-END
           class #{base_type.name}Val < #{base_type.name}
             value_type
           end
@@ -74,7 +74,7 @@ describe "An instance of every type of ObjectType" do
             one_to_one :test_by_#{base_type.name.snakecase}
           end
         END
-        eval code
+        Mod.module_eval code
       end
     end
 

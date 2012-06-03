@@ -16,7 +16,7 @@ describe "A Constellation instance" do
 
       # Create a value type and a subtype of that value type for each base type:
       @base_types.each do |base_type|
-        eval <<-END
+        Mod.module_eval <<-END
           class #{base_type.basename}Val < #{base_type.name}
             value_type
           end
