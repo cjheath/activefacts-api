@@ -333,6 +333,13 @@ describe "An instance of every type of ObjectType" do
     }.should raise_error
   end
 
+  it "should complain when wrong type is used for an entity" do
+    c = ActiveFacts::API::Constellation.new(Mod)
+    lambda {
+      c.TestByInt("Not an Int")
+    }.should raise_error
+  end
+
   it "should handle a non-mandatory missing identifying role" do
     module Mod2
       class Word
@@ -380,5 +387,4 @@ describe "An instance of every type of ObjectType" do
     f.is_ok.should == false
     s.is_ok.should == true
   end
-
 end

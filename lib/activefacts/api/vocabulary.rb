@@ -12,7 +12,7 @@ module ActiveFacts
     # Vocabulary is a mixin that adds methods to any Module which has any ObjectType classes (ValueType or EntityType).
     # A Vocabulary knows all the ObjectType classes including forward-referenced ones,
     # and can resolve the forward references when the class is finally defined.
-    # Construction of a Constellation requires a Vocabuary as argument.
+    # Construction of a Constellation requires a Vocabulary as argument.
     module Vocabulary
       # With a parameter, look up an object type by name.
       # Without, return the hash (keyed by the class' basename) of all object_types in this vocabulary

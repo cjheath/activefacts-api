@@ -17,12 +17,16 @@ class Int < SimpleDelegator
     __setobj__(Integer(i))
   end
 
+  def ==(o)                             #:nodoc:
+    __getobj__.==(o)
+  end
+
   def to_s                              #:nodoc:
     __getobj__.to_s
   end
 
-  def to_json c = {}                    #:nodoc
-    __getobj__.to_json
+  def to_json                           #:nodoc:
+    __getobj__.to_s
   end
 
   def hash                              #:nodoc:
@@ -37,10 +41,6 @@ class Int < SimpleDelegator
     __getobj__.eql?(Integer(o))
   end
 
-  def ==(o)                             #:nodoc:
-    __getobj__.==(o)
-  end
-
   def is_a?(k)
     __getobj__.is_a?(k) || super
   end
@@ -52,7 +52,7 @@ end
 
 # It's not possible to subclass Float, so instead we delegate to it.
 class Real < SimpleDelegator
-  def initialize(r = nil)                               #:nodoc:
+  def initialize(r = nil)               #:nodoc:
     __setobj__(Float(r))
   end
 
@@ -60,21 +60,21 @@ class Real < SimpleDelegator
     __getobj__.hash
   end
 
+  def ==(o)                             #:nodoc:
+    __getobj__.==(o)
+  end
+
   def to_s                              #:nodoc:
     __getobj__.to_s
   end
 
-  def to_json c = {}                    #:nodoc
-    __getobj__.to_json
+  def to_json                           #:nodoc:
+    __getobj__.to_s
   end
 
   def eql?(o)                           #:nodoc:
     # Note: See the note above on Int#eql?
     __getobj__.eql?(Float(o))
-  end
-
-  def ==(o)                             #:nodoc:
-    __getobj__.==(o)
   end
 
   def is_a?(k)
