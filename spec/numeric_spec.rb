@@ -48,3 +48,11 @@ describe Real do
     @r.is_a?(Real).should be_true
   end
 end
+
+describe Decimal do
+  it "should still detect Decimal as the main class" do
+    bd = Decimal.new("98765432109876543210")
+    bd.should be_a Decimal
+    bd.should be_a BigDecimal
+  end
+end
