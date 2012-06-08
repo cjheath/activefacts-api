@@ -151,7 +151,7 @@ describe "Object type role values" do
         instances.map{|k,o| o}.first.should == object
         unless object.class.is_entity_type
           # Look up value types using the value instance, not just the raw value:
-          instances[object].should == object
+          instances[object.identifying_role_values].should == object
         end
 
         # Make sure all the identifying roles are populated correctly:

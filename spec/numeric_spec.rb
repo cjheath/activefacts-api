@@ -17,8 +17,8 @@ describe Int do
   it "should behave like an Integer" do
     @i.should == 1
     @i.to_s.should == "1"
-    @i.eql?(1).should be_true
-    @i.is_a?(Integer).should be_true
+    @i.should eql 1
+    @i.should be_an Integer
   end
 
   it "should also know that it's a delegator" do
