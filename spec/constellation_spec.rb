@@ -282,9 +282,14 @@ describe "A Constellation instance" do
     person.family_name.should be_nil
     @constellation.retract(@constellation.Name("Fred"))
     @constellation.Name["Fred"].should be_nil
-    pending "Retraction of identifiers doesn't de/re-index" do
-      @constellation.Person.size.should == 0
-    end
+  end
+
+  it "should retract linked instances (cascading)" do
+    @constellation.Person "Fred", "Smith", :auto_counter_val => :new, :birth_name => "Nerk"
+    @constellation.Person "George", "Smith", :auto_counter_val => :new, :birth_name => "Patrick"
+    @constellation.Person.size.should == 2
+    @constellation.retract(@constellation.Name("Smith"))
+    @constellation.Person.size.should == 0
   end
 
   it "should fail to recognise references to unresolved forward referenced classes" do
