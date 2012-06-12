@@ -48,7 +48,11 @@ module ActiveFacts
               # puts "Not removing role #{role_name} from counterpart RoleValues #{counterpart.name}"
               # Duplicate the array using to_a, as the RoleValues here will be modified as we traverse it:
               send(role.name).to_a.each do |v|
-                v.send(counterpart.setter, nil)
+                if counterpart.is_identifying
+                  v.retract
+                else
+                  v.send(counterpart.setter, nil)
+                end
               end
             end
           end
