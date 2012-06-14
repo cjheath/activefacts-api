@@ -24,7 +24,47 @@ module ActiveFacts
         end
       end
 
+      # Checks if the role already has the same value set.
+      #
+      # Instance is unchanged when the new value for the role
+      # is the same as the previous one.
+      def is_unchanged?(role, value)
+        old = instance_variable_get(role.variable) rescue nil
+        return true if old.equal?(value)         # Occurs when another instance having the same value is assigned
+
+        value = role.adapt(@constellation, value) if value
+        return true if old.equal?(value)         # Occurs when same value but not same instance is assigned
+
+        false
+      end
+
+      # Checks if instance would still be unique if it was updated with
+      # updated_values.
+      #
+      # updated_values should be a hash containing the values to update
+      # and the name of the identifying value as the key.
+      #
+      # For example, if a Person is identified by name and family_name:
+      # updated_values = { :name => "John" }
+      # Would merge this hash with the one defining the current instance
+      # and verify in our constellation if it exists.
+      #
+      # Warning: instances with no constellation will always return true
+      def is_unique?(updated_values)
+        id = identity
+        updated_values.each do |name, role_value|
+          id[name] = role_value
+        end
+
+        if @constellation
+          !@constellation.send(self.class.basename.to_sym).include?(id)
+        else
+          true
+        end
+      end
+
       # Verbalise this instance
+      # REVISIT: Should it raise an error if it was not redefined ?
       def verbalise
         # This method should always be overridden in subclasses
       end
