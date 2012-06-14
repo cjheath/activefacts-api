@@ -81,11 +81,9 @@ describe "An Entity Type" do
       end
 
       it "should fail if the new value already exists" do
-        pending "Doesn't check validity of rename" do
-          proc do
-            @bus.name = 'Acme'
-          end.should raise_error
-        end
+        proc do
+          @fly.name = 'Acme'
+        end.should raise_error
       end
 
       describe "to a previously-nonexistent value" do

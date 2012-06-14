@@ -229,22 +229,23 @@ module ActiveFacts
 
         class_eval do
           define_method role.setter do |value|
-            role_var = role.variable
 
-            # Get old value, and jump out early if it's unchanged:
-            old = instance_variable_get(role_var) rescue nil
-            return value if old.equal?(value)         # Occurs when another instance having the same value is assigned
+            old = instance_variable_get(role.variable)
 
-            value = role.adapt(constellation, value) if value
-            return value if old.equal?(value)         # Occurs when same value but not same instance is assigned
+            if is_unchanged?(role, value)
+              return old
+            else
+              value = role.adapt(constellation, value) if value
+            end
 
-            # REVISIT: A frozen-key solution could be used to allow changing identifying roles.
-            # If this object plays an identifying role in other objects, they also need re-indexing
-#            if role.is_identifying
-#              raise "#{self.class.basename}: illegal attempt to modify identifying role #{role.name}" if value != nil && old != nil
-#            end
+            if role.is_identifying
+              if !is_unique?(role.getter => value)
+                raise "#{self.class.basename}: Illegal attempt to change an identifying value" +
+                  " (#{role.setter} used with #{value.verbalise})"
+              end
+            end
 
-            instance_variable_set(role_var, value)
+            instance_variable_set(role.variable, value)
 
             # Remove self from the old counterpart:
             old.send(role.counterpart.setter, nil) if old

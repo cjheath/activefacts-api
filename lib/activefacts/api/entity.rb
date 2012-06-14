@@ -39,7 +39,9 @@ module ActiveFacts
           # The solution to this is to have an empty initialize, add the new instance
           # to the Constellation, then initialise_roles using normal assignment.
 #        end
-
+        if args[-1].respond_to?(:has_key?) && args[-1].has_key?(:constellation)
+          @constellation = args.pop[:constellation]
+        end
         hash = args[-1].is_a?(Hash) ? args.pop.clone : nil
 
         # Pass just the hash, if there is one, else no arguments:
@@ -93,11 +95,11 @@ module ActiveFacts
       # When used as a hash key, this entity instance is compared with another by
       # comparing the values of its identifying roles
       def eql?(other)
-        return false unless self.class == other.class
-        self.class.identifying_role_names.each{|role_name|
-            return false unless send(role_name).eql?(other.send(role_name))
-          }
-        return true
+        if self.class == other.class
+          identity == other.identity
+        else
+          false
+        end
       end
 
       # Verbalise this entity instance
@@ -115,6 +117,14 @@ module ActiveFacts
         self.class.identifying_role_names.map do |role_name|
           send(role_name).identifying_role_values
         end
+      end
+
+      def identity
+        roles_hash = {}
+        self.class.identifying_roles.each do |role|
+          roles_hash[role.getter] = send(role.getter)
+        end
+        roles_hash
       end
 
       # All classes that become Entity types receive the methods of this class as class methods:
@@ -233,11 +243,9 @@ module ActiveFacts
           end
 
           #trace :assert, "Constructing new #{self} with #{values.inspect}" do
-            instance = new(*values)
+          values << { :constellation => constellation }
+          instance = new(*values)
           #end
-
-          # Make the new entity instance a member of this constellation:
-          instance.constellation = constellation
 
           # Now assign any extra args in the hash which weren't identifiers (extra identifiers will be assigned again)
           (arg_hash ? arg_hash.entries : []).each do |role_name, value|
