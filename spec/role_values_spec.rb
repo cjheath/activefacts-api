@@ -22,20 +22,20 @@ module TestValueTypesModule
     value_type
   end
   BASE_VALUE_TYPE_ROLE_NAMES = VALUE_TYPES.map { |base_type| base_type.name.snakecase }
-  VALUE_TYPE_ROLE_NAMES = BASE_VALUE_TYPE_ROLE_NAMES.map { |n| [ :"#{n}_value", :"#{n}_sub_value" ] }.flatten
+  VALUE_TYPE_ROLE_NAMES = BASE_VALUE_TYPE_ROLE_NAMES.map { |n| [ :"#{n}_val", :"#{n}_sub_val" ] }.flatten
   VALUE_TYPES.map do |value_type|
     code = <<-END
-      class #{value_type.name}Value < #{value_type.name}
+      class #{value_type.name}Val < #{value_type.name}
         value_type
       end
 
-      class #{value_type.name}ValueSub < #{value_type.name}Value
+      class #{value_type.name}ValSub < #{value_type.name}Val
         # Note no new "value_type" is required here, it comes through inheritance
       end
 
       class #{value_type.name}Entity
-        identified_by :#{identifying_role_name = "id_#{value_type.name.snakecase}_value"}
-        has_one :#{identifying_role_name}, :class => #{value_type.name}Value
+        identified_by :#{identifying_role_name = "id_#{value_type.name.snakecase}_val"}
+        has_one :#{identifying_role_name}, :class => #{value_type.name}Val
       end
 
       class #{value_type.name}EntitySub < #{value_type.name}Entity
@@ -46,10 +46,10 @@ module TestValueTypesModule
         has_one :counter, :class => "ESCID"
       end
 
-      VALUE_SUB_FOR_VALUE[#{value_type.name}Value] = #{value_type.name}ValueSub
+      VALUE_SUB_FOR_VALUE[#{value_type.name}Val] = #{value_type.name}ValSub
       classes = [
-          #{value_type.name}Value,
-          #{value_type.name}ValueSub,
+          #{value_type.name}Val,
+          #{value_type.name}ValSub,
           #{value_type.name}Entity,
           #{value_type.name}EntitySub,
           #{value_type.name}EntitySubCtr,
@@ -57,13 +57,13 @@ module TestValueTypesModule
       OBJECT_TYPES.concat(classes)
       classes.each { |klass| VALUE_TYPE_FOR_OBJECT_TYPE[klass] = value_type }
     END
-    eval code
+    TestValueTypesModule.module_eval code
   end
   OBJECT_TYPE_NAMES = OBJECT_TYPES.map{|object_type| object_type.basename}
 
   class Octopus
     identified_by :zero
-    has_one :zero, :class => IntValue
+    has_one :zero, :class => IntVal
     maybe :has_a_unary
     OBJECT_TYPE_NAMES.each do |object_type_name|
       has_one object_type_name.snakecase.to_sym
@@ -94,7 +94,7 @@ end
 describe "Object type role values" do
   def object_identifying_parameters object_type_name, value
     if object_type_name =~ /^(.*)EntitySubCtr$/
-      [{ :"id_#{$1.snakecase}_value" => value, :counter => :new}]
+      [{ :"id_#{$1.snakecase}_val" => value, :counter => :new}]
     else
       [value]
     end
@@ -110,7 +110,7 @@ describe "Object type role values" do
       it "should allow instantiation of a bare #{object_type_name}" do
         object_identifying_parameters =
           if object_type_name =~ /^(.*)EntitySubCtr$/
-            [{ :"id_#{$1.snakecase}_value" => values[0], :counter => :new}]
+            [{ :"id_#{$1.snakecase}_val" => values[0], :counter => :new}]
           else
             [values[0]]
           end

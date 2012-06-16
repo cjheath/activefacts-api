@@ -77,7 +77,7 @@ describe "Entity Type class definitions" do
     Mod::Person.roles.include?(:name).should be_true
   end
 
-  it "should fail on a ValueClass" do
+  it "should fail on a ValClass" do
     lambda{
       class SomeClass < String
         identified_by
