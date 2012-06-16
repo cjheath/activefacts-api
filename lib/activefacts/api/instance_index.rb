@@ -39,11 +39,19 @@ module ActiveFacts
       end
 
       def []=(key, value)   #:nodoc:
-        @hash[key] = value
+        if key.respond_to?(:identifying_role_values)
+          @hash[key.identifying_role_values] = value
+        else
+          @hash[key] = value
+        end
       end
 
-      def [](*args)
-        @hash[*args]
+      def [](key)
+        if key.respond_to?(:identifying_role_values)
+          @hash[key.identifying_role_values]
+        else
+          @hash[key]
+        end
       end
 
       def size
