@@ -25,7 +25,7 @@ class Int < SimpleDelegator
     __getobj__.to_s
   end
 
-  def to_json                           #:nodoc:
+  def to_json(*a)                       #:nodoc:
     __getobj__.to_s
   end
 
@@ -68,7 +68,7 @@ class Real < SimpleDelegator
     __getobj__.to_s
   end
 
-  def to_json                           #:nodoc:
+  def to_json(*a)                       #:nodoc:
     __getobj__.to_s
   end
 
