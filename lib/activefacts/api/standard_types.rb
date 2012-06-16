@@ -8,6 +8,7 @@
 # and allow any Class to become an Entity.
 #
 require 'date'
+require 'activefacts/api/numeric'
 
 module ActiveFacts
   module API
@@ -20,12 +21,9 @@ module ActiveFacts
     end
   end
 end
-
-require 'activefacts/api/numeric'
-
 # Add the methods that convert our classes into ObjectType types:
 
-ValueClasses = [String, Date, DateTime, Time, Int, Real, AutoCounter]
+ValueClasses = [String, Date, DateTime, Time, Int, Real, AutoCounter, Decimal]
 ValueClasses.each{|c|
     c.send :extend, ActiveFacts::API::ValueClass
   }
@@ -59,19 +57,6 @@ class Class
 
   def is_entity_type
     respond_to?(:identifying_role_names)
-  end
-end
-
-require 'bigdecimal'
-class Decimal < BigDecimal #:nodoc:
-  extend ActiveFacts::API::ValueClass
-  # The problem here is you can't pass a BigDecimal to BigDecimal.new. Fix it.
-  def self.new(v)
-    if v.is_a?(BigDecimal) || v.is_a?(Bignum)
-      super(v.to_s)
-    else
-      super
-    end
   end
 end
 

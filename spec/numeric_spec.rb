@@ -18,8 +18,8 @@ describe Int do
     1.should == @i
     @i.should == 1
     @i.to_s.should == "1"
-    @i.eql?(1).should be_true
-    @i.is_a?(Integer).should be_true
+    @i.should eql 1
+    @i.should be_an Integer
   end
 
   it "should also know that it's a delegator" do
@@ -48,5 +48,13 @@ describe Real do
   it "should also know that it's a delegator" do
     @r.is_a?(SimpleDelegator).should be_true
     @r.is_a?(Real).should be_true
+  end
+end
+
+describe Decimal do
+  it "should still detect Decimal as the main class" do
+    bd = Decimal.new("98765432109876543210")
+    bd.should be_a Decimal
+    bd.should be_a BigDecimal
   end
 end
