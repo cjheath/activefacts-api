@@ -10,79 +10,82 @@
 #
 require 'delegate'
 require 'date'
+require 'bigdecimal'
+
+module ActiveFacts
+  module API
+    # Fixes behavior of core functions over multiple platform
+    module SimpleDelegation
+      def initialize(v)
+        __setobj__(delegate_new(v))
+      end
+
+      def eql?(v)
+        # Note: This and #hash do not work the way you'd expect,
+        # and differently in each Ruby interpreter. If you store
+        # an Int or Real in a hash, you cannot reliably retrieve
+        # them with the corresponding Integer or Real.
+        __getobj__.eql?(delegate_new(v))
+      end
+
+      def ==(o)                             #:nodoc:
+        __getobj__.==(o)
+      end
+
+      def to_s                              #:nodoc:
+        __getobj__.to_s
+      end
+
+      def to_json                           #:nodoc:
+        __getobj__.to_s
+      end
+
+      def hash                              #:nodoc:
+        __getobj__.hash
+      end
+
+      def is_a?(k)
+        __getobj__.is_a?(k) || super
+      end
+
+      def kind_of?(k)
+        is_a?(k)
+      end
+
+      def inspect
+        "#{self.class.basename}:#{__getobj__.inspect}"
+      end
+    end
+  end
+end
+
+class Decimal < SimpleDelegator #:nodoc:
+  include ActiveFacts::API::SimpleDelegation
+
+  def delegate_new(v)
+    if v.is_a?(BigDecimal) || v.is_a?(Bignum)
+      BigDecimal.new(v.to_s)
+    else
+      BigDecimal.new(v)
+    end
+  end
+end
 
 # It's not possible to subclass Integer, so instead we delegate to it.
 class Int < SimpleDelegator
-  def initialize(i = nil)               #:nodoc:
-    __setobj__(Integer(i))
-  end
+  include ActiveFacts::API::SimpleDelegation
 
-  def ==(o)                             #:nodoc:
-    __getobj__.==(o)
-  end
-
-  def to_s                              #:nodoc:
-    __getobj__.to_s
-  end
-
-  def to_json                           #:nodoc:
-    __getobj__.to_s
-  end
-
-  def hash                              #:nodoc:
-    __getobj__.hash
-  end
-
-  def eql?(o)                           #:nodoc:
-    # Note: This and #hash do not work the way you'd expect,
-    # and differently in each Ruby interpreter. If you store
-    # an Int or Real in a hash, you cannot reliably retrieve
-    # them with the corresponding Integer or Real.
-    __getobj__.eql?(Integer(o))
-  end
-
-  def is_a?(k)
-    __getobj__.is_a?(k) || super
-  end
-
-  def inspect
-    "#{self.class.basename}:#{__getobj__.inspect}"
+  def delegate_new(i = nil)               #:nodoc:
+    Integer(i)
   end
 end
 
 # It's not possible to subclass Float, so instead we delegate to it.
 class Real < SimpleDelegator
-  def initialize(r = nil)               #:nodoc:
-    __setobj__(Float(r))
-  end
+  include ActiveFacts::API::SimpleDelegation
 
-  def hash                              #:nodoc:
-    __getobj__.hash
-  end
-
-  def ==(o)                             #:nodoc:
-    __getobj__.==(o)
-  end
-
-  def to_s                              #:nodoc:
-    __getobj__.to_s
-  end
-
-  def to_json                           #:nodoc:
-    __getobj__.to_s
-  end
-
-  def eql?(o)                           #:nodoc:
-    # Note: See the note above on Int#eql?
-    __getobj__.eql?(Float(o))
-  end
-
-  def is_a?(k)
-    __getobj__.is_a?(k) || super
-  end
-
-  def inspect                           #:nodoc:
-    "#{self.class.basename}:#{__getobj__.inspect}"
+  def delegate_new(r = nil)               #:nodoc:
+    Float(r)
   end
 end
 

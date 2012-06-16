@@ -19,20 +19,20 @@ describe "An instance of every type of ObjectType" do
         t.name.snakecase
       end
       @role_names = @base_type_roles.inject([]) {|a, t|
-          a << :"#{t}_value"
+          a << :"#{t}_val"
         } +
         @base_type_roles.inject([]) {|a, t|
-          a << :"#{t}_sub_value"
+          a << :"#{t}_sub_val"
         }
 
       # Create a value type and a subtype of that value type for each base type:
       @base_types.each do |base_type|
-        eval <<-END
-          class #{base_type.name}Value < #{base_type.name}
+        Mod.module_eval <<-END
+          class #{base_type.name}Val < #{base_type.name}
             value_type
           end
 
-          class #{base_type.name}SubValue < #{base_type.name}Value
+          class #{base_type.name}SubVal < #{base_type.name}Val
             # Note no new "value_type" is required here, it comes through inheritance
           end
         END
@@ -44,11 +44,11 @@ describe "An instance of every type of ObjectType" do
       @base_types.each do |base_type|
         code = <<-END
           class TestBy#{base_type.name}
-            identified_by :#{base_type.name.snakecase}_value#{
+            identified_by :#{base_type.name.snakecase}_val#{
               @role_names.map do |role_name|
                 %Q{
             has_one :#{role_name}#{
-              mandatory = (role_name == (base_type.name.snakecase+'_value').to_sym ? ', :mandatory => true' : '')
+              mandatory = (role_name == (base_type.name.snakecase+'_val').to_sym ? ', :mandatory => true' : '')
             }
             one_to_one :one_#{role_name}, :class => #{role_name.to_s.camelcase}}
               end*""
@@ -56,7 +56,7 @@ describe "An instance of every type of ObjectType" do
           end
 
           class TestBy#{base_type.name}Sub
-            identified_by :#{base_type.name.snakecase}_sub_value#{
+            identified_by :#{base_type.name.snakecase}_sub_val#{
               @role_names.map do |role_name|
                 %Q{
             has_one :#{role_name}
@@ -74,7 +74,7 @@ describe "An instance of every type of ObjectType" do
             one_to_one :test_by_#{base_type.name.snakecase}
           end
         END
-        eval code
+        Mod.module_eval code
       end
     end
 
@@ -89,29 +89,29 @@ describe "An instance of every type of ObjectType" do
     @decimal = BigDecimal.new('98765432109876543210')
 
     # Value Type instances
-    @int_value = Mod::IntValue.new(1)
-    @real_value = Mod::RealValue.new(1.0)
-    @auto_counter_value = Mod::AutoCounterValue.new(1)
-    @new_auto_counter_value = Mod::AutoCounterValue.new(:new)
-    @string_value = Mod::StringValue.new("one")
-    @date_value = Mod::DateValue.new(2008, 04, 20)
+    @int_value = Mod::IntVal.new(1)
+    @real_value = Mod::RealVal.new(1.0)
+    @auto_counter_value = Mod::AutoCounterVal.new(1)
+    @new_auto_counter_value = Mod::AutoCounterVal.new(:new)
+    @string_value = Mod::StringVal.new("one")
+    @date_value = Mod::DateVal.new(2008, 04, 20)
     # Parse the date:
-    @date_value = Mod::DateValue.new '2nd Nov 2001'
+    @date_value = Mod::DateVal.new '2nd Nov 2001'
     d = ::Date.civil(2008, 04, 20)
-    @date_time_value = Mod::DateTimeValue.new d # 2008, 04, 20, 10, 28, 14
+    @date_time_value = Mod::DateTimeVal.new d # 2008, 04, 20, 10, 28, 14
     # This next isn't in the same pattern; it makes a Decimal from a BigDecimal rather than a String (coverage reasons)
-    @decimal_value = Mod::DecimalValue.new(BigDecimal.new('98765432109876543210'))
+    @decimal_value = Mod::DecimalVal.new(BigDecimal.new('98765432109876543210'))
 
     # Value SubType instances
-    @int_sub_value = Mod::IntSubValue.new(4)
-    @real_sub_value = Mod::RealSubValue.new(4.0)
-    @auto_counter_sub_value = Mod::AutoCounterSubValue.new(4)
-    @auto_counter_sub_value_new = Mod::AutoCounterSubValue.new(:new)
-    @string_sub_value = Mod::StringSubValue.new("five")
-    @date_sub_value = Mod::DateSubValue.new(2008, 04, 25)
-    @date_time_sub_value = Mod::DateTimeSubValue.new(::DateTime.civil(2008, 04, 26, 10, 28, 14))
+    @int_sub_value = Mod::IntSubVal.new(4)
+    @real_sub_value = Mod::RealSubVal.new(4.0)
+    @auto_counter_sub_value = Mod::AutoCounterSubVal.new(4)
+    @auto_counter_sub_value_new = Mod::AutoCounterSubVal.new(:new)
+    @string_sub_value = Mod::StringSubVal.new("five")
+    @date_sub_value = Mod::DateSubVal.new(2008, 04, 25)
+    @date_time_sub_value = Mod::DateTimeSubVal.new(::DateTime.civil(2008, 04, 26, 10, 28, 14))
     # This next isn't in the same pattern; it makes a Decimal from a BigNum rather than a String (coverage reasons)
-    @decimal_sub_value = Mod::DecimalSubValue.new(98765432109876543210)
+    @decimal_sub_value = Mod::DecimalSubVal.new(98765432109876543210)
 
     # Entities identified by Value Type, SubType and Entity-by-value-type instances
     @test_by_int = Mod::TestByInt.new(2)
@@ -164,10 +164,10 @@ describe "An instance of every type of ObjectType" do
         String, Date, DateTime, Decimal
       ]
     @value_types = [
-        Mod::IntValue, Mod::RealValue, Mod::AutoCounterValue, Mod::AutoCounterValue,
-        Mod::StringValue, Mod::DateValue, Mod::DateTimeValue, Mod::DecimalValue,
-        Mod::IntSubValue, Mod::RealSubValue, Mod::AutoCounterSubValue, Mod::AutoCounterSubValue,
-        Mod::StringSubValue, Mod::DateSubValue, Mod::DateTimeSubValue, Mod::DecimalSubValue,
+        Mod::IntVal, Mod::RealVal, Mod::AutoCounterVal, Mod::AutoCounterVal,
+        Mod::StringVal, Mod::DateVal, Mod::DateTimeVal, Mod::DecimalVal,
+        Mod::IntSubVal, Mod::RealSubVal, Mod::AutoCounterSubVal, Mod::AutoCounterSubVal,
+        Mod::StringSubVal, Mod::DateSubVal, Mod::DateTimeSubVal, Mod::DecimalSubVal,
         ]
     @value_instances = [
         @int_value, @real_value, @auto_counter_value, @new_auto_counter_value,
@@ -226,11 +226,11 @@ describe "An instance of every type of ObjectType" do
         '98765432109876543211'
       ]
     @subtype_role_instances = [
-        Mod::IntSubValue.new(6), Mod::RealSubValue.new(6.0),
-        Mod::AutoCounterSubValue.new(:new), Mod::AutoCounterSubValue.new(8),
-        Mod::StringSubValue.new("seven"),
-        Mod::DateSubValue.new(2008,4,29), Mod::DateTimeSubValue.new(2008,4,30,10,28,16),
-        Mod::DecimalSubValue.new('98765432109876543210'),
+        Mod::IntSubVal.new(6), Mod::RealSubVal.new(6.0),
+        Mod::AutoCounterSubVal.new(:new), Mod::AutoCounterSubVal.new(8),
+        Mod::StringSubVal.new("seven"),
+        Mod::DateSubVal.new(2008,4,29), Mod::DateTimeSubVal.new(2008,4,30,10,28,16),
+        Mod::DecimalSubVal.new('98765432109876543210'),
       ]
   end
 
@@ -308,7 +308,7 @@ describe "An instance of every type of ObjectType" do
 
   it "should disallow treating an unresolved AutoCounter as an integer" do
     c = ActiveFacts::API::Constellation.new(Mod)
-    a = c.AutoCounterValue(:new)
+    a = c.AutoCounterVal(:new)
     lambda {
       b = 2 + a
     }.should raise_error
@@ -322,7 +322,7 @@ describe "An instance of every type of ObjectType" do
   it "should complain when not enough identifying values are provided for an entity" do
     c = ActiveFacts::API::Constellation.new(Mod)
     lambda {
-      c.TestByInt(:int_value => nil)
+      c.TestByInt(:int_val => nil)
     }.should raise_error
   end
 
