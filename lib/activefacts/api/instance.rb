@@ -57,11 +57,20 @@ module ActiveFacts
         end
 
         if @constellation
-          !@constellation.send(self.class.basename.to_sym).include?(id)
+          !instance_index.include?(id)
         else
           true
         end
       end
+
+      def instance_index
+        @constellation.send(self.class.basename.to_sym)
+      end
+
+      def instance_index_counterpart(role)
+        @constellation.send(role.counterpart.object_type.basename.to_sym)
+      end
+
 
       # Verbalise this instance
       # REVISIT: Should it raise an error if it was not redefined ?

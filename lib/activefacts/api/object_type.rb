@@ -253,6 +253,11 @@ module ActiveFacts
             # Assign self to the new counterpart
             value.send(role.counterpart.setter, self) if value
 
+            if @constellation
+              instance_index.refresh_keys
+              instance_index_counterpart(role).refresh_keys
+            end
+
             value
           end
         end
@@ -290,6 +295,11 @@ module ActiveFacts
 
             # Add "self" into the counterpart
             value.send(getter ||= role.counterpart.getter).update(old, self) if value
+
+            if @constellation
+              instance_index.refresh_keys
+              instance_index_counterpart(role).refresh_keys
+            end
 
             value
           end

@@ -81,9 +81,11 @@ describe "An Entity Type" do
       end
 
       it "should fail if the new value already exists" do
-        proc do
-          @fly.name = 'Acme'
-        end.should raise_error
+        lambda { @bus.name = 'Fly' }.should raise_error
+      end
+
+      it "should not fail if the new value is self" do
+        lambda { @bus.name = 'Acme' }.should_not raise_error
       end
 
       describe "to a previously-nonexistent value" do
@@ -101,15 +103,11 @@ describe "An Entity Type" do
         end
 
         it "should be found under the new identifier" do
-          pending "entities are not re-indexed on identifier assignment" do
-            @c.Business['Bloggs'].should == @bus
-          end
+          @c.Business[['Bloggs']].should == @bus
         end
 
         it "should be in the constellation's index under the new identifier" do
-          pending "entities are not re-indexed on identifier assignment" do
-            @c.Business.keys[0].should == ['Bloggs']
-          end
+          @c.Business.keys.should include ['Bloggs']
         end
 
         it "should be the counterpart of the new identifier" do
@@ -117,9 +115,7 @@ describe "An Entity Type" do
         end
 
         it "should not be found in the constellation using the old value" do
-          pending "entities are not de-indexed on identifier assignment" do
-            @c.Business[['Acme']].should be_nil
-          end
+          @c.Business[['Acme']].should be_nil
         end
 
         it "the old value's back-reference is set to nil" do
@@ -296,16 +292,12 @@ describe "An Entity Type" do
         end
 
         it "should be found under the new identifier" do
-          pending "entities are not re-indexed on identifier assignment" do
-            @c.Room[[@b.identifying_role_values, 103]].should == @r
-            @c.Room[[['Mackay'], 101]].should be_nil
-          end
+          @c.Room[[@b.identifying_role_values, 103]].should == @r
+          @c.Room[[['Mackay'], 101]].should be_nil
         end
 
         it "should be in the constellation's index under the new identifier" do
-          pending "entities are not de-indexed on identifier assignment" do
-            @c.Room.keys[0].should == [['Mackay'], @r.number]
-          end
+          @c.Room.keys[0].should == [['Mackay'], @r.number]
         end
 
         it "should be included in the counterparts of the new identifier roles" do
@@ -314,9 +306,7 @@ describe "An Entity Type" do
         end
 
         it "should not be found in the constellation using the old value" do
-          pending "entities are not de-indexed on identifier assignment" do
-            @c.Room.keys[0].should_not == [['Mackay'],101]
-          end
+          @c.Room.keys[0].should_not == [['Mackay'],101]
         end
 
         it "the old value's back-reference is set to nil" do
