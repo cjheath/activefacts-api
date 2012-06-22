@@ -269,11 +269,7 @@ describe "An Entity Type" do
 
       it "should fail if the new value already exists" do
         @c.Room(@b, 102)
-        pending "Doesn't check validity of rename" do
-          proc {
-            @r.number = 102
-          }.should raise_error
-        end
+        lambda { @r.number = 102 }.should raise_error
       end
 
       describe "to a previously-nonexistent value" do

@@ -24,6 +24,17 @@ module ActiveFacts
         end
       end
 
+      def detect_inconsistencies(role, value)
+        if duplicate_identifying_values?(role, value)
+          raise "#{self.class.basename}: Illegal attempt to change an identifying value (Duplicate)" +
+                " (#{role.setter} used with #{value.verbalise})"
+        end
+      end
+
+      def duplicate_identifying_values?(role, value)
+        role.is_identifying && !is_unique?(role.getter => value)
+      end
+
       # Checks if the role already has the same value set.
       #
       # Instance is unchanged when the new value for the role

@@ -147,9 +147,19 @@ module ActiveFacts
           # REVISIT: Should this return nil if identification_inherited_from?
           @identifying_roles ||=
             identifying_role_names.map do |role_name|
-              role = roles[role_name] || (!superclass.is_entity_type || superclass.roles[role_name])
+              role = roles[role_name] || find_inherited_roles(role_name)
               role
             end
+        end
+
+        def find_inherited_roles(role_name)
+          if !superclass.is_entity_type
+            false
+          elsif superclass.roles.has_key?(role_name)
+            superclass.roles[role_name]
+          else
+            superclass.find_inherited_roles(role_name)
+          end
         end
 
         # Convert the passed arguments into an array of raw values (or arrays of values, transitively)

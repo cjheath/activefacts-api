@@ -238,12 +238,7 @@ module ActiveFacts
               value = role.adapt(constellation, value) if value
             end
 
-            if role.is_identifying
-              if !is_unique?(role.getter => value)
-                raise "#{self.class.basename}: Illegal attempt to change an identifying value" +
-                  " (#{role.setter} used with #{value.verbalise})"
-              end
-            end
+            detect_inconsistencies(role, value)
 
             instance_variable_set(role.variable, value)
 
@@ -287,6 +282,8 @@ module ActiveFacts
 #            if role.is_identifying
 #              raise "#{self.class.basename}: illegal attempt to modify identifying role #{role.name}" if value != nil && old != nil
 #            end
+
+            detect_inconsistencies(role, value) if value
 
             instance_variable_set(role_var, value)
 
