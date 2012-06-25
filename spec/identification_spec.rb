@@ -28,16 +28,14 @@ describe "An Entity Type" do
     end
 
     it "should fail if the role isn't one-to-one" do
-      pending "Lacks a check for one-to-one identifying role" do
-        proc do
-          module Mod
-            class Cat
-              identified_by :name
-              has_one :name
-            end
+      proc do
+        module Mod
+          class Cat
+            identified_by :name
+            has_one :name
           end
-        end.should raise_error
-      end
+        end
+      end.should raise_error
     end
 
     describe "when asserted" do
@@ -205,17 +203,15 @@ describe "An Entity Type" do
     end
 
     it "should fail if any role is one-to-one" do
-      pending "Lacks a check for one-to-one identifying role" do
-        proc do
-          module Mod
-            class Floor
-              identified_by :building, :number
-              has_one :building
-              one_to_one :number    # Error, invalid identifier
-            end
+      proc do
+        module Mod
+          class Floor
+            identified_by :building, :number
+            has_one :building
+            one_to_one :number    # Error, invalid identifier
           end
-        end.should raise_error
-      end
+        end
+      end.should raise_error
     end
 
     describe "when asserted" do

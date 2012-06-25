@@ -35,20 +35,6 @@ module ActiveFacts
         role.is_identifying && !is_unique?(role.getter => value)
       end
 
-      # Checks if the role already has the same value set.
-      #
-      # Instance is unchanged when the new value for the role
-      # is the same as the previous one.
-      def is_unchanged?(role, value)
-        old = instance_variable_get(role.variable) rescue nil
-        return true if old.equal?(value)         # Occurs when another instance having the same value is assigned
-
-        value = role.adapt(@constellation, value) if value
-        return true if old.equal?(value)         # Occurs when same value but not same instance is assigned
-
-        false
-      end
-
       # Checks if instance would still be unique if it was updated with
       # updated_values.
       #
@@ -62,13 +48,9 @@ module ActiveFacts
       #
       # Warning: instances with no constellation will always return true
       def is_unique?(updated_values)
-        id = identity
-        updated_values.each do |name, role_value|
-          id[name] = role_value
-        end
-
         if @constellation
-          !instance_index.include?(id)
+          new_identity = identity.merge(updated_values)
+          !instance_index.include?(new_identity)
         else
           true
         end

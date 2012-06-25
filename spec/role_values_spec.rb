@@ -35,7 +35,7 @@ module TestValueTypesModule
 
       class #{value_type.name}Entity
         identified_by :#{identifying_role_name = "id_#{value_type.name.snakecase}_val"}
-        has_one :#{identifying_role_name}, :class => #{value_type.name}Val
+        one_to_one :#{identifying_role_name}, :class => #{value_type.name}Val
       end
 
       class #{value_type.name}EntitySub < #{value_type.name}Entity
@@ -43,7 +43,7 @@ module TestValueTypesModule
 
       class #{value_type.name}EntitySubCtr < #{value_type.name}Entity
         identified_by :counter
-        has_one :counter, :class => "ESCID"
+        one_to_one :counter, :class => "ESCID"
       end
 
       VALUE_SUB_FOR_VALUE[#{value_type.name}Val] = #{value_type.name}ValSub
@@ -63,7 +63,7 @@ module TestValueTypesModule
 
   class Octopus
     identified_by :zero
-    has_one :zero, :class => IntVal
+    one_to_one :zero, :class => IntVal
     maybe :has_a_unary
     OBJECT_TYPE_NAMES.each do |object_type_name|
       has_one object_type_name.snakecase.to_sym

@@ -33,7 +33,7 @@ module ActiveFacts
         if args.size == 1 && args[0].is_a?(@klass)
           key = args[0].identifying_role_values
         else
-          key = @klass.identifying_role_values(*args)
+          key = @klass.identifying_role_values(*args) rescue nil
         end
         return @hash[key]
       end
