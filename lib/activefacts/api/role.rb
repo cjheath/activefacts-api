@@ -58,16 +58,6 @@ module ActiveFacts
         counterpart == nil ? TrueClass : counterpart.object_type
       end
 
-      def is_one_to_one?
-        !unary? && @unique && @counterpart.unique
-      end
-
-      def is_has_one?
-        !unary? && (
-            @unique && !@counterpart.unique ||
-            @unique && @counterpart.unique)
-      end
-
       def inspect
         "<Role #{object_type.name}.#{name}>"
       end

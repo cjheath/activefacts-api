@@ -265,9 +265,10 @@ module ActiveFacts
 
             # REVISIT: refreshing keys happens at any call of instance_variable_set.
             # this is not necessary and should only happen once at the end of the assignment.
-            if @constellation
-              instance_index.refresh_keys
-              instance_index_counterpart(role).refresh_keys
+            if @constellation && value
+              value.related_entities.each do |entity|
+                entity.instance_index.refresh_keys
+              end
             end
 
             value
@@ -310,9 +311,10 @@ module ActiveFacts
             # Add "self" into the counterpart
             value.send(getter ||= role.counterpart.getter).update(old, self) if value
 
-            if @constellation
-              instance_index.refresh_keys
-              instance_index_counterpart(role).refresh_keys
+            if @constellation && value
+              value.related_entities.each do |entity|
+                entity.instance_index.refresh_keys
+              end
             end
 
             value

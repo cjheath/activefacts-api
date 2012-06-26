@@ -196,8 +196,25 @@ describe "An Entity Type" do
           has_one :building
           has_one :number
         end
+
+        class OwnershipId < Int
+          value_type
+        end
+
+        class Owner
+          identified_by :ownership_id, :building
+          has_one :ownership_id
+          has_one :building
+        end
+
+        class OwnerRoom
+          identified_by :owner, :room
+          has_one :owner
+          has_one :room
+        end
       end
     end
+
     before :each do
       @c = ActiveFacts::API::Constellation.new(Mod)
     end
@@ -220,6 +237,9 @@ describe "An Entity Type" do
         @mackay = @c.Name['Mackay']
         @r = @c.Room(@b, 101)
         @rn = @r.number
+
+        @o = @c.Owner(1_001, @b)
+        @or = @c.OwnerRoom(@o, @r)
       end
 
       it "should return a new instance if not previously present" do
@@ -261,6 +281,9 @@ describe "An Entity Type" do
         @mackay = @c.Name['Mackay']
         @r = @c.Room(@b, 101)
         @rn = @r.number
+
+        @o = @c.Owner(1_001, @b)
+        @or = @c.OwnerRoom(@o, @r)
       end
 
       it "should fail if the new value already exists" do
@@ -286,6 +309,12 @@ describe "An Entity Type" do
         it "should be found under the new identifier" do
           @c.Room[[@b.identifying_role_values, 103]].should == @r
           @c.Room[[['Mackay'], 101]].should be_nil
+        end
+
+        it "should be found under the new identifier even on deep associations" do
+          @c.OwnerRoom[[@o.identifying_role_values, @r.identifying_role_values]].should == @or
+          @c.OwnerRoom[[[1_001, ['Mackay']], [['Mackay'], 103]]].should == @or
+          @c.OwnerRoom[[[1_001, ['Mackay']], [['Mackay'], 101]]].should be_nil
         end
 
         it "should be in the constellation's index under the new identifier" do

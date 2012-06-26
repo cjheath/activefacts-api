@@ -60,8 +60,32 @@ module ActiveFacts
         @constellation.send(self.class.basename.to_sym)
       end
 
+      def related_entities(instances = [])
+        self.class.roles.each do |role_name, role|
+          instance_index_counterpart(role).each do |irv, entity|
+            if entity.class.is_entity_type && entity.is_identified_by?(self)
+              if !instances.include?(entity)
+                instances << entity
+                entity.related_entities(instances)
+              end
+            end
+          end
+        end
+        instances
+      end
+
+      def is_identified_by?(entity)
+        self.class.identifying_roles.detect do |role|
+          send(role.getter) == entity
+        end
+      end
+
       def instance_index_counterpart(role)
-        @constellation.send(role.counterpart.object_type.basename.to_sym)
+        if role.counterpart
+          @constellation.send(role.counterpart.object_type.basename.to_sym)
+        else
+          []
+        end
       end
 
 
