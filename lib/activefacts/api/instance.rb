@@ -32,7 +32,7 @@ module ActiveFacts
       end
 
       def duplicate_identifying_values?(role, value)
-        role.is_identifying && !is_unique?(role.getter => value)
+        @constellation && role.is_identifying && !is_unique?(role.getter => value)
       end
 
       # Checks if instance would still be unique if it was updated with
@@ -45,28 +45,22 @@ module ActiveFacts
       # updated_values = { :name => "John" }
       # Would merge this hash with the one defining the current instance
       # and verify in our constellation if it exists.
-      #
-      # Warning: instances with no constellation will always return true
       def is_unique?(updated_values)
-        if @constellation
-          new_identity = identity.merge(updated_values)
-          !instance_index.include?(new_identity)
-        else
-          true
-        end
+        new_identity = identity.merge(updated_values)
+        !instance_index.include?(new_identity)
       end
 
-      def instance_index
-        @constellation.send(self.class.basename.to_sym)
-      end
-
+      # List entities which reference the current one.
+      #
+      # Once an entity is found, it will also search for
+      # related entities of this instance.
       def related_entities(instances = [])
         self.class.roles.each do |role_name, role|
-          instance_index_counterpart(role).each do |irv, entity|
-            if entity.class.is_entity_type && entity.is_identified_by?(self)
-              if !instances.include?(entity)
-                instances << entity
-                entity.related_entities(instances)
+          instance_index_counterpart(role).each do |irv, instance|
+            if instance.class.is_entity_type && instance.is_identified_by?(self)
+              if !instances.include?(instance)
+                instances << instance
+                instance.related_entities(instances)
               end
             end
           end
@@ -74,10 +68,16 @@ module ActiveFacts
         instances
       end
 
+      # Determine if entity is an identifying value
+      # of the current instance.
       def is_identified_by?(entity)
         self.class.identifying_roles.detect do |role|
           send(role.getter) == entity
         end
+      end
+
+      def instance_index
+        @constellation.send(self.class.basename.to_sym)
       end
 
       def instance_index_counterpart(role)
@@ -90,8 +90,8 @@ module ActiveFacts
 
 
       # Verbalise this instance
-      # REVISIT: Should it raise an error if it was not redefined ?
       def verbalise
+        # REVISIT: Should it raise an error if it was not redefined ?
         # This method should always be overridden in subclasses
       end
 
