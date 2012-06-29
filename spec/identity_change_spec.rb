@@ -31,14 +31,14 @@ describe "identity" do
       @c1.AustralianTaxReturn.keys.should == [[[123], [2010]]]
       @c1.AustralianTaxReturn.values.should == [@r1]
 
-      @c1.Name.keys.should == [@juliar, @tony]
-      @c1.Name.values.should == [@juliar, @tony]
-      @c1.Person.keys.should == [[@juliar], [@tony]]
-      @c1.Person.values.should == [@p1, @p3]
-      @c1.Australian.keys.should == [[@juliar], [@tony]]
-      @c1.Australian.values.should == [@p1, @p3]
-      @c1.AustralianTaxPayer.keys.should == [[123]]
-      @c1.AustralianTaxPayer.values.should == [@p3]
+      @c1.Name.keys.should =~ [@juliar, @tony]
+      @c1.Name.values.should =~ [@juliar, @tony]
+      @c1.Person.keys.should =~ [[@juliar], [@tony]]
+      @c1.Person.values.should =~ [@p1, @p3]
+      @c1.Australian.keys.should =~ [[@juliar], [@tony]]
+      @c1.Australian.values.should =~ [@p1, @p3]
+      @c1.AustralianTaxPayer.keys.should =~ [[123]]
+      @c1.AustralianTaxPayer.values.should =~ [@p3]
     end
 
     describe "that implies change of subtype" do
@@ -65,12 +65,12 @@ describe "identity" do
         end
 
         @p2.should be_nil
-        @c1.Name.values.should == [@juliar, @tony]
-        @c1.Name.keys.should == [@juliar, @tony]
-        @c1.TFN.keys.should == [123]
-        @c1.Person.values.should == [@p1, @p3]
-        @c1.Person.keys.should == [[@juliar],[@tony]]
-        @c1.Australian.values.should == [@p1, @p3]
+        @c1.Name.values.should =~ [@juliar, @tony]
+        @c1.Name.keys.should =~ [@juliar, @tony]
+        @c1.TFN.keys.should =~ [123]
+        @c1.Person.values.should =~ [@p1, @p3]
+        @c1.Person.keys.should =~ [[@juliar],[@tony]]
+        @c1.Australian.values.should =~ [@p1, @p3]
       end
 
       it "should have no side-effects (retracting values which shouldn't)" do
@@ -80,7 +80,7 @@ describe "identity" do
         rescue ImplicitSubtypeChangeDisallowedException => e
         end
 
-        @c1.TFN.keys.should == [123, 789]
+        @c1.TFN.keys.should =~ [123, 789]
       end
     end
 
