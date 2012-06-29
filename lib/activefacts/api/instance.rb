@@ -25,9 +25,29 @@ module ActiveFacts
       end
 
       def detect_inconsistencies(role, value)
+        exception_data = {
+          :value => value,
+          :role  => role,
+          :class => self.class
+        }
+
         if duplicate_identifying_values?(role, value)
-          raise "#{self.class.basename}: Illegal attempt to change an identifying value (Duplicate)" +
-                " (#{role.setter} used with #{value.verbalise})"
+          e = DuplicateIdentifyingValueException.new(exception_data)
+          raise e
+        end
+
+        if implicit_subtype_change?(role, value)
+          e = ImplicitSubtypeChangeDisallowedException.new(exception_data)
+          raise e
+        end
+      end
+
+      def implicit_subtype_change?(role, value)
+        if value && role.is_identifying
+          value.related_entities.detect do |entity|
+            next if entity.class == self.class
+            !(entity.class.supertypes_transitive & self.class.supertypes_transitive).empty?
+          end
         end
       end
 
@@ -81,7 +101,7 @@ module ActiveFacts
       end
 
       def instance_index_counterpart(role)
-        if role.counterpart
+        if @constellation && role.counterpart
           @constellation.send(role.counterpart.object_type.basename.to_sym)
         else
           []

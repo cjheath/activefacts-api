@@ -133,6 +133,7 @@ module ActiveFacts
 
         attr_accessor :identification_inherited_from
         attr_accessor :overrides_identification_of
+        attr_accessor :created_instances
 
         # Return the array of Role objects that define the identifying relationships of this Entity type:
         def identifying_role_names
@@ -170,7 +171,7 @@ module ActiveFacts
           # If the single arg is an instance of the correct class or a subclass,
           # use the instance's identifying_role_values
           has_hash = args[-1].is_a?(Hash)
-          if (args.size == 1+(has_hash ?1:0) and (arg = args[0]).is_a?(self))
+          if (args.size == 1+(has_hash ? 1 : 0) and (arg = args[0]).is_a?(self))
             # With a secondary supertype or a subtype having separate identification,
             # we would get the wrong identifier from arg.identifying_role_values:
             return irns.map do |role_name|
@@ -222,9 +223,10 @@ module ActiveFacts
 
           # Now construct each of this object's identifying roles
           irns = identifying_role_names
+          @created_instances ||= []
 
           has_hash = args[-1].is_a?(Hash)
-          if args.size == 1+(has_hash ?1:0) and args[0].is_a?(self)
+          if args.size == 1+(has_hash ? 1 : 0) and args[0].is_a?(self)
             # We received a single argument of a compatible type
             # With a secondary supertype or a type having separate identification,
             # we would get the wrong identifier from arg.identifying_role_values:
@@ -242,9 +244,13 @@ module ActiveFacts
                 elsif !arg
                   value = role_key = nil
                 else
-                  #trace :assert, "Asserting #{role.counterpart.object_type} with #{Array(arg).inspect} for #{self}.#{role.name}" do
-                    value, role_key = role.counterpart.object_type.assert_instance(constellation, Array(arg))
-                  #end
+                  if role.counterpart.object_type.is_entity_type
+                    add = !constellation.send(role.counterpart.object_type.basename.to_sym).include?([arg])
+                  else
+                    add = !constellation.send(role.counterpart.object_type.basename.to_sym).include?(arg)
+                  end
+                  value, role_key = role.counterpart.object_type.assert_instance(constellation, Array(arg))
+                  @created_instances << [role.counterpart, value] if add
                 end
                 key << role_key
                 value
@@ -260,10 +266,24 @@ module ActiveFacts
           # Now assign any extra args in the hash which weren't identifiers (extra identifiers will be assigned again)
           (arg_hash ? arg_hash.entries : []).each do |role_name, value|
             role = roles(role_name)
+
+            if !instance.instance_index_counterpart(role).include?(value)
+              @created_instances << [role, value]
+            end
             instance.send(role.setter, value)
           end
 
           return *index_instance(instance, key, irns)
+
+        rescue ImplicitSubtypeChangeDisallowedException => e
+          @created_instances.each do |role, v|
+            if !v.respond_to?(:retract)
+              v = constellation.send(role.object_type.basename.to_sym)[[v]]
+            end
+            v.retract if v
+          end
+          @created_instances = []
+          raise e
         end
 
         def index_instance(instance, key = nil, key_roles = nil) #:nodoc:

@@ -51,7 +51,7 @@ describe "identity" do
       end
 
       it "should be denied" do
-        @change.should raise_error # (ActiveFacts::API::ImplicitSubtypeChangeDisallowedException)
+        @change.should raise_error(ImplicitSubtypeChangeDisallowedException)
       end
 
       it "should not change instance subtype" do
@@ -59,7 +59,11 @@ describe "identity" do
       end
 
       it "should have no side-effects" do
-        @change.call rescue nil
+        begin
+          @change.call
+        rescue ImplicitSubtypeChangeDisallowedException => e
+        end
+
         @p2.should be_nil
         @c1.Name.values.should == [@juliar, @tony]
         @c1.Name.keys.should == [@juliar, @tony]
@@ -67,6 +71,16 @@ describe "identity" do
         @c1.Person.values.should == [@p1, @p3]
         @c1.Person.keys.should == [[@juliar],[@tony]]
         @c1.Australian.values.should == [@p1, @p3]
+      end
+
+      it "should have no side-effects (retracting values which shouldn't)" do
+        @p2_tfn = @c1.TFN(789)
+        begin
+          @change.call
+        rescue ImplicitSubtypeChangeDisallowedException => e
+        end
+
+        @c1.TFN.keys.should == [123, 789]
       end
     end
 

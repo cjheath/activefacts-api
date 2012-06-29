@@ -23,10 +23,9 @@ module ActiveFacts
       end
 
       def assert(*args)
-        #trace :assert, "Asserting #{@klass} with #{args.inspect}" do
-          instance, key = *@klass.assert_instance(@constellation, args)
-          instance
-        #end
+        instance, key = *@klass.assert_instance(@constellation, args)
+        @klass.created_instances = nil if instance.class.is_entity_type
+        instance
       end
 
       def include?(*args)
