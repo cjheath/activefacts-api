@@ -28,16 +28,14 @@ describe "An Entity Type" do
     end
 
     it "should fail if the role isn't one-to-one" do
-      pending "Lacks a check for one-to-one identifying role" do
-        proc do
-          module Mod
-            class Cat
-              identified_by :name
-              has_one :name
-            end
+      proc do
+        module Mod
+          class Cat
+            identified_by :name
+            has_one :name
           end
-        end.should raise_error
-      end
+        end
+      end.should raise_error
     end
 
     describe "when asserted" do
@@ -86,6 +84,10 @@ describe "An Entity Type" do
         end.should raise_error
       end
 
+      it "should not fail if the new value is self" do
+        lambda { @bus.name = 'Acme' }.should_not raise_error
+      end
+
       describe "to a previously-nonexistent value" do
         before :each do
           @bus.name = 'Bloggs'
@@ -101,15 +103,11 @@ describe "An Entity Type" do
         end
 
         it "should be found under the new identifier" do
-          pending "entities are not re-indexed on identifier assignment" do
-            @c.Business['Bloggs'].should == @bus
-          end
+          @c.Business[['Bloggs']].should == @bus
         end
 
         it "should be in the constellation's index under the new identifier" do
-          pending "entities are not re-indexed on identifier assignment" do
-            @c.Business.keys[0].should == ['Bloggs']
-          end
+          @c.Business.keys.should include ['Bloggs']
         end
 
         it "should be the counterpart of the new identifier" do
@@ -117,9 +115,7 @@ describe "An Entity Type" do
         end
 
         it "should not be found in the constellation using the old value" do
-          pending "entities are not de-indexed on identifier assignment" do
-            @c.Business[['Acme']].should be_nil
-          end
+          @c.Business[['Acme']].should be_nil
         end
 
         it "the old value's back-reference is set to nil" do
@@ -202,24 +198,39 @@ describe "An Entity Type" do
           has_one :building
           has_one :number
         end
+
+        class OwnershipId < Int
+          value_type
+        end
+
+        class Owner
+          identified_by :ownership_id, :building
+          has_one :ownership_id
+          has_one :building
+        end
+
+        class OwnerRoom
+          identified_by :owner, :room
+          has_one :owner
+          has_one :room
+        end
       end
     end
+
     before :each do
       @c = ActiveFacts::API::Constellation.new(Mod)
     end
 
     it "should fail if any role is one-to-one" do
-      pending "Lacks a check for one-to-one identifying role" do
-        proc do
-          module Mod
-            class Floor
-              identified_by :building, :number
-              has_one :building
-              one_to_one :number    # Error, invalid identifier
-            end
+      proc do
+        module Mod
+          class Floor
+            identified_by :building, :number
+            has_one :building
+            one_to_one :number    # Error, invalid identifier
           end
-        end.should raise_error
-      end
+        end
+      end.should raise_error
     end
 
     describe "when asserted" do
@@ -228,6 +239,9 @@ describe "An Entity Type" do
         @mackay = @c.Name['Mackay']
         @r = @c.Room(@b, 101)
         @rn = @r.number
+
+        @o = @c.Owner(1_001, @b)
+        @or = @c.OwnerRoom(@o, @r)
       end
 
       it "should return a new instance if not previously present" do
@@ -236,7 +250,7 @@ describe "An Entity Type" do
 
       it "should assert the identifying values" do
         @rn.should be_a(Mod::Number)
-        @c.Number[@rn.identifying_role_values].should == @rn    # Yes
+        @c.Number[@rn].should == @rn    # Yes
         @c.Number[101].should == @rn    # No
         @c.Number[101].should be_eql 101    # No
       end
@@ -269,15 +283,14 @@ describe "An Entity Type" do
         @mackay = @c.Name['Mackay']
         @r = @c.Room(@b, 101)
         @rn = @r.number
+
+        @o = @c.Owner(1_001, @b)
+        @or = @c.OwnerRoom(@o, @r)
       end
 
       it "should fail if the new value already exists" do
         @c.Room(@b, 102)
-        pending "Doesn't check validity of rename" do
-          proc {
-            @r.number = 102
-          }.should raise_error
-        end
+        lambda { @r.number = 102 }.should raise_error
       end
 
       describe "to a previously-nonexistent value" do
@@ -296,16 +309,18 @@ describe "An Entity Type" do
         end
 
         it "should be found under the new identifier" do
-          pending "entities are not re-indexed on identifier assignment" do
-            @c.Room[[@b.identifying_role_values, 103]].should == @r
-            @c.Room[[['Mackay'], 101]].should be_nil
-          end
+          @c.Room[[@b.identifying_role_values, 103]].should == @r
+          @c.Room[[['Mackay'], 101]].should be_nil
+        end
+
+        it "should be found under the new identifier even on deep associations" do
+          @c.OwnerRoom[[@o.identifying_role_values, @r.identifying_role_values]].should == @or
+          @c.OwnerRoom[[[1_001, ['Mackay']], [['Mackay'], 103]]].should == @or
+          @c.OwnerRoom[[[1_001, ['Mackay']], [['Mackay'], 101]]].should be_nil
         end
 
         it "should be in the constellation's index under the new identifier" do
-          pending "entities are not de-indexed on identifier assignment" do
-            @c.Room.keys[0].should == [['Mackay'], @r.number]
-          end
+          @c.Room.keys[0].should == [['Mackay'], @r.number]
         end
 
         it "should be included in the counterparts of the new identifier roles" do
@@ -314,9 +329,7 @@ describe "An Entity Type" do
         end
 
         it "should not be found in the constellation using the old value" do
-          pending "entities are not de-indexed on identifier assignment" do
-            @c.Room.keys[0].should_not == [['Mackay'],101]
-          end
+          @c.Room.keys[0].should_not == [['Mackay'],101]
         end
 
         it "the old value's back-reference is set to nil" do

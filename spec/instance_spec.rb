@@ -47,8 +47,8 @@ describe "An instance of every type of ObjectType" do
             identified_by :#{base_type.name.snakecase}_val#{
               @role_names.map do |role_name|
                 %Q{
-            has_one :#{role_name}#{
-              mandatory = (role_name == (base_type.name.snakecase+'_val').to_sym ? ', :mandatory => true' : '')
+            #{
+              (role_name == (base_type.name.snakecase+'_val').to_sym ? "one_to_one :#{role_name}, :mandatory => true" : "has_one :#{role_name}")
             }
             one_to_one :one_#{role_name}, :class => #{role_name.to_s.camelcase}}
               end*""
@@ -59,7 +59,9 @@ describe "An instance of every type of ObjectType" do
             identified_by :#{base_type.name.snakecase}_sub_val#{
               @role_names.map do |role_name|
                 %Q{
-            has_one :#{role_name}
+            #{
+              (role_name == (base_type.name.snakecase+'_sub_val').to_sym ? "one_to_one :#{role_name}" : "has_one :#{role_name}")
+            }
             one_to_one :one_#{role_name}, :class => #{role_name.to_s.camelcase}}
               end*""
             }

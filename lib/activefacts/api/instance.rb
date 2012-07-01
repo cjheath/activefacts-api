@@ -24,18 +24,35 @@ module ActiveFacts
         end
       end
 
-      # Checks if the role already has the same value set.
-      #
-      # Instance is unchanged when the new value for the role
-      # is the same as the previous one.
-      def is_unchanged?(role, value)
-        old = instance_variable_get(role.variable) rescue nil
-        return true if old.equal?(value)         # Occurs when another instance having the same value is assigned
+      def detect_inconsistencies(role, value)
+        exception_data = {
+          :value => value,
+          :role  => role,
+          :class => self.class
+        }
 
-        value = role.adapt(@constellation, value) if value
-        return true if old.equal?(value)         # Occurs when same value but not same instance is assigned
+        if duplicate_identifying_values?(role, value)
+          e = DuplicateIdentifyingValueException.new(exception_data)
+          raise e
+        end
 
-        false
+        if implicit_subtype_change?(role, value)
+          e = ImplicitSubtypeChangeDisallowedException.new(exception_data)
+          raise e
+        end
+      end
+
+      def implicit_subtype_change?(role, value)
+        if value && role.is_identifying
+          value.related_entities.detect do |entity|
+            next if entity.class == self.class
+            !(entity.class.supertypes_transitive & self.class.supertypes_transitive).empty?
+          end
+        end
+      end
+
+      def duplicate_identifying_values?(role, value)
+        @constellation && role.is_identifying && !is_unique?(role.getter => value)
       end
 
       # Checks if instance would still be unique if it was updated with
@@ -48,24 +65,54 @@ module ActiveFacts
       # updated_values = { :name => "John" }
       # Would merge this hash with the one defining the current instance
       # and verify in our constellation if it exists.
-      #
-      # Warning: instances with no constellation will always return true
       def is_unique?(updated_values)
-        id = identity
-        updated_values.each do |name, role_value|
-          id[name] = role_value
-        end
+        new_identity = identity.merge(updated_values)
+        !instance_index.include?(new_identity)
+      end
 
-        if @constellation
-          !@constellation.send(self.class.basename.to_sym).include?(id)
-        else
-          true
+      # List entities which reference the current one.
+      #
+      # Once an entity is found, it will also search for
+      # related entities of this instance.
+      def related_entities(instances = [])
+        self.class.roles.each do |role_name, role|
+          instance_index_counterpart(role).each do |irv, instance|
+            if instance.class.is_entity_type && instance.is_identified_by?(self)
+              if !instances.include?(instance)
+                instances << instance
+                instance.related_entities(instances)
+              end
+            end
+          end
+        end
+        instances
+      end
+
+      # Determine if entity is an identifying value
+      # of the current instance.
+      def is_identified_by?(entity)
+        self.class.identifying_roles.detect do |role|
+          send(role.getter) == entity
         end
       end
+
+      def instance_index
+        @constellation.send(self.class.basename.to_sym)
+      end
+
+      def instance_index_counterpart(role)
+        if @constellation && role.counterpart
+          @constellation.send(role.counterpart.object_type.basename.to_sym)
+        else
+          []
+        end
+      end
+
 
       # Verbalise this instance
       # REVISIT: Should it raise an error if it was not redefined ?
       def verbalise
+        # REVISIT: Should it raise an error if it was not redefined ?
         # This method should always be overridden in subclasses
       end
 

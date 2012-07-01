@@ -23,27 +23,48 @@ module ActiveFacts
       end
 
       def assert(*args)
-        #trace :assert, "Asserting #{@klass} with #{args.inspect}" do
-          instance, key = *@klass.assert_instance(@constellation, args)
-          instance
-        #end
+        instance, key = *@klass.assert_instance(@constellation, args)
+        @klass.created_instances = nil if instance.class.is_entity_type
+        instance
       end
 
       def include?(*args)
         if args.size == 1 && args[0].is_a?(@klass)
           key = args[0].identifying_role_values
         else
-          key = @klass.identifying_role_values(*args)
+          key = @klass.identifying_role_values(*args) rescue nil
         end
         return @hash[key]
       end
 
       def []=(key, value)   #:nodoc:
-        @hash[key] = value
+        if key.respond_to?(:identifying_role_values)
+          @hash[key.identifying_role_values] = value
+        else
+          @hash[key] = value
+        end
       end
 
-      def [](*args)
-        @hash[*args]
+      def [](key)
+        if key.respond_to?(:identifying_role_values)
+          @hash[key.identifying_role_values]
+        else
+          @hash[key]
+        end
+      end
+
+      def refresh_keys
+        keys_to_update = []
+        @hash.each do |key, value|
+          if value.respond_to?(:identifying_role_values) && key != value.identifying_role_values
+            keys_to_update << key
+          end
+        end
+
+        keys_to_update.each do |key|
+          value = @hash.delete(key)
+          @hash[value.identifying_role_values] = value
+        end
       end
 
       def size

@@ -16,7 +16,7 @@ describe "Entity Type class definitions" do
       end
       class Person < LegalEntity
         identified_by :name
-        has_one :name, :class => Name
+        one_to_one :name, :class => Name
       end
     end
   end

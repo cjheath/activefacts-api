@@ -25,7 +25,16 @@ module ActiveFacts
             @stderr.puts "---\nDebugging keys available: #{@available.keys.map{|s| s.to_s}.sort*", "}"
           }
         end
-        require 'ruby-debug' if @keys[:debug]
+        if @keys[:debug]
+          require 'ruby-debug' + (
+            case RUBY_VERSION
+            when /^1\.9\.3/
+              '193'
+#            when /^1\.9/
+#              '19'
+            else ''
+            end)
+        end
       end
     end
 
