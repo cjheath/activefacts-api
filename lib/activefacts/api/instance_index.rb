@@ -22,7 +22,7 @@ module ActiveFacts
       def initialize(constellation, klass)
         @constellation = constellation
         @klass = klass
-        @hash = {}
+        @hash = RBTree.new
       end
 
       def inspect

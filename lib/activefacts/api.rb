@@ -30,6 +30,7 @@
 # of the counterpart ObjectType. There are no raw values, only instances of ValueType
 # classes.
 
+require 'rbtree'
 require 'activefacts/api/support'               # General support code and core patches
 require 'activefacts/api/vocabulary'            # A Ruby module may become a Vocabulary
 require 'activefacts/api/instance_index'        # The index used by a constellation to record every instance
