@@ -86,18 +86,11 @@ describe "Value Type class definitions" do
     # Check the role definition may not be accessed by passing an index:
     Mod::Name.roles(0).should be_nil
 
-    @classes.zip(@attrs).each { |pair|
-        klass, attr = *pair
-        role = klass.roles(attr)
-        role.should_not be_nil
-
-        role = klass.roles(attr.to_s)
-        role.should_not be_nil
-
+    @classes.zip(@attrs).each { |klass, attr|
+        klass.roles(attr).should_not be_nil
+        klass.roles(attr.to_s).should_not be_nil
         # Check the role definition may be accessed by indexing the returned array:
-        role = klass.roles[attr]
-        role.should_not be_nil
-
+        klass.roles[attr].should_not be_nil
         # Check the role definition array by .include?
         klass.roles.include?(attr).should be_true
       }

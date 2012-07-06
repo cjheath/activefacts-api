@@ -1,5 +1,5 @@
 require 'activefacts/api'
-require 'tax'
+require 'fixtures/tax'
 require 'rspec'
 require 'rspec/matchers'
 include ActiveFacts::API
