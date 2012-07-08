@@ -3,9 +3,6 @@
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
 
-require 'rspec'
-require 'activefacts/api'
-
 describe "A Constellation instance" do
   before :each do
     Object.send :remove_const, :Mod if Object.const_defined?("Mod")

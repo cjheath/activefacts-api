@@ -2,8 +2,6 @@
 # ActiveFacts tests: Value instances in the Runtime API
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
-require 'rspec'
-require 'activefacts/api'
 
 VALUE_TYPES = Int, Real, AutoCounter, String, Date, DateTime, Decimal
 RAW_VALUES = [2, 3.0, 4, "5", Date.new(2008, 04, 20), DateTime.new(2008, 04, 20, 10, 28, 14)]

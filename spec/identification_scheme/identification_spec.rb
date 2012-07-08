@@ -1,5 +1,7 @@
-require 'rspec'
-require 'activefacts/api'
+#
+# ActiveFacts tests: Value instances in the Runtime API
+# Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
+#
 
 describe "An Entity Type" do
   before :all do

@@ -2,8 +2,6 @@
 # ActiveFacts tests: Roles of object_type classes in the Runtime API
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
-require 'rspec'
-require 'activefacts/api'
 
 describe "Roles" do
   before :each do
