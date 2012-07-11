@@ -1,9 +1,10 @@
-require 'activefacts/api'
-require 'tax'
-require 'rspec'
-require 'rspec/matchers'
+#
+# ActiveFacts tests: Value instances in the Runtime API
+# Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
+#
+
+require 'fixtures/tax'
 include ActiveFacts::API
-include RSpec::Matchers
 
 describe "identity" do
   before :each do

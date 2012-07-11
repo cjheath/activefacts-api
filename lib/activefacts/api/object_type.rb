@@ -61,7 +61,7 @@ module ActiveFacts
       # * :restrict - a list of values or ranges which this role may take. Not used yet.
       def has_one(role_name, options = {})
         role_name, related, mandatory, related_role_name = extract_binary_params(false, role_name, options)
-        detect_fact_collision(:type => :has_one, :role => role_name, :related => related)
+        detect_fact_type_collision(:type => :has_one, :role => role_name, :related => related)
         define_binary_fact_type(false, role_name, related, mandatory, related_role_name)
       end
 
@@ -78,20 +78,20 @@ module ActiveFacts
       def one_to_one(role_name, options = {})
         role_name, related, mandatory, related_role_name =
           extract_binary_params(true, role_name, options)
-        detect_fact_collision(:type => :one_to_one, :role => role_name, :related => related)
+        detect_fact_type_collision(:type => :one_to_one, :role => role_name, :related => related)
         define_binary_fact_type(true, role_name, related, mandatory, related_role_name)
       end
 
-      def detect_fact_collision(fact)
+      def detect_fact_type_collision(fact)
         if respond_to?(:identifying_role_names) && identifying_role_names.include?(fact[:role])
           case fact[:type]
           when :has_one
             if identifying_role_names.size == 1
-              raise "has_one relationship used when activefacts-api was waiting for one_to_one (#{self}, role: #{fact[:role]})"
+              raise "Entity type #{self} cannot be identified by a single role '#{fact[:role]}' unless that role is one_to_one"
             end
           when :one_to_one
             if identifying_role_names.size > 1
-              raise "one_to_one relationship used when activefacts-api was waiting for has_one (#{self}, role: #{fact[:role]})"
+              raise "Entity type #{self} cannot be identified by a single role '#{fact[:role]}' unless that role is has_one"
             end
           end
         end
