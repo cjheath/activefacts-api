@@ -24,50 +24,55 @@ module ActiveFacts
         end
       end
 
+      # Detect inconsistencies within constellation if this entity was updated
+      # with the specified role/value pair.
       def detect_inconsistencies(role, value)
-        exception_data = {
-          :value => value,
-          :role  => role,
-          :class => self.class
-        }
-
         if duplicate_identifying_values?(role, value)
-          e = DuplicateIdentifyingValueException.new(exception_data)
-          raise e
-        end
+          exception_data = {
+            :value => value,
+            :role  => role,
+            :class => self.class
+          }
 
-        if implicit_subtype_change?(role, value)
-          e = ImplicitSubtypeChangeDisallowedException.new(exception_data)
-          raise e
-        end
-      end
-
-      def implicit_subtype_change?(role, value)
-        if value && role.is_identifying
-          value.related_entities.detect do |entity|
-            next if entity.class == self.class
-            !(entity.class.supertypes_transitive & self.class.supertypes_transitive).empty?
-          end
+          raise DuplicateIdentifyingValueException.new(exception_data)
         end
       end
 
+      # Checks if instance have duplicate values within its constellation.
+      #
+      # Only works on identifying roles.
       def duplicate_identifying_values?(role, value)
-        @constellation && role.is_identifying && !is_unique?(role.getter => value)
+        @constellation && role.is_identifying && !is_unique?(:role => role, :value => value)
       end
 
       # Checks if instance would still be unique if it was updated with
-      # updated_values.
+      # args.
       #
-      # updated_values should be a hash containing the values to update
+      # args should be a hash containing the role and value to update
       # and the name of the identifying value as the key.
       #
       # For example, if a Person is identified by name and family_name:
       # updated_values = { :name => "John" }
       # Would merge this hash with the one defining the current instance
       # and verify in our constellation if it exists.
-      def is_unique?(updated_values)
-        new_identity = identity.merge(updated_values)
-        !instance_index.include?(new_identity)
+      #
+      # The uniqueness of the entity will also be checked within its supertypes.
+      #
+      # An Employee -subtype of a Person- identified by its employee_id would
+      # collide with a Person if it has the same name. But `name` may not be
+      # an identifying value for the Employee identification scheme.
+      def is_unique?(args)
+        duplicate = ([self.class] + self.class.supertypes_transitive).detect do |klass|
+          old_identity = identity_by(klass)
+          if klass.identifying_roles.include?(args[:role])
+            new_identity = old_identity.merge(args[:role].getter => args[:value])
+            @constellation.instances[klass].include?(new_identity)
+          else
+            false
+          end
+        end
+
+        !duplicate
       end
 
       # List entities which reference the current one.

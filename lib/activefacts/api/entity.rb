@@ -119,9 +119,18 @@ module ActiveFacts
         end
       end
 
+      # Identifying role values in a hash form.
       def identity
+        identity_by(self.class)
+      end
+
+      # Identifying role values in a hash form by class (entity).
+      #
+      # Subtypes may have different identifying roles compared to their supertype, and therefore, a subtype entity
+      # may be identified differently if compared to one of its supertype.
+      def identity_by(klass)
         roles_hash = {}
-        self.class.identifying_roles.each do |role|
+        klass.identifying_roles.each do |role|
           roles_hash[role.getter] = send(role.getter)
         end
         roles_hash
@@ -275,7 +284,7 @@ module ActiveFacts
 
           return *index_instance(instance, key, irns)
 
-        rescue ImplicitSubtypeChangeDisallowedException => e
+        rescue DuplicateIdentifyingValueException
           @created_instances.each do |role, v|
             if !v.respond_to?(:retract)
               v = constellation.send(role.object_type.basename.to_sym)[[v]]
@@ -283,7 +292,7 @@ module ActiveFacts
             v.retract if v
           end
           @created_instances = []
-          raise e
+          raise
         end
 
         def index_instance(instance, key = nil, key_roles = nil) #:nodoc:

@@ -47,12 +47,11 @@ describe "identity" do
         @p2 = nil
         @change = proc {
           @p2 = @c1.AustralianTaxPayer(:tfn => 789, :name => "Juliar Gillard")
-          # Must fail; must not create TFN=789; must not change Juliar into an AustralianTaxPayer
         }
       end
 
       it "should be denied" do
-        @change.should raise_error(ImplicitSubtypeChangeDisallowedException)
+        @change.should raise_error(DuplicateIdentifyingValueException)
       end
 
       it "should not change instance subtype" do
@@ -62,7 +61,7 @@ describe "identity" do
       it "should have no side-effects" do
         begin
           @change.call
-        rescue ImplicitSubtypeChangeDisallowedException => e
+        rescue DuplicateIdentifyingValueException => e
         end
 
         @p2.should be_nil
@@ -78,7 +77,7 @@ describe "identity" do
         @p2_tfn = @c1.TFN(789)
         begin
           @change.call
-        rescue ImplicitSubtypeChangeDisallowedException => e
+        rescue DuplicateIdentifyingValueException => e
         end
 
         @c1.TFN.keys.should =~ [123, 789]
