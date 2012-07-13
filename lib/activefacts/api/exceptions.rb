@@ -9,13 +9,8 @@ module ActiveFacts
     class DuplicateIdentifyingValueException < Exception
       def initialize(desc)
         super("#{desc[:class].basename}: Illegal attempt to change an identifying value (Duplicate)" +
-              " (#{desc[:role].setter} used with #{desc[:value].verbalise})")
-      end
-    end
-
-    class ImplicitSubtypeChangeDisallowedException < Exception
-      def initialize(desc)
-        super("Implicit type change: used #{desc[:value]} for #{desc[:role].variable} in #{desc[:class]}")
+              " (#{desc[:role].setter} used with #{desc[:value].verbalise}," +
+              " already used by [#{desc[:value].related_entities.map(&:verbalise).join(", ")}])")
       end
     end
   end

@@ -8,40 +8,28 @@
 # The hash one has problems with keys being changed during object deletion, so
 # cannot be used yet; a fix is upcoming and will improve performance of large sets.
 #
+
+require 'forwardable'
+
 module ActiveFacts
   module API
 
     class RoleValues  #:nodoc:
       include Enumerable
+      extend Forwardable
+
+      def_delegators :@a, :each, :size, :empty?, :-
 
       def initialize
         @a = []
       end
 
-      def each &b
-        # REVISIT: Provide a configuration variable to enable this heckling during testing:
-        #@a.sort_by{rand}.each &b
-        @a.each &b
-      end
-
-      def size
-        @a.size
-      end
-
-      def empty?
-        @a.size == 0
-      end
-
       def +(a)
-        @a.+(a.is_a?(RoleValues) ? Array(a) : a)
-      end
-
-      def -(a)
-        @a - a
+        @a.+(a.is_a?(RoleValues) ? [a] : a)
       end
 
       def single
-        @a.size > 1 ? nil : @a[0]
+        size > 1 ? nil : @a[0]
       end
 
       def update(old, value)
@@ -50,9 +38,8 @@ module ActiveFacts
       end
 
       def verbalise
-        "["+@a.to_a.map{|e| e.verbalise}*", "+"]"
+        "[#{@a.map(&:verbalise).join(", ")}]"
       end
-
     end
 
   end
