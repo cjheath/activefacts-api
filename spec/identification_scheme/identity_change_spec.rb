@@ -1,9 +1,10 @@
-require 'activefacts/api'
-require 'tax'
-require 'rspec'
-require 'rspec/matchers'
+#
+# ActiveFacts tests: Value instances in the Runtime API
+# Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
+#
+
+require 'fixtures/tax'
 include ActiveFacts::API
-include RSpec::Matchers
 
 describe "identity" do
   before :each do
@@ -31,14 +32,14 @@ describe "identity" do
       @c1.AustralianTaxReturn.keys.should == [[[123], [2010]]]
       @c1.AustralianTaxReturn.values.should == [@r1]
 
-      @c1.Name.keys.should == [@juliar, @tony]
-      @c1.Name.values.should == [@juliar, @tony]
-      @c1.Person.keys.should == [[@juliar], [@tony]]
-      @c1.Person.values.should == [@p1, @p3]
-      @c1.Australian.keys.should == [[@juliar], [@tony]]
-      @c1.Australian.values.should == [@p1, @p3]
-      @c1.AustralianTaxPayer.keys.should == [[123]]
-      @c1.AustralianTaxPayer.values.should == [@p3]
+      @c1.Name.keys.should =~ [@juliar, @tony]
+      @c1.Name.values.should =~ [@juliar, @tony]
+      @c1.Person.keys.should =~ [[@juliar], [@tony]]
+      @c1.Person.values.should =~ [@p1, @p3]
+      @c1.Australian.keys.should =~ [[@juliar], [@tony]]
+      @c1.Australian.values.should =~ [@p1, @p3]
+      @c1.AustralianTaxPayer.keys.should =~ [[123]]
+      @c1.AustralianTaxPayer.values.should =~ [@p3]
     end
 
     describe "that implies change of subtype" do
@@ -46,12 +47,11 @@ describe "identity" do
         @p2 = nil
         @change = proc {
           @p2 = @c1.AustralianTaxPayer(:tfn => 789, :name => "Juliar Gillard")
-          # Must fail; must not create TFN=789; must not change Juliar into an AustralianTaxPayer
         }
       end
 
       it "should be denied" do
-        @change.should raise_error # (ActiveFacts::API::ImplicitSubtypeChangeDisallowedException)
+        @change.should raise_error(DuplicateIdentifyingValueException)
       end
 
       it "should not change instance subtype" do
@@ -59,14 +59,28 @@ describe "identity" do
       end
 
       it "should have no side-effects" do
-        @change.call rescue nil
+        begin
+          @change.call
+        rescue DuplicateIdentifyingValueException => e
+        end
+
         @p2.should be_nil
-        @c1.Name.values.should == [@juliar, @tony]
-        @c1.Name.keys.should == [@juliar, @tony]
-        @c1.TFN.keys.should == [123]
-        @c1.Person.values.should == [@p1, @p3]
-        @c1.Person.keys.should == [[@juliar],[@tony]]
-        @c1.Australian.values.should == [@p1, @p3]
+        @c1.Name.values.should =~ [@juliar, @tony]
+        @c1.Name.keys.should =~ [@juliar, @tony]
+        @c1.TFN.keys.should =~ [123]
+        @c1.Person.values.should =~ [@p1, @p3]
+        @c1.Person.keys.should =~ [[@juliar],[@tony]]
+        @c1.Australian.values.should =~ [@p1, @p3]
+      end
+
+      it "should have no side-effects (retracting values which shouldn't)" do
+        @p2_tfn = @c1.TFN(789)
+        begin
+          @change.call
+        rescue DuplicateIdentifyingValueException => e
+        end
+
+        @c1.TFN.keys.should =~ [123, 789]
       end
     end
 

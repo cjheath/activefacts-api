@@ -3,9 +3,6 @@
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
 
-require 'rspec'
-require 'activefacts/api'
-
 describe "A Constellation instance" do
   before :each do
     Object.send :remove_const, :Mod if Object.const_defined?("Mod")
@@ -34,12 +31,12 @@ describe "A Constellation instance" do
 
       class LegalEntity
         identified_by :name
-        has_one :name, :mandatory => true
+        one_to_one :name, :mandatory => true
       end
 
       class SurrogateId
         identified_by :auto_counter_val
-        has_one :auto_counter_val
+        one_to_one :auto_counter_val
       end
 
       class Company < LegalEntity
@@ -282,9 +279,14 @@ describe "A Constellation instance" do
     person.family_name.should be_nil
     @constellation.retract(@constellation.Name("Fred"))
     @constellation.Name["Fred"].should be_nil
-    pending "Retraction of identifiers doesn't de/re-index" do
-      @constellation.Person.size.should == 0
-    end
+  end
+
+  it "should retract linked instances (cascading)" do
+    @constellation.Person "Fred", "Smith", :auto_counter_val => :new, :birth_name => "Nerk"
+    @constellation.Person "George", "Smith", :auto_counter_val => :new, :birth_name => "Patrick"
+    @constellation.Person.size.should == 2
+    @constellation.retract(@constellation.Name("Smith"))
+    @constellation.Person.size.should == 0
   end
 
   it "should fail to recognise references to unresolved forward referenced classes" do

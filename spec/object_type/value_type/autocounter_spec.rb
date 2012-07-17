@@ -2,8 +2,6 @@
 # ActiveFacts tests: Value instances in the Runtime API
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
-require 'rspec'
-require 'activefacts/api'
 
 describe "AutoCounter Value Type instances" do
   before :each do
@@ -14,7 +12,7 @@ describe "AutoCounter Value Type instances" do
       end
       class Thing
         identified_by :thing_id
-        has_one :thing_id
+        one_to_one :thing_id
       end
       class Ordinal < Int
         value_type
@@ -43,7 +41,7 @@ describe "AutoCounter Value Type instances" do
   end
 
   it "should respond to its roles" do
-    @thing_id.respond_to?(:all_thing).should be_true
+    @thing_id.respond_to?(:thing).should be_true
   end
 
   it "should allow prevent invalid role assignment" do

@@ -61,6 +61,7 @@ module ActiveFacts
       # * :restrict - a list of values or ranges which this role may take. Not used yet.
       def has_one(role_name, options = {})
         role_name, related, mandatory, related_role_name = extract_binary_params(false, role_name, options)
+        detect_fact_type_collision(:type => :has_one, :role => role_name, :related => related)
         define_binary_fact_type(false, role_name, related, mandatory, related_role_name)
       end
 
@@ -77,7 +78,23 @@ module ActiveFacts
       def one_to_one(role_name, options = {})
         role_name, related, mandatory, related_role_name =
           extract_binary_params(true, role_name, options)
+        detect_fact_type_collision(:type => :one_to_one, :role => role_name, :related => related)
         define_binary_fact_type(true, role_name, related, mandatory, related_role_name)
+      end
+
+      def detect_fact_type_collision(fact)
+        if respond_to?(:identifying_role_names) && identifying_role_names.include?(fact[:role])
+          case fact[:type]
+          when :has_one
+            if identifying_role_names.size == 1
+              raise "Entity type #{self} cannot be identified by a single role '#{fact[:role]}' unless that role is one_to_one"
+            end
+          when :one_to_one
+            if identifying_role_names.size > 1
+              raise "Entity type #{self} cannot be identified by a single role '#{fact[:role]}' unless that role is has_one"
+            end
+          end
+        end
       end
 
       # Access supertypes or add new supertypes; multiple inheritance.
@@ -229,28 +246,34 @@ module ActiveFacts
 
         class_eval do
           define_method role.setter do |value|
-            role_var = role.variable
 
-            # Get old value, and jump out early if it's unchanged:
-            old = instance_variable_get(role_var) rescue nil
-            return value if old.equal?(value)         # Occurs when another instance having the same value is assigned
+            old = instance_variable_get(role.variable) rescue nil
+            return true if old.equal?(value)         # Occurs when another instance having the same value is assigned
 
-            value = role.adapt(constellation, value) if value
-            return value if old.equal?(value)         # Occurs when same value but not same instance is assigned
+            value = role.adapt(@constellation, value) if value
+            return true if old.equal?(value)         # Occurs when same value but not same instance is assigned
 
-            # REVISIT: A frozen-key solution could be used to allow changing identifying roles.
-            # If this object plays an identifying role in other objects, they also need re-indexing
-#            if role.is_identifying
-#              raise "#{self.class.basename}: illegal attempt to modify identifying role #{role.name}" if value != nil && old != nil
-#            end
+            detect_inconsistencies(role, value)
 
-            instance_variable_set(role_var, value)
+            if @constellation && old
+              keys = old.related_entities.map do |entity|
+                [entity.identifying_role_values, entity]
+              end
+            end
+
+            instance_variable_set(role.variable, value)
 
             # Remove self from the old counterpart:
             old.send(role.counterpart.setter, nil) if old
 
             # Assign self to the new counterpart
             value.send(role.counterpart.setter, self) if value
+
+            if keys
+              keys.each do |key, entity|
+                entity.instance_index.refresh_key(key)
+              end
+            end
 
             value
           end
@@ -282,6 +305,14 @@ module ActiveFacts
 #              raise "#{self.class.basename}: illegal attempt to modify identifying role #{role.name}" if value != nil && old != nil
 #            end
 
+            detect_inconsistencies(role, value) if value
+
+            if old && old.constellation
+              keys = old.related_entities.map do |entity|
+                [entity.identifying_role_values, entity]
+              end
+            end
+
             instance_variable_set(role_var, value)
 
             # Remove "self" from the old counterpart:
@@ -289,6 +320,12 @@ module ActiveFacts
 
             # Add "self" into the counterpart
             value.send(getter ||= role.counterpart.getter).update(old, self) if value
+
+            if keys
+              keys.each do |key, entity|
+                entity.instance_index.refresh_key(key)
+              end
+            end
 
             value
           end

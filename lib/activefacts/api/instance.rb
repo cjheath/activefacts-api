@@ -24,8 +24,99 @@ module ActiveFacts
         end
       end
 
+      # Detect inconsistencies within constellation if this entity was updated
+      # with the specified role/value pair.
+      def detect_inconsistencies(role, value)
+        if duplicate_identifying_values?(role, value)
+          exception_data = {
+            :value => value,
+            :role  => role,
+            :class => self.class
+          }
+
+          raise DuplicateIdentifyingValueException.new(exception_data)
+        end
+      end
+
+      # Checks if instance have duplicate values within its constellation.
+      #
+      # Only works on identifying roles.
+      def duplicate_identifying_values?(role, value)
+        @constellation && role.is_identifying && !is_unique?(:role => role, :value => value)
+      end
+
+      # Checks if instance would still be unique if it was updated with
+      # args.
+      #
+      # args should be a hash containing the role and value to update
+      # and the name of the identifying value as the key.
+      #
+      # For example, if a Person is identified by name and family_name:
+      # updated_values = { :name => "John" }
+      # Would merge this hash with the one defining the current instance
+      # and verify in our constellation if it exists.
+      #
+      # The uniqueness of the entity will also be checked within its supertypes.
+      #
+      # An Employee -subtype of a Person- identified by its employee_id would
+      # collide with a Person if it has the same name. But `name` may not be
+      # an identifying value for the Employee identification scheme.
+      def is_unique?(args)
+        duplicate = ([self.class] + self.class.supertypes_transitive).detect do |klass|
+          old_identity = identity_by(klass)
+          if klass.identifying_roles.include?(args[:role])
+            new_identity = old_identity.merge(args[:role].getter => args[:value])
+            @constellation.instances[klass].include?(new_identity)
+          else
+            false
+          end
+        end
+
+        !duplicate
+      end
+
+      # List entities which reference the current one.
+      #
+      # Once an entity is found, it will also search for
+      # related entities of this instance.
+      def related_entities(instances = [])
+        self.class.roles.each do |role_name, role|
+          instance_index_counterpart(role).each do |irv, instance|
+            if instance.class.is_entity_type && instance.is_identified_by?(self)
+              if !instances.include?(instance)
+                instances << instance
+                instance.related_entities(instances)
+              end
+            end
+          end
+        end
+        instances
+      end
+
+      # Determine if entity is an identifying value
+      # of the current instance.
+      def is_identified_by?(entity)
+        self.class.identifying_roles.detect do |role|
+          send(role.getter) == entity
+        end
+      end
+
+      def instance_index
+        @constellation.send(self.class.basename.to_sym)
+      end
+
+      def instance_index_counterpart(role)
+        if @constellation && role.counterpart
+          @constellation.send(role.counterpart.object_type.basename.to_sym)
+        else
+          []
+        end
+      end
+
+
       # Verbalise this instance
       def verbalise
+        # REVISIT: Should it raise an error if it was not redefined ?
         # This method should always be overridden in subclasses
       end
 
@@ -48,7 +139,11 @@ module ActiveFacts
               # puts "Not removing role #{role_name} from counterpart RoleValues #{counterpart.name}"
               # Duplicate the array using to_a, as the RoleValues here will be modified as we traverse it:
               send(role.name).to_a.each do |v|
-                v.send(counterpart.setter, nil)
+                if counterpart.is_identifying
+                  v.retract
+                else
+                  v.send(counterpart.setter, nil)
+                end
               end
             end
           end

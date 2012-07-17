@@ -2,8 +2,6 @@
 # ActiveFacts tests: Roles of object_type classes in the Runtime API
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
-require 'rspec'
-require 'activefacts/api'
 
 describe "Roles" do
   before :each do
@@ -14,11 +12,11 @@ describe "Roles" do
       end
       class Identifier
         identified_by :name
-        has_one :name
+        one_to_one :name
       end
       class LegalEntity
         identified_by :name
-        has_one :name
+        one_to_one :name
       end
       class Contract
         identified_by :first, :second
@@ -37,7 +35,7 @@ describe "Roles" do
       class Employee
         identified_by :name
         one_to_one :identifier
-        has_one :name
+        one_to_one :name
       end
     end
     # print "object_type: "; p Mod.object_type
@@ -125,10 +123,10 @@ describe "Roles" do
     le = Mod::LegalEntity.new(foo)
     le.respond_to?(:name).should be_true
     name = le.name
-    name.respond_to?(:all_legal_entity).should be_true
+    name.respond_to?(:legal_entity).should be_true
 
     #pending
-    Array(name.all_legal_entity).should === [le]
+    [name.legal_entity].should === [le]
   end
 
   it "should instantiate subclasses sensibly" do

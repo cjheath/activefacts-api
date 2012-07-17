@@ -2,8 +2,6 @@
 # ActiveFacts tests: Entity classes in the Runtime API
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
-require 'rspec'
-require 'activefacts/api'
 
 describe "Entity Type class definitions" do
   before :each do
@@ -16,7 +14,7 @@ describe "Entity Type class definitions" do
       end
       class Person < LegalEntity
         identified_by :name
-        has_one :name, :class => Name
+        one_to_one :name, :class => Name
       end
     end
   end

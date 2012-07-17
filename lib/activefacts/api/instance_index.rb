@@ -4,6 +4,9 @@
 #
 # Copyright (c) 2009 Clifford Heath. Read the LICENSE file.
 #
+
+require 'forwardable'
+
 module ActiveFacts
   module API
     #
@@ -12,6 +15,10 @@ module ActiveFacts
     # arguments (where ObjectType is the object_type name you're interested in)
     #
     class InstanceIndex
+      extend Forwardable
+      def_delegators :@hash, :size, :empty?, :each, :map,
+                     :detect, :values, :keys, :detect, :delete_if
+
       def initialize(constellation, klass)
         @constellation = constellation
         @klass = klass
@@ -22,71 +29,49 @@ module ActiveFacts
         "<InstanceIndex for #{@klass.name} in #{@constellation.inspect}>"
       end
 
+      # Assertion of an entity type or a value type
+      #
+      # When asserting an entity type, multiple entity type or value type
+      # may be created. Every instance (entity or value) created in this
+      # process will be removed if the entity type fail to be asserted.
       def assert(*args)
-        #trace :assert, "Asserting #{@klass} with #{args.inspect}" do
-          instance, key = *@klass.assert_instance(@constellation, args)
-          instance
-        #end
+        instance, key = *@klass.assert_instance(@constellation, args)
+        @klass.created_instances = nil if instance.class.is_entity_type
+        instance
       end
 
       def include?(*args)
         if args.size == 1 && args[0].is_a?(@klass)
           key = args[0].identifying_role_values
         else
-          key = @klass.identifying_role_values(*args)
+          key = @klass.identifying_role_values(*args) rescue nil
         end
-        return @hash[key]
+
+        @hash[key]
       end
 
       def []=(key, value)   #:nodoc:
-        if key.respond_to?(:identifying_role_values)
-          @hash[key.identifying_role_values] = value
-        else
-          @hash[key] = value
-        end
+        @hash[flatten_key(key)] = value
       end
 
       def [](key)
-        if key.respond_to?(:identifying_role_values)
-          @hash[key.identifying_role_values]
+        @hash[flatten_key(key)]
+      end
+
+      def refresh_key(key)
+        value = @hash.delete(key)
+        @hash[value.identifying_role_values] = value if value
+      end
+
+      private
+      def flatten_key(key)
+        if key.is_a?(Array)
+          key.map { |identifier| flatten_key(identifier) }
+        elsif key.respond_to?(:identifying_role_values)
+          key.identifying_role_values
         else
-          @hash[key]
+          key
         end
-      end
-
-      def size
-        @hash.size
-      end
-
-      def empty?
-        @hash.size == 0
-      end
-
-      def each &b
-        @hash.each &b
-      end
-
-      def map &b
-        @hash.map &b
-      end
-
-      def detect &b
-        r = @hash.detect &b
-        r ? r[1] : nil
-      end
-
-      # Return an array of all the instances of this object_type
-      def values
-        @hash.values
-      end
-
-      # Return an array of the identifying role values arrays for all the instances of this object_type
-      def keys
-        @hash.keys
-      end
-
-      def delete_if(&b)   #:nodoc:
-        @hash.delete_if &b
       end
     end
   end
