@@ -58,18 +58,9 @@ module ActiveFacts
         @hash[flatten_key(key)]
       end
 
-      def refresh_keys
-        keys_to_update = []
-        @hash.each do |key, value|
-          if value.respond_to?(:identifying_role_values) && key != value.identifying_role_values
-            keys_to_update << key
-          end
-        end
-
-        keys_to_update.each do |key|
-          value = @hash.delete(key)
-          @hash[value.identifying_role_values] = value
-        end
+      def refresh_key(key)
+        value = @hash.delete(key)
+        @hash[value.identifying_role_values] = value if value
       end
 
       private

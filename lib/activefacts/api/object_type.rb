@@ -255,6 +255,12 @@ module ActiveFacts
 
             detect_inconsistencies(role, value)
 
+            if @constellation && old
+              keys = old.related_entities.map do |entity|
+                [entity.identifying_role_values, entity]
+              end
+            end
+
             instance_variable_set(role.variable, value)
 
             # Remove self from the old counterpart:
@@ -263,11 +269,9 @@ module ActiveFacts
             # Assign self to the new counterpart
             value.send(role.counterpart.setter, self) if value
 
-            # REVISIT: refreshing keys happens at any call of instance_variable_set.
-            # this is not necessary and should only happen once at the end of the assignment.
-            if @constellation && value
-              value.related_entities.each do |entity|
-                entity.instance_index.refresh_keys
+            if keys
+              keys.each do |key, entity|
+                entity.instance_index.refresh_key(key)
               end
             end
 
@@ -303,6 +307,12 @@ module ActiveFacts
 
             detect_inconsistencies(role, value) if value
 
+            if old && old.constellation
+              keys = old.related_entities.map do |entity|
+                [entity.identifying_role_values, entity]
+              end
+            end
+
             instance_variable_set(role_var, value)
 
             # Remove "self" from the old counterpart:
@@ -311,9 +321,9 @@ module ActiveFacts
             # Add "self" into the counterpart
             value.send(getter ||= role.counterpart.getter).update(old, self) if value
 
-            if @constellation && value
-              value.related_entities.each do |entity|
-                entity.instance_index.refresh_keys
+            if keys
+              keys.each do |key, entity|
+                entity.instance_index.refresh_key(key)
               end
             end
 
