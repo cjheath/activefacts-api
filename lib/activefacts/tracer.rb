@@ -26,14 +26,15 @@ module ActiveFacts
           }
         end
         if @keys[:debug]
-          require 'ruby-debug' + (
-            case RUBY_VERSION
-            when /^1\.9\.3/
-              '193'
-#            when /^1\.9/
-#              '19'
-            else ''
-            end)
+          ['pry', 'debugger', 'ruby-debug'].each do |debugger|
+            begin
+              require debugger
+              puts "Loaded "+debugger
+              break
+            rescue LoadError
+            end
+          end
+          ::Debugger.start rescue nil
         end
       end
     end
