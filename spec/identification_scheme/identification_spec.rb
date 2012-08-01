@@ -124,15 +124,16 @@ describe "An Entity Type" do
           @acme.business.should be_nil
         end
 
-        describe "and the old identifying value plays no other roles" do
-          describe "and the player of the identifying role is not independent" do
-            it "should retract the previous value" do
-              pending "All value types default to independent" do
-                @c.Name['Acme'].should be_nil
-              end
-            end
-          end
-        end
+        #describe "and the old identifying value plays no other roles" do
+        #  describe "and the player of the identifying role is not independent" do
+        #    it "should retract the previous value" do
+        #      pending "All value types default to independent" do
+        #        @c.Name['Acme'].should be_nil
+        #      end
+        #    end
+        #  end
+        #end
+
       end
     end
 
@@ -153,11 +154,11 @@ describe "An Entity Type" do
             @bus.retract
           end
 
-          it "should retract the identifying value also" do
-            pending "All value types default to independent" do
-              @c.Name['Acme'].should be_nil
-            end
-          end
+          #it "should retract the identifying value also" do
+          #  pending "All value types default to independent" do
+          #    @c.Name['Acme'].should be_nil
+          #  end
+          #end
 
           it "should not appear as the value's counterpart role" do
             @acme.business.should be_nil
@@ -338,15 +339,15 @@ describe "An Entity Type" do
           @rn.all_room.to_a.should_not include @r
         end
 
-        describe "and the old identifying value plays no other roles" do
-          describe "and the player of the identifying role is not independent" do
-            it "should retract the previous value" do
-              pending "All value types default to independent" do
-                @c.Number[101].should be_nil
-              end
-            end
-          end
-        end
+        #describe "and the old identifying value plays no other roles" do
+        #  describe "and the player of the identifying role is not independent" do
+        #    it "should retract the previous value" do
+        #      pending "All value types default to independent" do
+        #        @c.Number[101].should be_nil
+        #      end
+        #    end
+        #  end
+        #end
       end
     end
 
