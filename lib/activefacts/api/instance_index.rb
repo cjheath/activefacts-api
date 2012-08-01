@@ -50,6 +50,11 @@ module ActiveFacts
         @hash[key]
       end
 
+      def detect &b
+        r = @hash.detect &b
+        r ? r[1] : nil
+      end
+
       def []=(key, value)   #:nodoc:
         @hash[flatten_key(key)] = value
       end
