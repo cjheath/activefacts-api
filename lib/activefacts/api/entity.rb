@@ -29,16 +29,6 @@ module ActiveFacts
           klass = klass.superclass
         end
 
-#        if (o = klass.overrides_identification_of and !(o.identifying_role_names-klass.identifying_role_names).empty?)
-          # This is a class which must initialise its superclass' identifying roles
-          # The hash can provide the values, but those values must already be asserted
-          # in the constellation this object will exist in, since they won't get
-          # attached to/cloned into that constellation merely by being assigned here.
-          # REVISIT: Nothing takes care of that, currently.
-          #
-          # The solution to this is to have an empty initialize, add the new instance
-          # to the Constellation, then initialise_roles using normal assignment.
-#        end
         if args[-1].respond_to?(:has_key?) && args[-1].has_key?(:constellation)
           @constellation = args.pop[:constellation]
         end

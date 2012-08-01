@@ -33,7 +33,9 @@ module ActiveFacts
     #
     class Constellation
       attr_reader :vocabulary
-      # All instances are indexed in this hash, keyed by the class object. Each instance is indexed for every supertype it has (including multiply-inherited ones). It's a bad idea to try to modify these indexes!
+      # All instances are indexed in this hash, keyed by the class object.
+      # Each instance is indexed for every supertype it has (including multiply-inherited ones).
+      # It's a bad idea to try to modify these indexes!
       attr_reader :instances      # Can say c.instances[MyClass].each{|k, v| ... }
                                   # Can also say c.MyClass.each{|k, v| ... }
 

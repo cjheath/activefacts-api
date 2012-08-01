@@ -294,17 +294,6 @@ module ActiveFacts
             value = role.adapt(constellation, value) if value
             return value if old.equal?(value)         # Occurs when another instance having the same value is assigned
 
-            # REVISIT: A frozen-key solution could be used to allow changing identifying roles.
-            # If this object plays an identifying role in other objects, they need re-indexing
-            # The key would be frozen, allowing indices and counterparts to de-assign,
-            # but delay re-assignment until defrosted.
-            # That would also allow caching the identifying_role_values, a performance win.
-
-            # This allows setting and clearing identifying roles, but not changing them.
-#            if role.is_identifying
-#              raise "#{self.class.basename}: illegal attempt to modify identifying role #{role.name}" if value != nil && old != nil
-#            end
-
             detect_inconsistencies(role, value) if value
 
             if old && old.constellation
