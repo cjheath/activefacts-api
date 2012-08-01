@@ -46,7 +46,7 @@ module ActiveFacts
       #
       # Example: maybe :is_ceo
       def maybe(role_name)
-        realise_role(roles[role_name] = Role.new(self, nil, role_name))
+        realise_role(roles[role_name] = Role.new(self, TrueClass, role_name))
       end
 
       # Define a binary fact type relating this object_type to another,
@@ -157,7 +157,7 @@ module ActiveFacts
 
       # Every new role added or inherited comes through here:
       def realise_role(role) #:nodoc:
-        if (!role.counterpart)
+        if (role.is_unary)
           # Unary role
           define_unary_role_accessor(role)
         elsif (role.unique)

@@ -15,6 +15,7 @@ module ActiveFacts
     # Each ObjectType class maintains a RoleCollection hash of the roles it plays.
     class Role
       attr_reader   :object_type      # The ObjectType to which this role belongs
+      attr_reader   :is_unary
       attr_reader   :name             # The name of the role (a Symbol)
       attr_accessor :counterpart      # All roles except unaries have a counterpart Role
       attr_reader   :unique           # Is this role played by at most one instance, or more?
@@ -24,7 +25,8 @@ module ActiveFacts
 
       def initialize(object_type, counterpart, name, mandatory = false, unique = true)
         @object_type = object_type
-        @counterpart = counterpart
+        @is_unary = counterpart == TrueClass
+        @counterpart = @is_unary ? nil : counterpart
         @name = name
         @mandatory = mandatory
         @unique = unique
@@ -59,7 +61,7 @@ module ActiveFacts
 
       def counterpart_object_type
         # This method is sometimes used when unaries are used in an entity's identifier.
-        counterpart == nil ? TrueClass : counterpart.object_type
+        @is_unary ? TrueClass : (counterpart ? counterpart.object_type : nil)
       end
 
       def inspect
