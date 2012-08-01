@@ -86,7 +86,7 @@ module ActiveFacts
       # comparing the values of its identifying roles
       def eql?(other)
         if self.class == other.class
-          identity == other.identity
+          identity_as_hash == other.identity_as_hash
         else
           false
         end
@@ -110,7 +110,7 @@ module ActiveFacts
       end
 
       # Identifying role values in a hash form.
-      def identity
+      def identity_as_hash
         identity_by(self.class)
       end
 
