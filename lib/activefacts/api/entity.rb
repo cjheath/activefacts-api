@@ -183,7 +183,7 @@ module ActiveFacts
           args, arg_hash = ActiveFacts::extract_hash_args(irns, args)
 
           if args.size > irns.size
-            raise "You've provided too many values for the identifier of #{basename}, which expects (#{irns*', '})"
+            raise "#{basename} expects only (#{irns*', '}) for its identifier, but you provided the extra values #{args[irns.size..-1].inspect}"
           end
 
           role_args = irns.map{|role_sym| roles(role_sym)}.zip(args)

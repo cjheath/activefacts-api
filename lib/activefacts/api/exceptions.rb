@@ -6,11 +6,11 @@
 
 module ActiveFacts
   module API
-    class DuplicateIdentifyingValueException < Exception
+    class DuplicateIdentifyingValueException < StandardError
       def initialize(desc)
-        super("#{desc[:class].basename}: Illegal attempt to change an identifying value (Duplicate)" +
-              " (#{desc[:role].setter} used with #{desc[:value].verbalise}," +
-              " already used by [#{desc[:value].related_entities.map(&:verbalise).join(", ")}])")
+        super("Illegal attempt to assert #{desc[:class].basename} having identifying value" +
+              " (#{desc[:role].name} is #{desc[:value].verbalise})," +
+              " when #{desc[:value].related_entities.map(&:verbalise).join(", ")} already exists")
       end
     end
   end

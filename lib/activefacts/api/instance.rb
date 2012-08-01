@@ -113,7 +113,6 @@ module ActiveFacts
         end
       end
 
-
       # Verbalise this instance
       # REVISIT: Should it raise an error if it was not redefined ?
       def verbalise
