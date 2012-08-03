@@ -160,13 +160,6 @@ describe "Roles" do
     lambda {p.family.foo}.should raise_error(RuntimeError)
   end
 
-  it "should keep a trace of the overwritten class when changing identification" do
-    pending
-    c = ActiveFacts::API::Constellation.new(Mod)
-    e = c.Employee(:identifier => "Project2501")
-    e.overrides_identification_of.is_a?(Mod::LegalEntity).should be_true
-  end
-
   it "should be able to import an entity from another constellation" do
     c1 = ActiveFacts::API::Constellation.new(Mod)
     c2 = ActiveFacts::API::Constellation.new(Mod)
