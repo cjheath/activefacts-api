@@ -30,6 +30,10 @@ module ActiveFacts
         "#{role_name || self.class.basename} '#{to_s}'"
       end
 
+      def clone_identity
+        identifying_role_values
+      end
+
       # A value is its own key, unless it's a delegate for a raw value
       def identifying_role_values #:nodoc:
         __getobj__ rescue self

@@ -74,9 +74,7 @@ module ActiveFacts
         if value.is_a?(counterpart.object_type)
           # Check that the value is in a compatible constellation, clone if not:
           if constellation && (vc = value.constellation) && vc != constellation
-            # Cross-constellation assignment!
-            # Just take the identifying_role_values to make a new object
-            value = constellation.send(value.class.basename, value.identifying_role_values)
+            value = constellation.copy(value)
           end
           value.constellation = constellation if constellation
         else

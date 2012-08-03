@@ -66,6 +66,11 @@ module ActiveFacts
         self
       end
 
+      # Copies object type across constellations.
+      def copy(value)
+        send(value.class.basename, value.clone_identity)
+      end
+
 =begin
       def assert *args
         case

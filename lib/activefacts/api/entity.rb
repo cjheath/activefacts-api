@@ -114,6 +114,16 @@ module ActiveFacts
         identity_by(self.class)
       end
 
+      # Clones identity.
+      #
+      # Cloning an entity identity means copying its class identifying values and also its supertypes identifying
+      # values.
+      def clone_identity
+        self.class.supertypes_transitive.inject(identity_as_hash) do |roles_hash, supertype|
+          roles_hash.merge!(identity_by(supertype))
+        end
+      end
+
       # Identifying role values in a hash form by class (entity).
       #
       # Subtypes may have different identifying roles compared to their supertype, and therefore, a subtype entity
