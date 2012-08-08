@@ -51,7 +51,12 @@ end
 
 describe Decimal do
   it "should still detect Decimal as the main class" do
-    bd = Decimal.new("98765432109876543210")
+    bd = Decimal.new("98765432109876543.210")
+    bd.to_s("F").should == "98765432109876543.21"
+    bd.to_s("E").should == "0.9876543210987654321E17"
+    bd.to_s("3E").should == "0.987 654 321 098 765 432 1E17"
+    bd.to_s(3).should == "0.987 654 321 098 765 432 1E17"
+    bd.to_s("3F").should == "987 654 321 098 765 43.21"
     bd.should be_a Decimal
     bd.should be_a BigDecimal
   end

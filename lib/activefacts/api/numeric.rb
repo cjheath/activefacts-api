@@ -32,8 +32,8 @@ module ActiveFacts
         __getobj__.==(o)
       end
 
-      def to_s                              #:nodoc:
-        __getobj__.to_s
+      def to_s *a                            #:nodoc:
+        __getobj__.to_s *a
       end
 
       def to_json(*a)                       #:nodoc:
