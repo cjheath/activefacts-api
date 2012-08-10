@@ -17,7 +17,7 @@ module ActiveFacts
     class InstanceIndex
       extend Forwardable
       def_delegators :@hash, :size, :empty?, :each, :map,
-                     :detect, :values, :keys, :detect, :delete_if
+                     :detect, :values, :detect, :delete_if
 
       def initialize(constellation, klass)
         @constellation = constellation
@@ -47,7 +47,7 @@ module ActiveFacts
           key = @klass.identifying_role_values(*args) rescue nil
         end
 
-        @hash[key]
+        self.[](key)
       end
 
       def detect &b
@@ -56,27 +56,24 @@ module ActiveFacts
       end
 
       def []=(key, value)   #:nodoc:
-        @hash[flatten_key(key)] = value
+        @hash[InstanceIndexKey.new(key)] = value
       end
 
       def [](key)
-        @hash[flatten_key(key)]
+        @hash[InstanceIndexKey.new(key)]
+      end
+
+      def keys
+        @hash.keys.map { |key| key.to_hash }
+      end
+
+      def delete(key)
+        @hash.delete(InstanceIndexKey.new(key))
       end
 
       def refresh_key(key)
-        value = @hash.delete(key)
-        @hash[value.identifying_role_values] = value if value
-      end
-
-      private
-      def flatten_key(key)
-        if key.is_a?(Array)
-          key.map { |identifier| flatten_key(identifier) }
-        elsif key.respond_to?(:identifying_role_values)
-          key.identifying_role_values
-        else
-          key
-        end
+        value = self.delete(key)
+        self.[]=(value, value) if value
       end
     end
   end

@@ -43,4 +43,5 @@ require 'activefacts/api/value'                 # A Value is an Instance of a va
 require 'activefacts/api/entity'                # An Entity class is an Instance not of a value class
 require 'activefacts/api/standard_types'        # Value classes are augmented so their subclasses may become Value Types
 require 'activefacts/api/exceptions'            # Relevant exceptions
+require 'activefacts/api/instance_index_key'
 require 'activefacts/tracer'
