@@ -1,21 +1,33 @@
 class InstanceIndexKey
-  attr_reader :hash
+  attr_reader :value
 
   def initialize(hash)
-    @hash = flatten_key(hash)
+    @value = flatten_key(hash)
   end
 
   def <=>(other)
-    result = @hash <=> other.hash
+    result = @value <=> other.value
     if result.nil?
-      @hash.to_s <=> other.hash.to_s
+      @value.to_s <=> other.value.to_s
     else
       result
     end
   end
 
-  def to_hash
-    @hash
+  def ==(other)
+    @value == other.value
+  end
+
+  def eql?(other)
+    if self.class == other.class
+      self == other
+    else
+      false
+    end
+  end
+
+  def hash
+    @value.hash
   end
 
   private

@@ -64,7 +64,7 @@ module ActiveFacts
       end
 
       def keys
-        @hash.keys.map { |key| key.to_hash }
+        @hash.keys.map { |key| key.value }
       end
 
       def delete(key)

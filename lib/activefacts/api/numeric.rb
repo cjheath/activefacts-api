@@ -185,6 +185,14 @@ class AutoCounter
     end
   end
 
+  def <=>(other)
+    to_s <=> other.to_s
+  end
+
+  def ==(other)
+    to_s == other.to_s
+  end
+
   def eql?(o)                           #:nodoc:
     to_s.eql?(o.to_s)
   end
