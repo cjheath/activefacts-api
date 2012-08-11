@@ -6,11 +6,24 @@ class InstanceIndexKey
   end
 
   def <=>(other)
-    result = @value <=> other.value
-    if result.nil?
-      @value.to_s <=> other.value.to_s
+    if contains_nil?(@value) || contains_nil?(other.value)
+      @value.inspect <=> other.value.inspect
     else
-      result
+      @value <=> other.value
+    end
+  end
+
+  def contains_nil?(arr)
+    if arr.class.ancestors.include?(Array)
+      arr.any? do |el|
+        if el.nil?
+          true
+        else
+          contains_nil?(el)
+        end
+      end
+    else
+      arr.nil?
     end
   end
 
