@@ -288,9 +288,6 @@ module ActiveFacts
 
         rescue DuplicateIdentifyingValueException
           @created_instances.each do |role, v|
-            if !v.respond_to?(:retract)
-              v = constellation.send(role.object_type.basename.to_sym)[[v]]
-            end
             v.retract if v
           end
           @created_instances = []
