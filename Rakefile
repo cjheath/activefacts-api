@@ -38,17 +38,32 @@ task :default => :spec
 desc "Run Rspec tests"
 RSpec::Core::RakeTask.new(:spec)
 
+namespace :spec do
+  namespace :rubies do
+    SUPPORTED_RUBIES = %w{ 1.8.7 1.9.2 1.9.3 jruby-1.6.7.2 rbx }
+
+    desc "Run Rspec tests on all supported rubies"
+    task :all_tasks => [:install_gems, :exec]
+
+    desc "Run `bundle install` on all rubies"
+    task :install_gems do
+      sh %{ rvm #{SUPPORTED_RUBIES.join(',')} exec bundle install }
+    end
+
+    desc "Run `bundle exec rake` on all rubies"
+    task :exec do
+      sh %{ rvm #{SUPPORTED_RUBIES.join(',')} exec bundle exec rake spec }
+    end
+  end
+end
+
 desc "Run RSpec tests and produce coverage files (results viewable in coverage/index.html)"
 RSpec::Core::RakeTask.new(:coverage) do |spec|
   if RUBY_VERSION < '1.9'
-    spec.rcov_opts = [
-        '--exclude', 'spec',
-        '--exclude', 'lib/activefacts/tracer.rb',
-        '--exclude', 'gem/*'
-      ]
+    spec.rcov_opts = %{ --exclude spec --exclude lib/activefacts/tracer.rb --exclude gem/* }
     spec.rcov = true
   else
-    spec.rspec_opts = ['--require', 'simplecov_helper']
+    spec.rspec_opts = %w{ --require simplecov_helper }
   end
 end
 
