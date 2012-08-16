@@ -55,10 +55,6 @@ module ActiveFacts
         counterpart == nil
       end
 
-      def is_inherited?(klass)
-        klass.supertypes_transitive.include?(@object_type)
-      end
-
       def counterpart_object_type
         # This method is sometimes used when unaries are used in an entity's identifier.
         @is_unary ? TrueClass : (counterpart ? counterpart.object_type : nil)

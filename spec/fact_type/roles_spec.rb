@@ -41,6 +41,12 @@ describe "Roles" do
     # print "object_type: "; p Mod.object_type
   end
 
+  it "should find inherited roles" do
+    Mod::Person.find_inherited_role(:name).should be_an_instance_of Role # name is defined on LegalEntity
+    Mod::Person.find_inherited_role(:family).should be_false # family is defined on Person
+    Mod::Person.find_inherited_role(:non_existing_role).should be_false
+  end
+
   it "should associate a role name with a matching existing object_type" do
     module Mod
       class Existing1 < String

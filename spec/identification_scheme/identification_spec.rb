@@ -71,6 +71,21 @@ describe "An Entity Type" do
         @c.Business[['Acme']].should == @bus
         @c.Business.size.should == 1
       end
+
+      describe "when compared to a subtype" do
+        before :each do
+          module Mod
+            class SubBusiness < Business
+            end
+          end
+          @sub_business = @c.Business('Bcme')
+        end
+
+        it "should not be eql?" do
+          @business.eql?(@sub_business).should be_false
+          @sub_business.eql?(@business).should be_false
+        end
+      end
     end
 
     describe "when the value is changed" do

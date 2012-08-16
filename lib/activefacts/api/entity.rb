@@ -163,12 +163,14 @@ module ActiveFacts
         end
 
         def find_inherited_role(role_name)
-          if !superclass.is_entity_type
-            false
-          elsif superclass.roles.has_key?(role_name)
-            superclass.roles[role_name]
+          if superclass.is_entity_type
+            if superclass.roles.has_key?(role_name)
+              superclass.roles[role_name]
+            else
+              superclass.find_inherited_role(role_name)
+            end
           else
-            superclass.find_inherited_role(role_name)
+            false
           end
         end
 
