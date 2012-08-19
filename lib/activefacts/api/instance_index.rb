@@ -6,6 +6,7 @@
 #
 
 require 'forwardable'
+require 'rbtree'
 
 module ActiveFacts
   module API
