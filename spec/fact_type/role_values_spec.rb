@@ -386,7 +386,7 @@ describe "Object type role values" do
 
           it "should support each" do
             count = 0
-            @role_values.each { |rv| count += 1 }
+            @role_values.each { |_, _| count += 1 }
             count.should == 1
           end
 

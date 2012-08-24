@@ -8,8 +8,8 @@
 module ActiveFacts
   module API
 
-    # Instance Index Key provides a way to compare hashes with nil values.
-    class InstanceIndexKey
+    # ComparableHashKey provides a way to compare hashes with nil values.
+    class ComparableHashKey
 
       # Key value
       attr_reader :value
@@ -24,10 +24,14 @@ module ActiveFacts
       # Keys containing nil values will be compared using their string
       # representation. (see inspect)
       def <=>(other)
-        if contains_nil?(@value) || contains_nil?(other.value)
-          @value.inspect <=> other.value.inspect
+        if !contains_nil?(@value) && !contains_nil?(other.value)
+          result = @value <=> other.value rescue nil
+          if result.nil?
+            result = @value.inspect <=> other.value.inspect
+          end
+          result
         else
-          @value <=> other.value
+          @value.inspect <=> other.value.inspect
         end
       end
 

@@ -57,11 +57,11 @@ module ActiveFacts
       end
 
       def []=(key, value)   #:nodoc:
-        @hash[InstanceIndexKey.new(key)] = value
+        @hash[ComparableHashKey.new(key)] = value
       end
 
       def [](key)
-        @hash[InstanceIndexKey.new(key)]
+        @hash[ComparableHashKey.new(key)]
       end
 
       def keys
@@ -69,7 +69,7 @@ module ActiveFacts
       end
 
       def delete(key)
-        @hash.delete(InstanceIndexKey.new(key))
+        @hash.delete(ComparableHashKey.new(key))
       end
 
       def refresh_key(key)

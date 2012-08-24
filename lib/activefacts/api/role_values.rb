@@ -13,29 +13,66 @@ module ActiveFacts
       include Enumerable
       extend Forwardable
 
-      def_delegators :@a, :each, :size, :empty?, :-
+      def_delegators :@a, :each, :size, :empty?, :values
 
       def initialize
-        @a = []
+        @a = RBTree.new
       end
 
-      def +(a)
-        @a.+(a.is_a?(RoleValues) ? [a] : a)
+      def +(role_values)
+        if role_values.is_a?(RoleValues)
+          values + role_values.values
+        else
+          values + role_values
+        end
+      end
+
+      def -(a)
+        clone = Hash[values]
+        if self[a]
+          clone.delete(ComparableHashKey.new(a))
+        end
+        clone.values
       end
 
       def single
-        size > 1 ? nil : @a[0]
+        size > 1 ? nil : @a.first[1]
       end
 
       def update(old, value)
-        @a.delete(old) if old
-        @a << value if value
+        delete(old) if old
+        self[value] = value if value
+      end
+
+      def []=(key, value)   #:nodoc:
+        @a[ComparableHashKey.new(key)] = value
+      end
+
+      def [](key)
+        @a[ComparableHashKey.new(key)]
+      end
+
+      def to_a
+        values
+      end
+
+      def include?(key)
+        @a.has_key?(ComparableHashKey.new(key))
+      end
+
+      def keys
+        @a.keys.map { |key| key.value }
+      end
+
+      def delete(value)
+        if @a.has_value?(value)
+           @a.delete(@a.index(value))
+        end
       end
 
       def verbalise
-        "[#{@a.map(&:verbalise).join(", ")}]"
+        "[#{@a.values.map(&:verbalise).join(", ")}]"
       end
     end
-
   end
 end

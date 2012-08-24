@@ -235,10 +235,6 @@ describe "An Entity Type" do
       end
     end
 
-    before :each do
-      @c = ActiveFacts::API::Constellation.new(Mod)
-    end
-
     it "should fail if any role is one-to-one" do
       proc do
         module Mod
