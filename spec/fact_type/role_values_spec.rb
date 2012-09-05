@@ -386,22 +386,31 @@ describe "Object type role values" do
 
           it "should support each" do
             count = 0
-            @role_values.each { |_, _| count += 1 }
+            @role_values.each { |_| count += 1 }
             count.should == 1
+          end
+
+          it 'should have an arity of 1 for #each' do
+            @role_values.each do |*args|
+              args.size.should == 1
+            end
           end
 
           it "should support detect" do
             @role_values.detect { |rv| true }.should be_true
           end
 
+          it "should have an arity of 1 for #detect" do
+            @role_values.detect do |*args|
+              args.size.should == 1
+            end
+          end
+
           it "should verbalise" do
             @role_values.verbalise.should =~ /Octopus.*Zero '0'/
           end
-
         end
       end
-
     end
-
   end
 end

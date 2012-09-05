@@ -63,4 +63,12 @@ describe ActiveFacts::API::InstanceIndex do
       @constellation.EntityC[%w{abc}].should == @c
     end
   end
+
+  describe 'Enumerable implementation' do
+    it 'should have an arity of 1 for #each' do
+      @constellation.EntityA.each do |*args|
+        args.size.should == 1
+      end
+    end
+  end
 end

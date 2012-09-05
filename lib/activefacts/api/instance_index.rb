@@ -17,8 +17,8 @@ module ActiveFacts
     #
     class InstanceIndex
       extend Forwardable
-      def_delegators :@hash, :size, :empty?, :each, :map,
-                     :detect, :values, :detect, :delete_if
+      include FlatHash
+      def_delegators :@hash, :size, :empty?, :map, :values, :delete_if
 
       def initialize(constellation, klass)
         @constellation = constellation
@@ -52,20 +52,7 @@ module ActiveFacts
       end
 
       def detect &b
-        r = @hash.detect &b
-        r ? r[1] : nil
-      end
-
-      def []=(key, value)   #:nodoc:
-        @hash[ComparableHashKey.new(key)] = value
-      end
-
-      def [](key)
-        @hash[ComparableHashKey.new(key)]
-      end
-
-      def keys
-        @hash.keys.map { |key| key.value }
+        @hash.detect(&b)[1]
       end
 
       def delete(key)

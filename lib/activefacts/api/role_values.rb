@@ -11,32 +11,33 @@ module ActiveFacts
 
     class RoleValues  #:nodoc:
       include Enumerable
+      include FlatHash
       extend Forwardable
 
-      def_delegators :@a, :each, :size, :empty?, :values
+      def_delegators :@hash, :size, :empty?, :values
 
       def initialize
-        @a = RBTree.new
+        @hash = RBTree.new
       end
 
-      def +(role_values)
-        if role_values.is_a?(RoleValues)
-          values + role_values.values
+      def +(object)
+        if object.is_a?(RoleValues)
+          values + object.values
         else
-          values + role_values
+          values + object
         end
       end
 
-      def -(a)
-        clone = Hash[values]
-        if self[a]
-          clone.delete(ComparableHashKey.new(a))
+      def -(object)
+        clone = Hash.new(values)
+        if self[object]
+          clone.delete(ComparableHashKey.new(object))
         end
         clone.values
       end
 
       def single
-        size > 1 ? nil : @a.first[1]
+        size > 1 ? nil : @hash.first[1]
       end
 
       def update(old, value)
@@ -44,34 +45,22 @@ module ActiveFacts
         self[value] = value if value
       end
 
-      def []=(key, value)   #:nodoc:
-        @a[ComparableHashKey.new(key)] = value
-      end
-
-      def [](key)
-        @a[ComparableHashKey.new(key)]
-      end
-
       def to_a
         values
       end
 
       def include?(key)
-        @a.has_key?(ComparableHashKey.new(key))
-      end
-
-      def keys
-        @a.keys.map { |key| key.value }
+        @hash.has_key?(ComparableHashKey.new(key))
       end
 
       def delete(value)
-        if @a.has_value?(value)
-           @a.delete(@a.index(value))
+        if @hash.has_value?(value)
+           @hash.delete(@hash.index(value))
         end
       end
 
       def verbalise
-        "[#{@a.values.map(&:verbalise).join(", ")}]"
+        "[#{@hash.values.map(&:verbalise).join(", ")}]"
       end
     end
   end
