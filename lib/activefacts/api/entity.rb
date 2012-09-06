@@ -218,7 +218,10 @@ module ActiveFacts
           instances = constellation.instances[self]   # All instances of this class in this constellation
           instance = instances[key]
           # REVISIT: This ignores any additional attribute assignments
-          return instance, key if instance      # A matching instance of this class
+          if instance
+            raise "Additional role values are ignored when asserting an existing instance" if args[-1].is_a? Hash and !args[-1].empty?
+            return instance, key      # A matching instance of this class
+          end
 
           # Now construct each of this object's identifying roles
           irns = identifying_role_names
