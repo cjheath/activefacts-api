@@ -134,13 +134,23 @@ describe "A Constellation instance" do
 
     name2 = @constellation.Name("foo")
     foo2 = @constellation.LegalEntity("foo")
-    acme2 = @constellation.Company("Acme, Inc", :auto_counter_val => :new)
-    fred_fly2 = @constellation.Person("fred", "fly", :auto_counter_val => :new)
+    acme2 = @constellation.Company("Acme, Inc") # , :auto_counter_val => :new)
+    fred_fly2 = @constellation.Person("fred", "fly") # , :auto_counter_val => :new)
 
     name1.object_id.should == name2.object_id
     foo1.object_id.should == foo2.object_id
     acme1.object_id.should == acme2.object_id
     fred_fly1.object_id.should == fred_fly2.object_id
+  end
+
+  it "should reject re-assertion with additional assignments" do
+    name1 = @constellation.Name("foo")
+    foo1 = @constellation.LegalEntity("foo")
+    acme1 = @constellation.Company("Acme, Inc", :auto_counter_val => :new)
+
+    name2 = @constellation.Name("foo")
+    foo2 = @constellation.LegalEntity("foo")
+    lambda { @constellation.Company("Acme, Inc", :auto_counter_val => :new) }.should raise_error
   end
 
   it "should support methods to assert instances via the class for that type" do
