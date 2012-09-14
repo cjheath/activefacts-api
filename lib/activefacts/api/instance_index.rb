@@ -58,11 +58,6 @@ module ActiveFacts
       def delete(key)
         @hash.delete(ComparableHashKey.new(key))
       end
-
-      def refresh_key(key)
-        value = self.delete(key)
-        self.[]=(value, value) if value
-      end
     end
   end
 end

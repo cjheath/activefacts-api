@@ -81,16 +81,46 @@ module ActiveFacts
       # related entities of this instance.
       def related_entities(instances = [])
         self.class.roles.each do |role_name, role|
-          instance_index_counterpart(role).each do |irv, instance|
+          instance_index_counterpart(role).each do |instance|
             if instance.class.is_entity_type && instance.is_identified_by?(self)
-              if !instances.include?(instance)
-                instances << instance
+              if !instances.any? { |i, r, iic| i == instance }
+                counterpart_role = instance.is_identified_by?(self)
+                role_value = instance_index_counterpart(counterpart_role)
+                role_value = role_value.is_a?(RoleValues) ? role_value : nil
+                instances << [instance, role, role_value]
                 instance.related_entities(instances)
               end
             end
           end
         end
         instances
+      end
+
+      def reverse_related_entities(instances = [])
+        self.class.roles.each do |role_name, role|
+          instance_index_counterpart(role).each do |instance|
+            if self.class.is_entity_type && self.is_identified_by?(instance)
+              if !instances.any? { |i, r, iic| i == instance }
+                counterpart_role = self.is_identified_by?(instance)
+                role_value = instance.send(counterpart_role.counterpart.name)
+                role_value = role_value.is_a?(RoleValues) ? role_value : nil
+                instances << [self, role, role_value]
+                instance.reverse_related_entities(instances)
+              end
+            end
+          end
+        end
+        instances
+      end
+
+      def two_way_related_entities(old)
+        entities = self.reverse_related_entities
+        if old && old.constellation
+          entities = entities + old.related_entities
+        end
+        entities.map do |entity, role_obj, role_value|
+          [entity.identifying_role_values, entity, role_obj, role_value]
+        end
       end
 
       # Determine if entity is an identifying value

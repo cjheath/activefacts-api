@@ -216,23 +216,26 @@ module ActiveFacts
           end
         end
 
+        def has_unused_params?(assert_args)
+          args, arg_hash = ActiveFacts.extract_hash_args(identifying_role_names, assert_args)
+          !arg_hash.empty?
+        end
+
         # REVISIT: This method should verify that all identifying roles (including
         # those required to identify any superclass) are present (if mandatory)
         # and are unique... BEFORE it creates any new object(s)
         # This is a hard problem because it's recursive.
         def assert_instance(constellation, args) #:nodoc:
-          # Build the key for this instance from the args
-          # The key of an instance is the value or array of keys of the identifying values.
-          # The key values aren't necessarily present in the constellation, even after this.
+          # Hijack assert_instance if an instance is already present.
           key = identifying_role_values(*args)
 
-          # Find and return an existing instance matching this key
-          instances = constellation.instances[self]   # All instances of this class in this constellation
-          instance = instances[key]
-          # REVISIT: This ignores any additional attribute assignments
+          instance = constellation.get_instance(self, key)
           if instance
-            raise "Additional role values are ignored when asserting an existing instance" if args[-1].is_a? Hash and !args[-1].empty?
-            return instance, key      # A matching instance of this class
+            if has_unused_params?(args)
+              raise "Additional role values are ignored when asserting an existing instance"
+            else
+              return instance, key
+            end
           end
 
           # Now construct each of this object's identifying roles
@@ -244,7 +247,7 @@ module ActiveFacts
             # We received a single argument of a compatible type
             # With a secondary supertype or a type having separate identification,
             # we would get the wrong identifier from arg.identifying_role_values:
-            key = 
+            key =
               values = identifying_role_values(args[0])
             values = values + [arg_hash = args.pop] if has_hash
           else

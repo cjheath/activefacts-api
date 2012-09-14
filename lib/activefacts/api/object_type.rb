@@ -255,11 +255,7 @@ module ActiveFacts
 
             detect_inconsistencies(role, value)
 
-            if @constellation && old
-              keys = old.related_entities.map do |entity|
-                [entity.identifying_role_values, entity]
-              end
-            end
+            keys = two_way_related_entities(old)
 
             instance_variable_set(role.variable, value)
 
@@ -269,9 +265,10 @@ module ActiveFacts
             # Assign self to the new counterpart
             value.send(role.counterpart.setter, self) if value
 
-            if keys
-              keys.each do |key, entity|
+            unless keys.empty?
+              keys.each do |key, entity, role_obj, role_value|
                 entity.instance_index.refresh_key(key)
+                role_value.refresh_key(entity) unless role_value.nil?
               end
             end
 
@@ -296,11 +293,7 @@ module ActiveFacts
 
             detect_inconsistencies(role, value) if value
 
-            if old && old.constellation
-              keys = old.related_entities.map do |entity|
-                [entity.identifying_role_values, entity]
-              end
-            end
+            keys = two_way_related_entities(old)
 
             instance_variable_set(role_var, value)
 
@@ -310,9 +303,10 @@ module ActiveFacts
             # Add "self" into the counterpart
             value.send(getter ||= role.counterpart.getter).update(old, self) if value
 
-            if keys
-              keys.each do |key, entity|
+            unless keys.empty?
+              keys.each do |key, entity, role_obj, role_value|
                 entity.instance_index.refresh_key(key)
+                role_value.refresh_key(entity) unless role_value.nil?
               end
             end
 
@@ -426,7 +420,7 @@ module ActiveFacts
         [ role_name,
           related,
           mandatory,
-          other_role_method.to_sym 
+          other_role_method.to_sym
         ]
       end
 

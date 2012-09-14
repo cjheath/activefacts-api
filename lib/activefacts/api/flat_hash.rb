@@ -38,6 +38,11 @@ module ActiveFacts
           @hash.each(&block)
         end
       end
+
+      def refresh_key(key)
+        value = self.delete(key)
+        self.[]=(value, value) if value
+      end
     end
   end
 end

@@ -98,9 +98,7 @@ module ActiveFacts
           instance = instances[key]
           return instance, key if instance      # A matching instance of this class
 
-          #trace :assert, "Constructing new #{self} with #{args.inspect}" do
-            instance = new(*args)
-          #end
+          instance = new(*args)
 
           instance.constellation = constellation
           return *index_instance(instance)
