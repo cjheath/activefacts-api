@@ -96,6 +96,9 @@ module ActiveFacts
         instances
       end
 
+      # Searches for entities which are referenced by this entity.
+      #
+      # This is done recursively through the constellation.
       def reverse_related_entities(instances = [])
         self.class.roles.each do |role_name, role|
           instance_index_counterpart(role).each do |instance|
@@ -113,14 +116,59 @@ module ActiveFacts
         instances
       end
 
-      def two_way_related_entities(old)
-        entities = self.reverse_related_entities
-        if old && old.constellation
-          entities = entities + old.related_entities
-        end
+      def two_way_related_entities
+        entities = self.reverse_related_entities + self.related_entities
         entities.map do |entity, role_obj, role_value|
           [entity.identifying_role_values, entity, role_obj, role_value]
         end
+      end
+
+      def role_setter(role, value)
+        r_val = prepare_assignment(role, value)
+        if r_val.nil?
+          true
+        else
+          old, value = r_val
+
+          keys = two_way_related_entities
+
+          instance_variable_set(role.variable, value)
+
+          update_counterpart_roles(role, old, value)
+
+          update_linked_roles(keys) unless keys.empty?
+
+          value
+        end
+      end
+
+      def update_counterpart_roles(role, old, value)
+        if role.counterpart.unique
+          old.send(role.counterpart.setter, nil) if old
+          value.send(role.counterpart.setter, self) if value
+        else
+          old.send(role.counterpart.getter).update(self, nil) if old
+          value.send(role.counterpart.getter).update(old, self) if value
+        end
+      end
+
+      def update_linked_roles(keys)
+        keys.each do |key, entity, role_obj, role_value|
+          entity.instance_index.refresh_key(key)
+          role_value.refresh_key(entity) unless role_value.nil?
+        end
+      end
+
+      def prepare_assignment(role, value)
+        old = instance_variable_get(role.variable) rescue nil
+        return nil if old.equal?(value)         # Occurs when another instance having the same value is assigned
+
+        value = role.adapt(@constellation, value) if value
+        return nil if old.equal?(value)         # Occurs when same value but not same instance is assigned
+
+        detect_inconsistencies(role, value)
+
+        [old, value]
       end
 
       # Determine if entity is an identifying value

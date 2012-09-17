@@ -161,11 +161,7 @@ module ActiveFacts
           # Unary role
           define_unary_role_accessor(role)
         elsif (role.unique)
-          if role.counterpart.unique
-            define_one_to_one_accessor(role)
-          else
-            define_one_to_many_accessor(role)
-          end
+          define_single_accessor(role)
         else
           define_many_to_one_accessor(role)
         end
@@ -229,10 +225,10 @@ module ActiveFacts
             assigned
           end
         end
-        define_single_role_getter(role)
+        define_role_getter(role)
       end
 
-      def define_single_role_getter(role)
+      def define_role_getter(role)
         class_eval do
           define_method role.getter do |*a|
             raise "Parameters passed to #{self.class.name}\##{role.name}" if a.size > 0
@@ -241,78 +237,17 @@ module ActiveFacts
         end
       end
 
-      def define_one_to_one_accessor(role)
-        define_single_role_getter(role)
-
+      def define_role_setter(role)
         class_eval do
           define_method role.setter do |value|
-
-            old = instance_variable_get(role.variable) rescue nil
-            return true if old.equal?(value)         # Occurs when another instance having the same value is assigned
-
-            value = role.adapt(@constellation, value) if value
-            return true if old.equal?(value)         # Occurs when same value but not same instance is assigned
-
-            detect_inconsistencies(role, value)
-
-            keys = two_way_related_entities(old)
-
-            instance_variable_set(role.variable, value)
-
-            # Remove self from the old counterpart:
-            old.send(role.counterpart.setter, nil) if old
-
-            # Assign self to the new counterpart
-            value.send(role.counterpart.setter, self) if value
-
-            unless keys.empty?
-              keys.each do |key, entity, role_obj, role_value|
-                entity.instance_index.refresh_key(key)
-                role_value.refresh_key(entity) unless role_value.nil?
-              end
-            end
-
-            value
+            role_setter(role, value)
           end
         end
       end
 
-      def define_one_to_many_accessor(role)
-        define_single_role_getter(role)
-
-        class_eval do
-          define_method role.setter do |value|
-            role_var = role.variable
-
-            # Get old value, and jump out early if it's unchanged:
-            old = instance_variable_get(role_var) rescue nil
-            return value if old.equal?(value)         # Occurs during one_to_one assignment, for example
-
-            value = role.adapt(constellation, value) if value
-            return value if old.equal?(value)         # Occurs when another instance having the same value is assigned
-
-            detect_inconsistencies(role, value) if value
-
-            keys = two_way_related_entities(old)
-
-            instance_variable_set(role_var, value)
-
-            # Remove "self" from the old counterpart:
-            old.send(getter = role.counterpart.getter).update(self, nil) if old
-
-            # Add "self" into the counterpart
-            value.send(getter ||= role.counterpart.getter).update(old, self) if value
-
-            unless keys.empty?
-              keys.each do |key, entity, role_obj, role_value|
-                entity.instance_index.refresh_key(key)
-                role_value.refresh_key(entity) unless role_value.nil?
-              end
-            end
-
-            value
-          end
-        end
+      def define_single_accessor(role)
+        define_role_getter(role)
+        define_role_setter(role)
       end
 
       def define_many_to_one_accessor(role)
