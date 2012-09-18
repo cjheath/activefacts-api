@@ -177,12 +177,12 @@ class AutoCounter
     "\#<AutoCounter "+to_s+">"
   end
 
-  def hash                              #:nodoc:
-    if self.defined?
-      @value.hash
-    else
-      0
-    end
+  def <=>(other)
+    to_s <=> other.to_s
+  end
+
+  def ==(other)
+    to_s == other.to_s
   end
 
   def eql?(o)                           #:nodoc:

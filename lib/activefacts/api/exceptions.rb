@@ -8,9 +8,12 @@ module ActiveFacts
   module API
     class DuplicateIdentifyingValueException < StandardError
       def initialize(desc)
+        verbalised_entities = desc[:value].related_entities.map do |entity, role_obj, role_value|
+          entity.verbalise
+        end
         super("Illegal attempt to assert #{desc[:class].basename} having identifying value" +
               " (#{desc[:role].name} is #{desc[:value].verbalise})," +
-              " when #{desc[:value].related_entities.map(&:verbalise).join(", ")} already exists")
+              " when #{verbalised_entities} already exists")
       end
     end
   end

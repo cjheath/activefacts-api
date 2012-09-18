@@ -1,5 +1,3 @@
-require 'activefacts/api'
-
 module TestMultiPartIdentifierModule
   class ParentId < AutoCounter
     value_type
@@ -22,13 +20,12 @@ module TestMultiPartIdentifierModule
 end
 
 describe "Multi-part identifiers" do
-  include ActiveFacts::API
   before :each do
-    @c = Constellation.new(TestMultiPartIdentifierModule)
+    @c = ActiveFacts::API::Constellation.new(TestMultiPartIdentifierModule)
     @p = @c.Parent(:new)
     @c0 = @c.Child(@p, 0)
-    @c2 = @c.Child(@p, 2)
     @c1 = @c.Child(@p, 1)
+    @c2 = @c.Child(@p, 2)
   end
 
   it "should allow children to be found in the instance index" do
@@ -47,12 +44,10 @@ describe "Multi-part identifiers" do
     @p.all_child.size.should == 3
   end
 
-  it "should allow children to be found in the instance index by the residual key" do
-    pending "RoleValues use the whole key, not the residual key" do
-      @c.Child[[0]].should == @c0
-      @c.Child[[1]].should == @c1
-      @c.Child[[2]].should == @c2
-    end
+  it "should allow children to be found in the RoleValues by the residual key" do
+    @p.all_child[[0]].should == @c0
+    @p.all_child[[1]].should == @c1
+    @p.all_child[[2]].should == @c2
   end
 
   it "should allow children to be found in the instance index by the whole key" do

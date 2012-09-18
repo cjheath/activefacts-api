@@ -66,6 +66,16 @@ module ActiveFacts
         self
       end
 
+      # Get instance from InstanceIndex.
+      def get_instance(entity_class, args)
+        instances[entity_class][args]
+      end
+
+      # Copies object type across constellations.
+      def copy(value)
+        send(value.class.basename, value.clone_identity)
+      end
+
 =begin
       def assert *args
         case
@@ -105,7 +115,7 @@ module ActiveFacts
               instances.map do |key, instance|
                   s = "\t\t" + instance.verbalise
                   if (single_roles.size > 0)
-                    role_values = 
+                    role_values =
                       single_roles.map{|role|
                           [ role_name = role.to_s.camelcase,
                             value = instance.send(role)]

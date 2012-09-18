@@ -1,6 +1,7 @@
 source 'https://rubygems.org'
 
 gem 'rake', :group => [:development, :test]
+gem 'rbtree-pure'
 
 group :development do
   gem 'jeweler'

@@ -6,6 +6,7 @@
 #
 
 require 'forwardable'
+require 'rbtree'
 
 module ActiveFacts
   module API
@@ -16,13 +17,13 @@ module ActiveFacts
     #
     class InstanceIndex
       extend Forwardable
-      def_delegators :@hash, :size, :empty?, :each, :map,
-                     :detect, :values, :keys, :detect, :delete_if
+      include FlatHash
+      def_delegators :@hash, :size, :empty?, :map, :values, :delete_if
 
       def initialize(constellation, klass)
         @constellation = constellation
         @klass = klass
-        @hash = {}
+        @hash = RBTree.new
       end
 
       def inspect
@@ -47,36 +48,15 @@ module ActiveFacts
           key = @klass.identifying_role_values(*args) rescue nil
         end
 
-        @hash[key]
+        self.[](key)
       end
 
       def detect &b
-        r = @hash.detect &b
-        r ? r[1] : nil
+        @hash.detect(&b)[1]
       end
 
-      def []=(key, value)   #:nodoc:
-        @hash[flatten_key(key)] = value
-      end
-
-      def [](key)
-        @hash[flatten_key(key)]
-      end
-
-      def refresh_key(key)
-        value = @hash.delete(key)
-        @hash[value.identifying_role_values] = value if value
-      end
-
-      private
-      def flatten_key(key)
-        if key.is_a?(Array)
-          key.map { |identifier| flatten_key(identifier) }
-        elsif key.respond_to?(:identifying_role_values)
-          key.identifying_role_values
-        else
-          key
-        end
+      def delete(key)
+        @hash.delete(serialize_key(key))
       end
     end
   end

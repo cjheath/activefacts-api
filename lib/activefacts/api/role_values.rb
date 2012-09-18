@@ -11,31 +11,68 @@ module ActiveFacts
 
     class RoleValues  #:nodoc:
       include Enumerable
+      include FlatHash
       extend Forwardable
 
-      def_delegators :@a, :each, :size, :empty?, :-
+      def_delegators :@hash, :size, :empty?, :values
 
-      def initialize
-        @a = []
+      def initialize(role, entity)
+        @hash = RBTree.new
+        @role = role
+        @entity = entity
       end
 
-      def +(a)
-        @a.+(a.is_a?(RoleValues) ? [a] : a)
+      def +(object)
+        if object.is_a?(RoleValues)
+          values + object.values
+        else
+          values + object
+        end
+      end
+
+      def -(object)
+        values - object
       end
 
       def single
-        size > 1 ? nil : @a[0]
+        size > 1 ? nil : @hash.first[1]
       end
 
       def update(old, value)
-        @a.delete(old) if old
-        @a << value if value
+        delete(old) if old
+        self[value] = value if value
+      end
+
+      def to_a
+        values
+      end
+
+      def include?(key)
+        @hash.has_key?(serialize_key(key))
+      end
+
+      def delete(value)
+        if @hash.has_value?(value)
+           @hash.delete(@hash.index(value))
+        end
       end
 
       def verbalise
-        "[#{@a.map(&:verbalise).join(", ")}]"
+        "[#{@hash.values.map(&:verbalise).join(", ")}]"
+      end
+
+      def [](key)
+        @hash[serialize_key(rebuild_from_residual(key))]
+      end
+
+      def rebuild_from_residual(key)
+        if @role.counterpart.is_identifying
+          irv_position = @role.counterpart.object_type.identifying_roles.index(@role.counterpart)
+          key.insert(irv_position, @entity.identifying_role_values)
+        else
+          key
+        end
       end
     end
-
   end
 end

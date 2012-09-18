@@ -32,7 +32,9 @@
 
 require 'activefacts/api/support'               # General support code and core patches
 require 'activefacts/api/vocabulary'            # A Ruby module may become a Vocabulary
+require 'activefacts/api/flat_hash'             # Common behavior shared by RoleValues and InstanceIndex
 require 'activefacts/api/instance_index'        # The index used by a constellation to record every instance
+require 'activefacts/api/comparable_hash_key'   # The keys used by RoleValues and InstanceIndex
 require 'activefacts/api/constellation'         # A Constellation is a query result or fact population
 require 'activefacts/api/object_type'           # A Ruby class may become a ObjectType in a Vocabulary
 require 'activefacts/api/role'                  # A ObjectType has a collection of Roles

@@ -238,13 +238,13 @@ describe "A Constellation instance" do
     it "should support each" do
       baz = @constellation.Name("baz")
       count = 0
-      @constellation.Name.each { |rv| count += 1 }
+      @constellation.Name.each { |_| count += 1 }
       count.should == 1
     end
 
     it "should support detect" do
       baz = @constellation.Name("baz")
-      @constellation.Name.detect { |rv| true }.should be_true
+      @constellation.Name.detect { |_| true }.should be_true
     end
   end
 

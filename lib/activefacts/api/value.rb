@@ -30,6 +30,10 @@ module ActiveFacts
         "#{role_name || self.class.basename} '#{to_s}'"
       end
 
+      def clone_identity
+        identifying_role_values
+      end
+
       # A value is its own key, unless it's a delegate for a raw value
       def identifying_role_values #:nodoc:
         __getobj__ rescue self
@@ -94,9 +98,7 @@ module ActiveFacts
           instance = instances[key]
           return instance, key if instance      # A matching instance of this class
 
-          #trace :assert, "Constructing new #{self} with #{args.inspect}" do
-            instance = new(*args)
-          #end
+          instance = new(*args)
 
           instance.constellation = constellation
           return *index_instance(instance)
