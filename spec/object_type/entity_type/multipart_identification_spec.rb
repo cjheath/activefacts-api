@@ -44,12 +44,10 @@ describe "Multi-part identifiers" do
     @p.all_child.size.should == 3
   end
 
-  it "should allow children to be found in the instance index by the residual key" do
-    pending "RoleValues use the whole key, not the residual key" do
-      @c.Child[[0]].should == @c0
-      @c.Child[[1]].should == @c1
-      @c.Child[[2]].should == @c2
-    end
+  it "should allow children to be found in the RoleValues by the residual key" do
+    @p.all_child[[0]].should == @c0
+    @p.all_child[[1]].should == @c1
+    @p.all_child[[2]].should == @c2
   end
 
   it "should allow children to be found in the instance index by the whole key" do

@@ -157,10 +157,9 @@ module ActiveFacts
 
       # Every new role added or inherited comes through here:
       def realise_role(role) #:nodoc:
-        if (role.is_unary)
-          # Unary role
+        if role.is_unary
           define_unary_role_accessor(role)
-        elsif (role.unique)
+        elsif role.unique
           define_single_accessor(role)
         else
           define_many_to_one_accessor(role)
@@ -254,7 +253,7 @@ module ActiveFacts
         class_eval do
           define_method role.getter do
             unless (r = instance_variable_get(role_var = role.variable) rescue nil)
-              r = instance_variable_set(role_var, RoleValues.new)
+              r = instance_variable_set(role_var, RoleValues.new(role, self))
             end
             r
           end

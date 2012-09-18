@@ -56,7 +56,7 @@ module ActiveFacts
       end
 
       def delete(key)
-        @hash.delete(ComparableHashKey.new(key))
+        @hash.delete(serialize_key(key))
       end
     end
   end

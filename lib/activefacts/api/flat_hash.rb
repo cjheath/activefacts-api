@@ -19,12 +19,16 @@ module ActiveFacts
     # # while keeping behaviors such as
     # flat_hash['hello'] = 'world'
     module FlatHash
+      def serialize_key(key)
+        ComparableHashKey.new(key)
+      end
+
       def []=(key, value)
-        @hash[ComparableHashKey.new(key)] = value
+        @hash[serialize_key(key)] = value
       end
 
       def [](key)
-        @hash[ComparableHashKey.new(key)]
+        @hash[serialize_key(key)]
       end
 
       def keys

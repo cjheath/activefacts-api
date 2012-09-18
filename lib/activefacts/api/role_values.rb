@@ -16,8 +16,10 @@ module ActiveFacts
 
       def_delegators :@hash, :size, :empty?, :values
 
-      def initialize
+      def initialize(role, entity)
         @hash = RBTree.new
+        @role = role
+        @entity = entity
       end
 
       def +(object)
@@ -29,11 +31,7 @@ module ActiveFacts
       end
 
       def -(object)
-        clone = Hash.new(values)
-        if self[object]
-          clone.delete(ComparableHashKey.new(object))
-        end
-        clone.values
+        values - object
       end
 
       def single
@@ -50,7 +48,7 @@ module ActiveFacts
       end
 
       def include?(key)
-        @hash.has_key?(ComparableHashKey.new(key))
+        @hash.has_key?(serialize_key(key))
       end
 
       def delete(value)
@@ -61,6 +59,19 @@ module ActiveFacts
 
       def verbalise
         "[#{@hash.values.map(&:verbalise).join(", ")}]"
+      end
+
+      def [](key)
+        @hash[serialize_key(rebuild_from_residual(key))]
+      end
+
+      def rebuild_from_residual(key)
+        if @role.counterpart.is_identifying
+          irv_position = @role.counterpart.object_type.identifying_roles.index(@role.counterpart)
+          key.insert(irv_position, @entity.identifying_role_values)
+        else
+          key
+        end
       end
     end
   end
