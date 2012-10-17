@@ -219,7 +219,8 @@ module ActiveFacts
           instance = instances[key]
           # REVISIT: This ignores any additional attribute assignments
           if instance
-            raise "Additional role values are ignored when asserting an existing instance" if args[-1].is_a? Hash and !args[-1].empty?
+            # raise "Additional role values are ignored when asserting an existing instance" if args[-1].is_a? Hash and !args[-1].empty?
+            assign_additional_roles(instance, args[-1]) if args[-1].is_a? Hash and !args[-1].empty?
             return instance, key      # A matching instance of this class
           end
 
@@ -265,15 +266,7 @@ module ActiveFacts
           instance = new(*values)
           #end
 
-          # Now assign any extra args in the hash which weren't identifiers (extra identifiers will be assigned again)
-          (arg_hash ? arg_hash.entries : []).each do |role_name, value|
-            role = roles(role_name)
-
-            if !instance.instance_index_counterpart(role).include?(value)
-              @created_instances << [role, value]
-            end
-            instance.send(role.setter, value)
-          end
+          assign_additional_roles(instance, arg_hash)
 
           return *index_instance(instance, key, irns)
 
@@ -286,6 +279,18 @@ module ActiveFacts
           end
           @created_instances = []
           raise
+        end
+
+        def assign_additional_roles(instance, arg_hash)
+          # Now assign any extra args in the hash which weren't identifiers (extra identifiers will be assigned again)
+          (arg_hash ? arg_hash.entries : []).each do |role_name, value|
+            role = roles(role_name)
+
+            if !instance.instance_index_counterpart(role).include?(value)
+              @created_instances << [role, value]
+            end
+            instance.send(role.setter, value)
+          end
         end
 
         def index_instance(instance, key = nil, key_roles = nil) #:nodoc:
