@@ -386,12 +386,23 @@ describe "Object type role values" do
 
           it "should support each" do
             count = 0
-            @role_values.each { |rv| count += 1 }
+            @role_values.each do |v, *a|
+              a.size.should == 0
+              v.should_not be_nil
+              count += 1
+            end
             count.should == 1
           end
 
           it "should support detect" do
-            @role_values.detect { |rv| true }.should be_true
+            count = 0
+            @role_values.detect do |v, *a|
+              a.size.should == 0
+              v.should_not be_nil
+              count += 1
+              false
+            end
+            count.should == 1
           end
 
           it "should verbalise" do
