@@ -161,6 +161,11 @@ class AutoCounter
     end
   end
 
+  # if the value is unassigned, it equal?(:new).
+  def equal? value
+    value == :new ? @value == nil : super
+  end
+
   # An AutoCounter may only be used in numeric expressions after a definite value has been assigned
   def to_i
     raise ArgumentError, "Illegal attempt to get integer value of an uncommitted AutoCounter" unless @value

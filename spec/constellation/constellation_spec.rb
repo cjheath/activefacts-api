@@ -147,10 +147,16 @@ describe "A Constellation instance" do
     name1 = @constellation.Name("foo")
     foo1 = @constellation.LegalEntity("foo")
     acme1 = @constellation.Company("Acme, Inc", :auto_counter_val => :new)
+    acme1_id = acme1.auto_counter_val.to_s
 
     name2 = @constellation.Name("foo")
     foo2 = @constellation.LegalEntity("foo")
-    lambda { @constellation.Company("Acme, Inc", :auto_counter_val => :new) }.should raise_error
+    acme2 = nil
+    lambda { acme2 = @constellation.Company("Acme, Inc", :auto_counter_val => :new) }.should_not raise_error
+    acme2.auto_counter_val = :new
+    acme2.should == acme1
+    acme2.auto_counter_val.should_not be_defined
+    acme2.auto_counter_val.to_s.should == acme1_id
   end
 
   it "should support methods to assert instances via the class for that type" do
