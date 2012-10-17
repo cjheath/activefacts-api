@@ -39,7 +39,7 @@ describe ActiveFacts::API::InstanceIndex do
     @c = @constellation.EntityC(:value_a => 123, :value_b => 'abc')
   end
 
-  it "should index its own class" do
+  it "should index an instance under its own class" do
     @constellation.instances[Mod::EntityC].size.should == 1
   end
 
@@ -61,6 +61,30 @@ describe ActiveFacts::API::InstanceIndex do
 
     it "should use the value as-is if it doesn't have identifying role values" do
       @constellation.EntityC[%w{abc}].should == @c
+    end
+  end
+
+  describe "should iterate over instances" do
+    [:each, :map, :detect].each do |api|
+      it "Should pass the key and object to #{api}" do
+        a_index = @constellation.EntityA
+        a_index.size.should == 3
+        a_index.send(api) do |k, v, *a|
+          [[1], [12], [123]].should include(k)
+          [@a, @b, @c].should include(v)
+          a.size.should == 0
+          false
+        end
+
+        b_index = @constellation.EntityB
+        b_index.size.should == 2
+        b_index.send(api) do |k, v, *a|
+          [['ab'], ['abc']].should include(k)
+          [@b, @c].should include v
+          a.size.should == 0
+          false
+        end
+      end
     end
   end
 end
