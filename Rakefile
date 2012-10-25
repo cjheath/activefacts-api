@@ -31,6 +31,8 @@ require 'rspec/core'
 require 'rspec/core/rake_task'
 require 'rdoc/task'
 
+gem "rspec", :require => "spec/rake/spectask"
+
 task :default => :spec
 
 desc "Run Rspec tests"
