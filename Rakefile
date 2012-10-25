@@ -40,7 +40,7 @@ RSpec::Core::RakeTask.new(:spec)
 
 namespace :spec do
   namespace :rubies do
-    SUPPORTED_RUBIES = %w{ 1.8.7 1.9.2 1.9.3 jruby-1.6.7.2 rbx }
+    SUPPORTED_RUBIES = %w{ 1.8.7 1.9.2 1.9.3 jruby-1.7.0 rbx }
 
     desc "Run Rspec tests on all supported rubies"
     task :all_tasks => [:install_gems, :exec]
