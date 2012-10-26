@@ -26,13 +26,20 @@ module ActiveFacts
           }
         end
         if @keys[:debug]
+          errors = []
+          success = false
           ['pry', 'debugger', 'ruby-debug'].each do |debugger|
             begin
               require debugger
               puts "Loaded "+debugger
+              success = true
               break
-            rescue LoadError
+            rescue LoadError => e
+              errors << e
             end
+          end
+          unless success
+            puts "Can't load any debugger, failed on:\n#{errors.inspect}"
           end
           ::Debugger.start rescue nil
         end

@@ -5,6 +5,7 @@ gem 'rake', :group => [:development, :test]
 group :development do
   gem 'jeweler'
   gem 'rspec', '~>2.6.0'
+  gem 'debugger'
 end
 
 group :test do
