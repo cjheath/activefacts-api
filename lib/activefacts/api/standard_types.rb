@@ -9,6 +9,7 @@
 #
 require 'date'
 require 'activefacts/api/numeric'
+require 'activefacts/api/guid'
 
 module ActiveFacts
   module API
@@ -23,7 +24,7 @@ module ActiveFacts
 end
 # Add the methods that convert our classes into ObjectType types:
 
-ValueClasses = [String, Date, DateTime, Time, Int, Real, AutoCounter, Decimal]
+ValueClasses = [String, Date, DateTime, Time, Int, Real, AutoCounter, Decimal, Guid]
 ValueClasses.each{|c|
     c.send :extend, ActiveFacts::API::ValueClass
   }

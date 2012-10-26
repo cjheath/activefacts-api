@@ -23,6 +23,7 @@ pkg
 
 # Common spec log file
 spec.log
+spec/log
 
 # Have editor/IDE/OS specific files you need to ignore? Consider using a global gitignore: 
 #

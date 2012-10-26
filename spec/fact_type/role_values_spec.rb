@@ -3,9 +3,9 @@
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
 
-VALUE_TYPES = Int, Real, AutoCounter, String, Date, DateTime, Decimal
-RAW_VALUES = [2, 3.0, 4, "5", Date.new(2008, 04, 20), DateTime.new(2008, 04, 20, 10, 28, 14)]
-ALT_VALUES = [3, 4.0, 5, "6", Date.new(2009, 04, 20), DateTime.new(2009, 04, 20, 10, 28, 14)]
+VALUE_TYPES = Int, Real, AutoCounter, String, Date, DateTime, Decimal, Guid
+RAW_VALUES = [2, 3.0, 4, "5", Date.new(2008, 04, 20), DateTime.new(2008, 04, 20, 10, 28, 14), '43210.98765', '01234567-89ab-cdef-0123-456789abcdef']
+ALT_VALUES = [3, 4.0, 5, "6", Date.new(2009, 04, 20), DateTime.new(2009, 04, 20, 10, 28, 14), '56789.01234', 'fedcba987654-3210-fedc-ba98-76543210']
 VALUE_SUB_FOR_VALUE = {}
 VALUES_FOR_TYPE = VALUE_TYPES.zip(RAW_VALUES, ALT_VALUES).inject({}) do |h, (vt, v1, v2)|
     next h unless v1 and v2
@@ -186,7 +186,7 @@ describe "Object type role values" do
         it "should allow nullifying and reassigning a #{object_type_name} entity's identifying role value" do
           object = @constellation.send(object_type_name, *object_identifying_parameters(object_type_name, values[0]))
           object.class.identifying_roles.each do |identifying_role|
-            next if identifying_role.name == :counter
+            next if [:counter, :id_guid_val].include?(identifying_role.name)
             assigned = object.send(:"#{identifying_role.name}=", nil)
             assigned.should be_nil
             object.send(:"#{identifying_role.name}=", values[1])

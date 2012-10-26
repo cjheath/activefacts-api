@@ -8,7 +8,7 @@ describe "A Constellation instance" do
     Object.send :remove_const, :Mod if Object.const_defined?("Mod")
     module Mod
       @base_types = [
-          Int, Real, AutoCounter, String, Date, DateTime
+          Int, Real, AutoCounter, String, Date, DateTime, Decimal, Guid
         ]
 
       # Create a value type and a subtype of that value type for each base type:

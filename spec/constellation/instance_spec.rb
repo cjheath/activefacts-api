@@ -9,7 +9,7 @@ describe "An instance of every type of ObjectType" do
     module Mod
       # These are the base value types we're going to test:
       @base_types = [
-          Int, Real, AutoCounter, String, Date, DateTime, Decimal
+          Int, Real, AutoCounter, String, Date, DateTime, Decimal, Guid
         ]
 
       # Construct the names of the roles they play:
@@ -74,7 +74,13 @@ describe "An instance of every type of ObjectType" do
             one_to_one :test_by_#{base_type.name.snakecase}
           end
         END
-        Mod.module_eval code
+
+        begin
+          Mod.module_eval code
+        rescue Exception => e
+          puts "Failure: #{e}"
+          puts "Failed on: <<END\n#{code}\nEND"
+        end
       end
     end
 
@@ -87,6 +93,7 @@ describe "An instance of every type of ObjectType" do
     @date = [2008, 04, 19]
     @date_time = [2008, 04, 19, 10, 28, 14]
     @decimal = BigDecimal.new('98765432109876543210')
+    @guid = '01234567-89ab-cdef-0123-456789abcdef'
 
     # Value Type instances
     @int_value = Mod::IntVal.new(1)
@@ -101,6 +108,7 @@ describe "An instance of every type of ObjectType" do
     @date_time_value = Mod::DateTimeVal.new d # 2008, 04, 20, 10, 28, 14
     # This next isn't in the same pattern; it makes a Decimal from a BigDecimal rather than a String (coverage reasons)
     @decimal_value = Mod::DecimalVal.new(BigDecimal.new('98765432109876543210'))
+    @guid_value = Mod::GuidVal.new(:new)
 
     # Value SubType instances
     @int_sub_value = Mod::IntSubVal.new(4)
@@ -112,6 +120,7 @@ describe "An instance of every type of ObjectType" do
     @date_time_sub_value = Mod::DateTimeSubVal.new(::DateTime.civil(2008, 04, 26, 10, 28, 14))
     # This next isn't in the same pattern; it makes a Decimal from a BigNum rather than a String (coverage reasons)
     @decimal_sub_value = Mod::DecimalSubVal.new(98765432109876543210)
+    @guid_sub_value = Mod::GuidSubVal.new(:new)
 
     # Entities identified by Value Type, SubType and Entity-by-value-type instances
     @test_by_int = Mod::TestByInt.new(2)
@@ -125,6 +134,7 @@ describe "An instance of every type of ObjectType" do
     @test_by_date_time = Mod::TestByDateTime.new([[2008,04,28,10,28,15]])
     #@test_by_date_time = Mod::TestByDateTime.new(DateTime.new(2008,04,28,10,28,15))
     @test_by_decimal = Mod::TestByDecimal.new('98765432109876543210')
+    @test_by_guid = Mod::TestByGuid.new('01234567-89ab-cdef-0123-456789abcdef')
 
     @test_by_int_sub = Mod::TestByIntSub.new(2)
     @test_by_real_sub = Mod::TestByRealSub.new(5.0)
@@ -134,6 +144,7 @@ describe "An instance of every type of ObjectType" do
     @test_by_date_sub = Mod::TestByDateSub.new(Date.new(2008,04,27))
     @test_by_date_time_sub = Mod::TestByDateTimeSub.new(2008,04,29,10,28,15)
     @test_by_decimal_sub = Mod::TestByDecimalSub.new('98765432109876543210')
+    @test_by_guid_sub = Mod::TestByGuidSub.new('01234567-89ab-cdef-0123-456789abcdef')
 
     @test_by_int_entity = Mod::TestByIntEntity.new(@test_by_int)
     @test_by_real_entity = Mod::TestByRealEntity.new(@test_by_real)
@@ -143,6 +154,7 @@ describe "An instance of every type of ObjectType" do
     @test_by_date_entity = Mod::TestByDateEntity.new(@test_by_date)
     @test_by_date_time_entity = Mod::TestByDateTimeEntity.new(@test_by_date_time)
     @test_by_decimal_entity = Mod::TestByDecimalEntity.new(@test_by_decimal)
+    @test_by_guid_entity = Mod::TestByGuidEntity.new(@test_by_guid)
 
     # Entity subtypes
     @test_sub_by_int = Mod::TestSubByInt.new(2)
@@ -153,45 +165,54 @@ describe "An instance of every type of ObjectType" do
     @test_sub_by_date = Mod::TestSubByDate.new(Date.new(2008,04,28))
     @test_sub_by_date_time = Mod::TestSubByDateTime.new(2008,04,28,10,28,15)
     @test_sub_by_decimal = Mod::TestSubByDecimal.new('98765432109876543210')
+    @test_sub_by_guid = Mod::TestSubByGuid.new('01234567-89ab-cdef-0123-456789abcdef')
 
     # These arrays get zipped together in various ways. Keep them aligned.
     @values = [
         @int, @real, @auto_counter, @new_auto_counter,
-        @string, @date, @date_time, @decimal
+        @string, @date, @date_time, @decimal, @guid
       ]
     @classes = [
         Int, Real, AutoCounter, AutoCounter,
-        String, Date, DateTime, Decimal
+        String, Date, DateTime, Decimal, Guid
       ]
     @value_types = [
         Mod::IntVal, Mod::RealVal, Mod::AutoCounterVal, Mod::AutoCounterVal,
         Mod::StringVal, Mod::DateVal, Mod::DateTimeVal, Mod::DecimalVal,
+        Mod::GuidVal,
         Mod::IntSubVal, Mod::RealSubVal, Mod::AutoCounterSubVal, Mod::AutoCounterSubVal,
         Mod::StringSubVal, Mod::DateSubVal, Mod::DateTimeSubVal, Mod::DecimalSubVal,
+        Mod::GuidSubVal,
         ]
     @value_instances = [
         @int_value, @real_value, @auto_counter_value, @new_auto_counter_value,
-        @string_value, @date_value, @date_time_value, @decimal_value,
+        @string_value, @date_value, @date_time_value, @decimal_value, @guid_value,
         @int_sub_value, @real_sub_value, @auto_counter_sub_value, @auto_counter_sub_value_new,
-        @string_sub_value, @date_sub_value, @date_time_sub_value, @decimal_sub_value,
+        @string_sub_value, @date_sub_value, @date_time_sub_value, @decimal_sub_value, @guid_sub_value,
         @int_value, @real_value, @auto_counter_value, @new_auto_counter_value,
-        @string_value, @date_value, @date_time_value, @decimal_value,
+        @string_value, @date_value, @date_time_value, @decimal_value, @guid_value,
       ]
     @entity_types = [
         Mod::TestByInt, Mod::TestByReal, Mod::TestByAutoCounter, Mod::TestByAutoCounter,
         Mod::TestByString, Mod::TestByDate, Mod::TestByDateTime, Mod::TestByDecimal,
+        Mod::TestByGuid,
         Mod::TestByIntSub, Mod::TestByRealSub, Mod::TestByAutoCounterSub, Mod::TestByAutoCounterSub,
         Mod::TestByStringSub, Mod::TestByDateSub, Mod::TestByDateTimeSub, Mod::TestByDecimalSub,
+        Mod::TestByGuidSub,
         Mod::TestSubByInt, Mod::TestSubByReal, Mod::TestSubByAutoCounter, Mod::TestSubByAutoCounter,
         Mod::TestSubByString, Mod::TestSubByDate, Mod::TestSubByDateTime, Mod::TestByDecimalEntity,
+        Mod::TestByGuidEntity,
       ]
     @entities = [
         @test_by_int, @test_by_real, @test_by_auto_counter, @test_by_auto_counter_new,
         @test_by_string, @test_by_date, @test_by_date_time, @test_by_decimal,
+        @test_by_guid,
         @test_by_int_sub, @test_by_real_sub, @test_by_auto_counter_sub, @test_by_auto_counter_new_sub,
         @test_by_string_sub, @test_by_date_sub, @test_by_date_time_sub, @test_by_decimal_sub,
+        @test_by_guid_sub,
         @test_sub_by_int, @test_sub_by_real, @test_sub_by_auto_counter, @test_sub_by_auto_counter_new,
         @test_sub_by_string, @test_sub_by_date, @test_sub_by_date_time, @test_sub_by_decimal,
+        @test_sub_by_guid,
       ]
     @entities_by_entity = [
         @test_by_int_entity,
@@ -202,28 +223,35 @@ describe "An instance of every type of ObjectType" do
         @test_by_date_entity,
         @test_by_date_time_entity,
         @test_by_decimal_entity,
+        @test_by_guid_entity,
       ]
     @entities_by_entity_types = [
         Mod::TestByIntEntity, Mod::TestByRealEntity, Mod::TestByAutoCounterEntity, Mod::TestByAutoCounterEntity,
         Mod::TestByStringEntity, Mod::TestByDateEntity, Mod::TestByDateTimeEntity, Mod::TestByDecimalEntity,
+        Mod::TestByGuidEntity,
       ]
     @test_role_names = [
         :int_value, :real_value, :auto_counter_value, :auto_counter_value,
         :string_value, :date_value, :date_time_value, :decimal_value,
+        :guid_value,
         :int_sub_value, :real_sub_value, :auto_counter_sub_value, :auto_counter_sub_value,
         :string_sub_value, :date_sub_value, :date_time_sub_value, :decimal_sub_value,
+        :guid_sub_value,
         :int_value, :real_value, :auto_counter_value, :auto_counter_value,
         :string_value, :date_value, :date_time_value, :decimal_value,
+        :guid_value,
       ]
     @role_values = [
         3, 4.0, 5, 6,
         "three", Date.new(2008,4,21), DateTime.new(2008,4,22,10,28,16),
-        '98765432109876543210'
+        '98765432109876543210',
+        '01234567-89ab-cdef-0123-456789abcdef'
       ]
     @role_alternate_values = [
         4, 5.0, 6, 7,
         "four", Date.new(2009,4,21), DateTime.new(2009,4,22,10,28,16),
-        '98765432109876543211'
+        '98765432109876543211',
+        '01234567-89ab-cdef-0123-456789abcdef'
       ]
     @subtype_role_instances = [
         Mod::IntSubVal.new(6), Mod::RealSubVal.new(6.0),
@@ -231,6 +259,7 @@ describe "An instance of every type of ObjectType" do
         Mod::StringSubVal.new("seven"),
         Mod::DateSubVal.new(2008,4,29), Mod::DateTimeSubVal.new(2008,4,30,10,28,16),
         Mod::DecimalSubVal.new('98765432109876543210'),
+        Mod::DecimalSubVal.new('01234567-89ab-cdef-0123-456789abcdef'),
       ]
   end
 

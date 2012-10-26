@@ -5,7 +5,9 @@ gem 'rake', :group => [:development, :test]
 group :development do
   gem 'jeweler'
   gem 'rspec', '~>2.6.0'
-  gem 'debugger'
+  gem 'ruby-debug', :platforms => [:mri_18]
+  gem 'debugger', :platforms => [:mri_19]
+  gem 'pry', :platforms => [:jruby, :rbx]
 end
 
 group :test do
