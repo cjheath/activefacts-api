@@ -36,7 +36,9 @@ gem "rspec", :require => "spec/rake/spectask"
 task :default => :spec
 
 desc "Run Rspec tests"
-RSpec::Core::RakeTask.new(:spec)
+RSpec::Core::RakeTask.new(:spec) do |t|
+  t.rspec_opts = %w{-f d}
+end
 
 namespace :spec do
   namespace :rubies do
