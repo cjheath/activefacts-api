@@ -44,7 +44,17 @@ module ActiveFacts
         if args.size == 1 && args[0].is_a?(@klass)
           key = args[0].identifying_role_values
         else
-          key = @klass.identifying_role_values(*args) rescue nil
+          begin
+            key = @klass.identifying_role_values(*args)
+          rescue TypeError => e
+            # This happens (and should not) during assert_instance when checking
+            # for new asserts of identifying values that might get rolled back
+            # when the assert fails (for example because of an implied subtyping change)
+            key = nil
+          rescue ActiveFactsRuntimeException => e
+            # This is currently only known to happen during a retract()
+            key = nil
+          end
         end
 
         @hash[key]

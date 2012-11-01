@@ -101,7 +101,7 @@ module ActiveFacts
         role = self
         klass.class_eval do
           role_accessor_name = "#{role.name}_role"
-          unless (method(role_accessor_name) rescue nil)
+          unless respond_to?(role_accessor_name)
             (class << self; self; end).
               send(:define_method, role_accessor_name) do
                 role

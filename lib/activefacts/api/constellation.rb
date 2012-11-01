@@ -118,8 +118,8 @@ module ActiveFacts
       # With no parameters, return the collection of all instances of that object_type.
       # With parameters, assert an instance of the object_type identified by the values passed as args.
       def method_missing(m, *args, &b)
-        if klass = @vocabulary.const_get(m) and klass.is_a?(Class) and klass.respond_to?(:assert_instance)
-
+        klass = @vocabulary.const_get(m)
+        if klass and klass.is_a?(Class) and klass.respond_to?(:assert_instance)
           (class << self; self; end).
             send(:define_method, sym = m.to_sym) do |*args|
               instance_index = @instances[klass]

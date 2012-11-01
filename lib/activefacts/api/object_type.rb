@@ -29,13 +29,17 @@ module ActiveFacts
           unless role = @roles[role_name.to_sym]
             role = nil
             supertypes.each do |supertype|
-                r = supertype.roles(role_name) rescue nil
-                next unless r
-                role = r
+                begin
+                  role = supertype.roles(role_name)
+                rescue RoleNotDefinedException
+                  next
+                end
                 break
               end
           end
-          raise "Role #{basename}.#{role_name} is not defined" unless role
+          unless role
+            raise RoleNotDefinedException.new(self, role_name)
+          end
           role
         else
           nil
@@ -145,8 +149,7 @@ module ActiveFacts
           supertypes += (@supertypes ||= [])
           sts = supertypes.inject([]) do |a, t|
             next if a.include?(t)
-            a += [t]
-            a += t.supertypes_transitive rescue []
+            a += [t] + t.supertypes_transitive
           end.uniq
           sts # The local variable unconfuses rcov
         end
@@ -388,10 +391,12 @@ module ActiveFacts
         end
 
         # resolve the Symbol to a Class now if possible:
-        resolved = vocabulary.object_type(related) rescue nil
+        resolved = vocabulary.object_type(related)
         related = resolved if resolved
         if related.is_a?(Class)
-          raise "#{related} must be an object type in #{vocabulary.name}" unless related.respond_to?(:vocabulary) and related.vocabulary == self.vocabulary
+          unless related.respond_to?(:vocabulary) and related.vocabulary == self.vocabulary
+            raise CrossVocabularyRoleException.new(related, vocabulary)
+          end
         end
 
         if options.delete(:mandatory) == true

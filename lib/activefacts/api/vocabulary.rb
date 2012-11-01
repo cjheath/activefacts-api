@@ -21,7 +21,9 @@ module ActiveFacts
         return @object_type unless name
 
         if name.is_a? Class
-          raise "#{name} must be an object type in #{self.name}" unless name.vocabulary == self
+          unless name.respond_to?(:vocabulary) and name.vocabulary == self
+            raise CrossVocabularyRoleException.new(name, self)
+          end
           return name
         end
 
@@ -31,7 +33,7 @@ module ActiveFacts
           c
         else
           begin
-            const_get("#{self.name}::#{camel}")
+            const_get(camel)
           rescue NameError
             nil
           end

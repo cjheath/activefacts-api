@@ -9,7 +9,7 @@
 # We use this to define open-ended ranges.
 begin
   Object.const_get("Infinity")
-rescue
+rescue NameError
   Infinity = 1.0/0.0
 end
 

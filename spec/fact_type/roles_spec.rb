@@ -54,6 +54,48 @@ describe "Roles" do
     role.counterpart.object_type.should == Mod::Name
   end
 
+  it "should prevent association of a role name with an object_type from the wrong module" do
+    lambda {
+      module Mod2
+        class Unrelated
+        end
+      end
+
+      module Mod
+        class Existing1 < String
+          value_type
+          has_one :unrelated, :class => Mod2::Unrelated
+        end
+      end
+    }.should raise_error(ActiveFacts::API::CrossVocabularyRoleException)
+  end
+
+  it "should prevent association of a role name with a non-object_type" do
+    lambda {
+      module Mod
+        class NonObject
+        end
+        class Existing1 < String
+          value_type
+          has_one :non_object, :class => NonObject
+        end
+      end
+    }.should raise_error(ActiveFacts::API::CrossVocabularyRoleException)
+  end
+
+  it "should prevent association of a role name with an implied non-object_type" do
+    lambda {
+      module Mod
+        class NonObject
+        end
+        class Existing1 < String
+          value_type
+          has_one :non_object
+        end
+      end
+    }.should raise_error(ActiveFacts::API::CrossVocabularyRoleException)
+  end
+
   it "should provide value type metadata" do
     Mod::Name.length.should == 40
     Mod::Name.scale.should == 0

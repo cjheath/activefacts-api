@@ -227,7 +227,7 @@ module ActiveFacts
             end
             if arg == nil # But not false
               if role.mandatory
-                raise "You must provide a #{role.counterpart.object_type.name} to identify a #{basename}"
+                raise MissingMandatoryRoleValueException.new(self, role)
               end
             else
               role.counterpart_object_type.identifying_role_values(*arg)
@@ -277,6 +277,8 @@ module ActiveFacts
                 elsif !arg
                   value = role_key = nil
                 else
+# REVISIT; These next few lines are bogus; they generate TypeError exceptions which are caught and ignored
+# A new approach will follow shortly which won't @create_instances that won't be needed
                   if role.counterpart.object_type.is_entity_type
                     add = !constellation.send(role.counterpart.object_type.basename.to_sym).include?([arg])
                   else
