@@ -100,6 +100,7 @@ class ::Date
     elsif (a.size == 1 && a[0].is_a?(String))
       parse(a[0])
     else
+      a = [] if a == [nil]
       civil(*a, &b)
     end
   end
