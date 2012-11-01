@@ -64,20 +64,24 @@ module ActiveFacts
       end
 
       def __delay(object_type_name, args, &block) #:nodoc:
-        @delayed ||= Hash.new { |h,k| h[k] = [] }
-        @delayed[object_type_name] << [args, block]
+        delayed[object_type_name] << [args, block]
       end
 
       # __bind raises an error if the named class doesn't exist yet.
       def __bind(object_type_name)  #:nodoc:
         object_type = const_get(object_type_name)
-        if (@delayed && @delayed.include?(object_type_name))
-          d = @delayed[object_type_name]
+        if (delayed.include?(object_type_name))
+          d = delayed[object_type_name]
           d.each{|(a,b)|
               b.call(object_type, *a)
             }
-          @delayed.delete(object_type_name)
+          delayed.delete(object_type_name)
         end
+      end
+
+      def delayed
+        @delayed ||= Hash.new { |h,k| h[k] = [] }
+        @delayed
       end
 
     end

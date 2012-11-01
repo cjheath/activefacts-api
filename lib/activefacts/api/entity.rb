@@ -58,8 +58,39 @@ module ActiveFacts
         # Assign the identifying roles in order. Any other roles will be assigned by our caller
         klass.identifying_role_names.zip(args).each do |role_name, value|
           role = self.class.roles(role_name)
-          send(role.setter, value)
+          begin
+            send(role.setter, value)
+          rescue NoMethodError => e
+            raise settable_roles_exception(e, role_name)
+          end
         end
+      end
+
+      def settable_roles_exception e, role_name
+        n = e.class.new(
+          "#{self.class} has no setter for #{role_name}.\n" +
+          "Settable roles are #{settable_roles*', '}.\n" +
+          (if self.class.vocabulary.delayed.empty?
+            ''
+          else
+            "This could be because the following expected object types are still not defined: #{self.class.vocabulary.delayed.keys.sort*', '}\n"
+          end
+          )
+        )
+        n.set_backtrace(e.backtrace)
+        n
+      end
+
+      def settable_roles
+        ([self.class]+self.class.supertypes_transitive).
+          map do |k|
+            k.roles.
+              map do |name, role|
+                role.unique ? name : nil
+              end.
+              compact
+            end.
+          flatten
       end
 
       def inspect #:nodoc:
