@@ -132,7 +132,7 @@ module ActiveFacts
             # REVISIT: Need to check all superclass roles recursively, unless we hit a common supertype
             realise_supertypes(object_type, all_supertypes)
           end
-          [(superclass.vocabulary && superclass rescue nil), *@supertypes].compact
+          [(superclass.respond_to?(:vocabulary) ? superclass : nil), *@supertypes].compact
         end
       end
 
@@ -140,7 +140,8 @@ module ActiveFacts
       def supertypes_transitive
         class_eval do
           supertypes = []
-          supertypes << superclass if Module === (superclass.vocabulary rescue nil)
+          v = superclass.respond_to?(:vocabulary) ? superclass.vocabulary : nil
+          supertypes << superclass if v.kind_of?(Module)
           supertypes += (@supertypes ||= [])
           sts = supertypes.inject([]) do |a, t|
             next if a.include?(t)
@@ -236,7 +237,7 @@ module ActiveFacts
         class_eval do
           define_method role.getter do |*a|
             raise "Parameters passed to #{self.class.name}\##{role.name}" if a.size > 0
-            instance_variable_get(role.variable) rescue nil
+            instance_variable_get(role.variable)
           end
         end
       end
@@ -247,7 +248,7 @@ module ActiveFacts
         class_eval do
           define_method role.setter do |value|
 
-            old = instance_variable_get(role.variable) rescue nil
+            old = instance_variable_get(role.variable)
             return true if old.equal?(value)         # Occurs when another instance having the same value is assigned
 
             value = role.adapt(@constellation, value) if value
@@ -288,7 +289,7 @@ module ActiveFacts
             role_var = role.variable
 
             # Get old value, and jump out early if it's unchanged:
-            old = instance_variable_get(role_var) rescue nil
+            old = instance_variable_get(role_var)
             return value if old.equal?(value)         # Occurs during one_to_one assignment, for example
 
             value = role.adapt(constellation, value) if value
@@ -324,10 +325,9 @@ module ActiveFacts
       def define_many_to_one_accessor(role)
         class_eval do
           define_method role.getter do
-            unless (r = instance_variable_get(role_var = role.variable) rescue nil)
-              r = instance_variable_set(role_var, RoleValues.new)
-            end
-            r
+            role_var = role.variable
+            instance_variable_get(role_var) or
+              instance_variable_set(role_var, RoleValues.new)
           end
         end
       end
