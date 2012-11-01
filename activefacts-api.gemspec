@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "activefacts-api"
-  s.version = "0.9.2"
+  s.version = "0.9.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Clifford Heath"]
-  s.date = "2012-10-17"
+  s.date = "2012-11-01"
   s.description = "\nThe ActiveFacts API is a Ruby DSL for managing constellations of elementary facts.\nEach fact is either existential (a value or an entity), characteristic (boolean) or\nbinary relational (A rel B). Relational facts are consistently co-referenced, so you\ncan traverse them efficiently in any direction. Each constellation maintains constraints\nover the fact population.\n"
   s.email = "clifford.heath@gmail.com"
   s.extra_rdoc_files = [
@@ -31,6 +31,7 @@ Gem::Specification.new do |s|
     "lib/activefacts/api/constellation.rb",
     "lib/activefacts/api/entity.rb",
     "lib/activefacts/api/exceptions.rb",
+    "lib/activefacts/api/guid.rb",
     "lib/activefacts/api/instance.rb",
     "lib/activefacts/api/instance_index.rb",
     "lib/activefacts/api/numeric.rb",
@@ -54,6 +55,8 @@ Gem::Specification.new do |s|
     "spec/object_type/entity_type/entity_type_spec.rb",
     "spec/object_type/entity_type/multipart_identification_spec.rb",
     "spec/object_type/value_type/autocounter_spec.rb",
+    "spec/object_type/value_type/date_time_spec.rb",
+    "spec/object_type/value_type/guid_spec.rb",
     "spec/object_type/value_type/numeric_spec.rb",
     "spec/object_type/value_type/value_type_spec.rb",
     "spec/simplecov_helper.rb",
@@ -72,6 +75,9 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<rake>, [">= 0"])
       s.add_development_dependency(%q<jeweler>, [">= 0"])
       s.add_development_dependency(%q<rspec>, ["~> 2.6.0"])
+      s.add_development_dependency(%q<ruby-debug>, [">= 0"])
+      s.add_development_dependency(%q<debugger>, [">= 0"])
+      s.add_development_dependency(%q<pry>, [">= 0"])
       s.add_development_dependency(%q<rspec>, ["~> 2.3.0"])
       s.add_development_dependency(%q<bundler>, ["~> 1.0.0"])
       s.add_development_dependency(%q<jeweler>, ["~> 1.5.2"])
@@ -80,6 +86,9 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<rake>, [">= 0"])
       s.add_dependency(%q<jeweler>, [">= 0"])
       s.add_dependency(%q<rspec>, ["~> 2.6.0"])
+      s.add_dependency(%q<ruby-debug>, [">= 0"])
+      s.add_dependency(%q<debugger>, [">= 0"])
+      s.add_dependency(%q<pry>, [">= 0"])
       s.add_dependency(%q<rspec>, ["~> 2.3.0"])
       s.add_dependency(%q<bundler>, ["~> 1.0.0"])
       s.add_dependency(%q<jeweler>, ["~> 1.5.2"])
@@ -89,6 +98,9 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<rake>, [">= 0"])
     s.add_dependency(%q<jeweler>, [">= 0"])
     s.add_dependency(%q<rspec>, ["~> 2.6.0"])
+    s.add_dependency(%q<ruby-debug>, [">= 0"])
+    s.add_dependency(%q<debugger>, [">= 0"])
+    s.add_dependency(%q<pry>, [">= 0"])
     s.add_dependency(%q<rspec>, ["~> 2.3.0"])
     s.add_dependency(%q<bundler>, ["~> 1.0.0"])
     s.add_dependency(%q<jeweler>, ["~> 1.5.2"])
