@@ -43,7 +43,9 @@ module ActiveFacts
       def initialize(vocabulary)
         @vocabulary = vocabulary
         @instances = Hash.new do |h,k|
-          raise "A constellation over #{@vocabulary.name} can only index instances of object_types in that vocabulary, not #{k.inspect}" unless k.is_a?(Class) and k.modspace == vocabulary
+          unless k.is_a?(Class) and k.modspace == vocabulary
+            raise "A constellation over #{@vocabulary.name} can only index instances of classes in that vocabulary, not #{k.inspect}"
+          end
           h[k] = InstanceIndex.new(self, k)
         end
       end
@@ -65,27 +67,6 @@ module ActiveFacts
         end
         self
       end
-
-=begin
-      def assert *args
-        case
-        when args.size >= 1
-          args.each do |arg|
-            assert arg
-          end
-        when args[0].is_a?(Hash)
-          args[0].each do |key, value|
-            klass_name = key.is_a?(Symbol) ? key.to_s.camelcase : key.to_s
-            klass = vocabulary.const_get(klass_name)
-            send(klass_name).assert(*Array(value))
-          end
-        else
-          args.each do |arg|
-            assert(arg)
-          end
-        end
-      end
-=end
 
       # Constellations verbalise all members of all classes in alphabetical order, showing
       # non-identifying role values as well
