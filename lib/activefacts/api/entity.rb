@@ -277,6 +277,7 @@ module ActiveFacts
                 elsif !arg
                   value = role_key = nil
                 else
+=begin
 # REVISIT; These next few lines are bogus; they generate TypeError exceptions which are caught and ignored
 # A new approach will follow shortly which won't @create_instances that won't be needed
                   if role.counterpart.object_type.is_entity_type
@@ -284,8 +285,9 @@ module ActiveFacts
                   else
                     add = !constellation.send(role.counterpart.object_type.basename.to_sym).include?(arg)
                   end
+=end
                   value, role_key = role.counterpart.object_type.assert_instance(constellation, Array(arg))
-                  @created_instances << [role.counterpart, value] if add
+#                  @created_instances << [role.counterpart, value] if add
                 end
                 key << role_key
                 value
