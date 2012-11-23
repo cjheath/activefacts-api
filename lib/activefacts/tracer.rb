@@ -28,12 +28,14 @@ module ActiveFacts
         if @keys[:debug]
           errors = []
           success = false
-          [ENV["DEBUG_PREFERENCE"]].compact+
-          [
-            'pry',
-            'debugger',
-            'ruby-debug'
-          ].each do |debugger|
+          (
+	    [ENV["DEBUG_PREFERENCE"]].compact +
+	    [
+	      'pry',
+	      'debugger',
+	      'ruby-debug'
+	    ]
+	  ).each do |debugger|
             begin
               require debugger
               puts "Loaded "+debugger
