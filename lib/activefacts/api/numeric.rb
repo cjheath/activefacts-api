@@ -36,9 +36,9 @@ module ActiveFacts
         __getobj__.to_s *a
       end
 
-      def to_json(*a)                       #:nodoc:
-        __getobj__.to_s
-      end
+#      def to_json(*a)                       #:nodoc:
+#        __getobj__.to_s
+#      end
 
       def hash                              #:nodoc:
         __getobj__.hash
@@ -195,16 +195,25 @@ class AutoCounter
     to_s.eql?(o.to_s)
   end
 
-  def self.inherited(other)             #:nodoc:
-    def other.identifying_role_values(*args)
-      return nil if args == [:new]  # A new object has no identifying_role_values
-      if args.size == 1
-        return args[0] if args[0].is_a?(AutoCounter)
-        return args[0].send(self.basename.snakecase.to_sym) if args[0].respond_to?(self.basename.snakecase.to_sym)
+  def self.identifying_role_values(*args)
+    return nil if args == [:new]  # A new object has no identifying_role_values
+    if args.size == 1
+      return args[0] if args[0].is_a?(AutoCounter)
+      if args[0].class.is_entity_type
+	# REVISIT: Crazy hack to temporarily work around Vincent's breakage.
+	# If passed an entity type, and it or any supertype has a single identifying role which is an AutoCounter, use that value
+	irv = nil
+	([args[0].class]+args[0].class.supertypes_transitive).
+	  detect{|t|
+	    r = t.identifying_roles
+	    r.size == 1 and
+	      r[0].counterpart.object_type.ancestors.include?(AutoCounter) and
+	      irv = args[0].send(r[0].getter)
+	  }
+	return irv
       end
-      return new(*args)
     end
-    super
+    return new(*args)
   end
 
   def clone

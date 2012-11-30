@@ -76,6 +76,9 @@ module ActiveFacts
         end
 
         def identifying_role_values(*args)  #:nodoc:
+	  if s = (super rescue nil)
+	    return s  # The superclass knows how to do this, don't default
+	  end
           # If the single arg is the correct class or a subclass, use it directly
           if (args.size == 1 and (arg = args[0]).is_a?(self))   # No secondary supertypes allowed for value types
             return arg.identifying_role_values
