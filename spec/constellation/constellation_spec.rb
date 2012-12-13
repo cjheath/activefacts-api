@@ -135,6 +135,7 @@ describe "A Constellation instance" do
     name2 = @constellation.Name("foo")
     foo2 = @constellation.LegalEntity("foo")
     acme2 = @constellation.Company("Acme, Inc") # , :auto_counter_val => :new)
+    debugger
     fred_fly2 = @constellation.Person("fred", "fly") # , :auto_counter_val => :new)
 
     name1.object_id.should == name2.object_id
@@ -152,16 +153,20 @@ describe "A Constellation instance" do
     name2 = @constellation.Name("foo")
     foo2 = @constellation.LegalEntity("foo")
     acme2 = nil
-    lambda { acme2 = @constellation.Company("Acme, Inc", :auto_counter_val => :new) }.should_not raise_error
+    lambda {
+      acme2 = @constellation.Company("Acme, Inc")
+    }.should_not raise_error
     acme2.auto_counter_val = :new
     acme2.should == acme1
     acme2.auto_counter_val.should_not be_defined
     acme2.auto_counter_val.to_s.should == acme1_id
   end
 
+=begin
   it "should support methods to assert instances via the class for that type" do
     name = foo = acme = fred_fly = nil
     lambda {
+	ni = @constellation.Name
         name = @constellation.Name.assert("foo")
         foo = @constellation.LegalEntity.assert("foo")
         acme = @constellation.Company.assert("Acme, Inc", :auto_counter_val => :new)
@@ -185,6 +190,7 @@ describe "A Constellation instance" do
     fred_fly.inspect.should =~ / in Conste/
     fred_fly.verbalise.should =~ /Person\(/
   end
+=end
 
   it "should support population blocks" do
     @constellation.populate do
@@ -202,12 +208,15 @@ describe "A Constellation instance" do
       Name("bar")
       LegalEntity("foo")
       c = Company("Acme, Inc", :auto_counter_val => :new)
-      p = Person("Fred", "Nerk", :auto_counter_val => :new, :employer => c)
+      c.is_a?(Mod::SurrogateId).should == true
+      c.auto_counter_val.should_not == nil
+      p = Person("Fred", "Nerk", :auto_counter_val => :new)
+      p.employer = c
       p.birth_name = "Nerk"
     end
     s = @constellation.verbalise
     names = s.split(/\n/).grep(/\tEvery /).map{|l| l.sub(/.*Every (.*):$/, '\1')}
-    expected = ["AutoCounterVal", "Company", "LegalEntity", "Name", "Person", "StringVal", "SurrogateId"]
+    expected = ["Company", "LegalEntity", "Name", "Person", "StringVal", "SurrogateId"]
     names.sort.should == expected
   end
 
@@ -288,7 +297,9 @@ describe "A Constellation instance" do
   it "should allow retraction of instances" do
     person = @constellation.Person "Fred", "Smith", :auto_counter_val => :new, :birth_name => "Nerk"
 
-    @constellation.retract(@constellation.Name("Smith"))
+    smith = @constellation.Name("Smith")
+    #debugger
+    @constellation.retract(smith)
     @constellation.Name["Smith"].should be_nil
     @constellation.Name["Fred"].should_not be_nil
 
@@ -480,6 +491,7 @@ describe "A Constellation instance" do
   end
 
   it "should allow assert using an object of the same type" do
+    pending "uncertain what should happen when one identifier is from a similar object and one from hash arguments"
     c = @constellation.Company("foo", :auto_counter_val => 23)
     c2 = ActiveFacts::API::Constellation.new(Mod)
     lambda {

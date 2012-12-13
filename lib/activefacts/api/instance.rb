@@ -17,11 +17,22 @@ module ActiveFacts
         unless (self.class.is_entity_type)
           begin
             super(*args)
+	  rescue TypeError => e
+	    if trace(:debug)
+	      p e
+	      puts e.backtrace*"\n\t"
+	      debugger
+	      true
+	    end
           rescue ArgumentError => e
             e.message << " constructing a #{self.class}"
             raise
           end
         end
+      end
+
+      def is_a? klass
+        super || self.class.supertypes_transitive.include?(klass)
       end
 
       # Detect inconsistencies within constellation if this entity was updated
@@ -42,14 +53,11 @@ module ActiveFacts
       #
       # Only works on identifying roles.
       def duplicate_identifying_values?(role, value)
-        @constellation && role.is_identifying && !is_unique?(:role => role, :value => value)
+        @constellation && role.is_identifying && !is_unique?(role, value)
       end
 
       # Checks if instance would still be unique if it was updated with
       # args.
-      #
-      # args should be a hash containing the role and value to update
-      # and the name of the identifying value as the key.
       #
       # For example, if a Person is identified by name and family_name:
       # updated_values = { :name => "John" }
@@ -61,11 +69,11 @@ module ActiveFacts
       # An Employee -subtype of a Person- identified by its employee_id would
       # collide with a Person if it has the same name. But `name` may not be
       # an identifying value for the Employee identification scheme.
-      def is_unique?(args)
+      def is_unique?(role, value)
         duplicate = ([self.class] + self.class.supertypes_transitive).detect do |klass|
           old_identity = identity_by(klass)
-          if klass.identifying_roles.include?(args[:role])
-            new_identity = old_identity.merge(args[:role].getter => args[:value])
+          if klass.identifying_roles.include?(role)
+            new_identity = old_identity.merge(role.getter => value)
             @constellation.instances[klass].include?(new_identity)
           else
             false
@@ -155,7 +163,7 @@ module ActiveFacts
         # Add Instance class methods here
       end
 
-      def Instance.included other #:nodoc:
+      def self.included other #:nodoc:
         other.send :extend, ClassMethods
       end
     end

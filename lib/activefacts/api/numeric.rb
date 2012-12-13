@@ -131,9 +131,30 @@ end
 # Construct it with the value :new to get an uncommitted value.
 # You can use this new instance as a value of any role of this type, including to identify an entity instance.
 # The assigned value will be filled out everywhere it needs to be, upon save.
+module ActiveFacts
+  module AutoCounterClass
+    def identifying_role_values(constellation, args)
+      arg_hash = args[-1].is_a?(Hash) ? args.pop : {}
+      n = 
+	case
+	when args == [:new]	# A new object has no identifying_role_values
+	  :new
+	when args.size == 1 && args[0].is_a?(AutoCounter)
+	  args[0]		# An AutoCounter is its own key
+	else
+	  new(*args)
+	end
+      args.replace([arg_hash])
+      n
+    end
+  end
+end
+
 class AutoCounter
   def initialize(i = :new)
-    raise "AutoCounter #{self.class} may not be #{i.inspect}" unless i == :new or i.is_a?(Integer) or i.is_a?(AutoCounter)
+    unless i == :new or i.is_a?(Integer) or i.is_a?(AutoCounter)
+      raise "AutoCounter #{self.class} may not be #{i.inspect}"
+    end
     @@placeholder ||= 0
     if i == :new
       @value = nil
@@ -169,13 +190,17 @@ class AutoCounter
 
   # An AutoCounter may only be used in numeric expressions after a definite value has been assigned
   def to_i
-    raise ArgumentError, "Illegal attempt to get integer value of an uncommitted AutoCounter" unless @value
+    unless @value
+      raise ArgumentError, "Illegal attempt to get integer value of an uncommitted AutoCounter"
+    end
     @value
   end
 
   # Coerce "i" to be of the same type as self
   def coerce(i)
-    raise ArgumentError, "Illegal attempt to use the value of an uncommitted AutoCounter" unless @value
+    unless @value
+      raise ArgumentError, "Illegal attempt to use the value of an uncommitted AutoCounter"
+    end
     [ i.to_i, @value ]
   end
 
@@ -195,14 +220,14 @@ class AutoCounter
     to_s.eql?(o.to_s)
   end
 
+  def identifying_role_values
+    self
+  end
+
+#  extend ActiveFacts::AutoCounterClass
   def self.inherited(other)             #:nodoc:
-    def other.identifying_role_values(*args)
-      return nil if args == [:new]  # A new object has no identifying_role_values
-      if args.size == 1
-        return args[0] if args[0].is_a?(AutoCounter)
-        return args[0].send(self.basename.snakecase.to_sym) if args[0].respond_to?(self.basename.snakecase.to_sym)
-      end
-      return new(*args)
+    other.class_eval do
+      extend ActiveFacts::AutoCounterClass
     end
     super
   end

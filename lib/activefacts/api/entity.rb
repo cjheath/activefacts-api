@@ -11,69 +11,51 @@ module ActiveFacts
     module Entity
       include Instance
 
-      # Assign the identifying roles to initialise a new Entity instance.
-      # The role values are asserted in the constellation first, so you
-      # can pass bare values (array, string, integer, etc) for any role
-      # whose instances can be constructed using those values.
+    private
+      # Initialise a new Entity instance.
       #
-      # A value must be provided for every identifying role, but if the
-      # last argument is a hash, they may come from there.
+      # arg_hash contains full-normalised and valid keys for the counterpart
+      # role values.
       #
-      # If a supertype (including a secondary supertype) has a different
-      # identifier, the identifying roles must be provided in the hash.
+      # This instance and its supertypes might have distinct identifiers,
+      # and none of the identifiers may already exist in the constellation.
       #
-      # Any additional (non-identifying) roles in the hash are ignored
-      def initialize(*args)
-        klass = self.class
-        while klass.identification_inherited_from
-          klass = klass.superclass
-        end
+      # Pick out the identifying roles and assert the counterpart instances
+      # to assign as the new object's role values.
+      #
+      # The identifying roles of secondary supertypes must also be assigned
+      # here.
+      def initialize(constellation, arg_hash)
+	raise "REVISIT: Unexpected parameters in call to #{self}.new" unless arg_hash.is_a?(Hash)
 
-        if args[-1].respond_to?(:has_key?) && args[-1].has_key?(:constellation)
-          @constellation = args.pop[:constellation]
-        end
-        hash = args[-1].is_a?(Hash) ? args.pop.clone : nil
+        super(arg_hash)
 
-        # Pass just the hash, if there is one, else no arguments:
-        super(*(hash ? [hash] : []))
+        unless (klass = self.class).identification_inherited_from
+	  irns = klass.identifying_role_names
+	  irns.each do |role_name|
+	    role = klass.roles(role_name)
+	    key = arg_hash.delete(role_name)
+	    value = role.counterpart.object_type.assert_instance(constellation, Array(key))
 
-        # Pick any missing identifying roles out of the hash if possible:
-        irns = klass.identifying_role_names
-        while hash && args.size < irns.size
-          value = hash[role = irns[args.size]]
-          hash.delete(role)
-          args.push value
-        end
-
-        # If one arg is expected but more are passed, they might be the
-        # args for the object that plays a single identifying role:
-        args = [args] if klass.identifying_role_names.size == 1 && args.size > 1
-
-        # This occur when there are too many args passed, or too few
-        # and no hash. Otherwise the missing ones will be nil.
-        raise "Wrong number of parameters to #{klass}.new, " +
-            "expect (#{klass.identifying_role_names*","}) " +
-            "got (#{args.map{|a| a.to_s.inspect}*", "})" if args.size != klass.identifying_role_names.size
-
-        # Assign the identifying roles in order. Any other roles will be assigned by our caller
-        klass.identifying_role_names.zip(args).each do |role_name, value|
-          role = self.class.roles(role_name)
-          begin
-            send(role.setter, value)
-          rescue NoMethodError => e
-            raise settable_roles_exception(e, role_name)
-          end
+	    begin
+	      # REVISIT: How to avoid the key-change processing here?
+	      send(role.setter, value)
+	    rescue NoMethodError => e
+	      raise settable_roles_exception(e, role_name)
+	    end
+	    # instance_variable_set(role.setter, value)
+	  end
         end
       end
 
       def settable_roles_exception e, role_name
-        n = e.class.new(
-          "#{self.class} has no setter for #{role_name}.\n" +
+        n = NoMethodError.new(
+          "You cannot assert a #{self.class} until you define #{role_name}.\n" +
           "Settable roles are #{settable_roles*', '}.\n" +
           (if self.class.vocabulary.delayed.empty?
             ''
           else
-            "This could be because the following expected object types are still not defined: #{self.class.vocabulary.delayed.keys.sort*', '}\n"
+            "Please define these object types: #{self.class.vocabulary.delayed.keys.sort*', '}\n"
           end
           )
         )
@@ -93,6 +75,7 @@ module ActiveFacts
           flatten
       end
 
+    public
       def inspect #:nodoc:
         inc = constellation ? " in #{constellation.inspect}" : ""
         # REVISIT: Where there are one-to-one roles, this cycles
@@ -133,10 +116,11 @@ module ActiveFacts
         "#{role_name || self.class.basename}(#{ irnv*', ' })"
       end
 
-      # Return the array of the values of this entity instance's identifying roles
-      def identifying_role_values
-        self.class.identifying_role_names.map do |role_name|
-          send(role_name).identifying_role_values
+      # Return the array of the values of this instance's identifying roles
+      def identifying_role_values(klass = self.class)
+        klass.identifying_role_names.map do |role_name|
+          value = send(role_name)
+	  value.identifying_role_values
         end
       end
 
@@ -193,160 +177,140 @@ module ActiveFacts
           end
         end
 
-        # Convert the passed arguments into an array of raw values (or arrays of values, transitively)
-        # that identify an instance of this Entity type:
-        def identifying_role_values(*args)
+	def check_supertype_identifiers_match instance, arg_hash
+	  supertypes_transitive.each do |supertype|
+	    supertype.identifying_role_names.each do |role_name|
+	      next unless arg_hash.include?(role_name)	  # No contradiction here
+	      new_value = arg_hash[role_name]
+	      existing_value = instance.send(role_name.to_sym)
+
+	      # Quick check for an exact match:
+	      next if existing_value == new_value or existing_value.identifying_role_values == new_value
+
+	      # Coerce the new value to identifying values for the counterpart role's type:
+	      role = supertype.roles(role_name)
+	      new_key = role.counterpart.object_type.identifying_role_values(instance.constellation, [new_value])
+	      # REVISIT: Check that the next line actually gets hit, otherwise strip it out
+	      next if existing_value == new_key	  # This can happen when the counterpart is a value type
+
+	      existing_key = existing_value.identifying_role_values
+	      next if existing_key.identifying_role_values == new_key
+	      raise "#{basename} cannot be asserted to have #{supertype} identifier #{new_key.inspect} because the existing object has #{existing_key.inspect}"
+	    end
+	  end
+	end
+
+	# all its candidate keys must match those from the arg_hash.
+	def check_no_supertype_instance_exists constellation, arg_hash
+	  supertypes_transitive.each do |supertype|
+	    key = supertype.identifying_role_values(constellation, [arg_hash])
+	    if constellation.instances[supertype][key]
+	      raise "#{basename} cannot be asserted due to the prior existence of a conflicting #{supertype} identified by #{key.inspect}"
+	    end
+	  end
+	end
+
+	# This method receives an array (possibly including a trailing arguments hash)
+	# from which the values of identifying roles must be coerced. Note that when a
+	# value which is not the corrent class is received, we recurse to ask that class
+	# to coerce what we *do* have.
+	# The return value is an array of (and arrays of) raw values, not object instances.
+	def identifying_role_values(constellation, args)
           irns = identifying_role_names
 
-          # If the single arg is an instance of the correct class or a subclass,
-          # use the instance's identifying_role_values
-          has_hash = args[-1].is_a?(Hash)
-          if (args.size == 1+(has_hash ? 1 : 0) and (arg = args[0]).is_a?(self))
-            # With a secondary supertype or a subtype having separate identification,
-            # we would get the wrong identifier from arg.identifying_role_values:
-            return irns.map do |role_name|
-                # Use the identifier for the class expected, not the actual:
-                value = arg.send(role_name)
-                value && arg.class.roles(role_name).counterpart_object_type.identifying_role_values(value)
-              end
-          end
+	  # Normalise positional arguments into an arguments hash (this changes the passed parameter)
+	  arg_hash = args[-1].is_a?(Hash) ? args.pop : {}
 
-          args, arg_hash = ActiveFacts::extract_hash_args(irns, args)
+	  # If the first parameter is an object of type self, its
+	  # identifying roles provide any values missing from the array/hash.
+	  if args[0].is_a?(self)
+	    proto = args.shift
+	  end
 
-          if args.size > irns.size
-            raise "#{basename} expects only (#{irns*', '}) for its identifier, but you provided the extra values #{args[irns.size..-1].inspect}"
-          end
+	  # Following arguments provide identifying values in sequence; put them into the hash:
+	  irns.each do |role_name|
+	    break if args.size == 0
+	    arg_hash[role_name] = args.shift
+	  end
 
-          role_args = irns.map{|role_sym| roles(role_sym)}.zip(args)
-          role_args.map do |role, arg|
-            next !!arg unless role.counterpart  # Unary
-            if arg.is_a?(role.counterpart.object_type)              # includes secondary supertypes
-              # With a secondary supertype or a type having separate identification,
-              # we would get the wrong identifier from arg.identifying_role_values:
-              next role.counterpart_object_type.identifying_role_values(arg)
-            end
-            if arg == nil # But not false
-              if role.mandatory
-                raise MissingMandatoryRoleValueException.new(self, role)
-              end
-            else
-              role.counterpart_object_type.identifying_role_values(*arg)
-            end
-          end
-        end
+	  # Complain if we have left-over arguments
+	  if args.size > 0
+            raise "#{basename} expects only (#{irns*', '}) for its identifier, but you provided additional values #{args.inspect}"
+	  end
 
-        # REVISIT: This method should verify that all identifying roles (including
-        # those required to identify any superclass) are present (if mandatory)
-        # and are unique... BEFORE it creates any new object(s)
-        # This is a hard problem because it's recursive.
-        def assert_instance(constellation, args) #:nodoc:
-          # Build the key for this instance from the args
-          # The key of an instance is the value or array of keys of the identifying values.
-          # The key values aren't necessarily present in the constellation, even after this.
-          key = identifying_role_values(*args)
+	  # REVISIT: Why?
+	  args.push(arg_hash)
 
-          # Find and return an existing instance matching this key
-          instances = constellation.instances[self]   # All instances of this class in this constellation
-          instance = instances[key]
-          @created_instances ||= []
-          if instance
-            # raise "Additional role values are ignored when asserting an existing instance" if args[-1].is_a? Hash and !args[-1].empty?
-            assign_additional_roles(instance, args[-1]) if args[-1].is_a? Hash and !args[-1].empty?
-            return instance, key      # A matching instance of this class
-          end
+	  irns.map do |role_name|
+	    roles(role_name)
+	  end.map do |role|
+	    if arg_hash.include?(n = role.name)	  # Do it this way to avoid problems where nil or false is provided
+	      value = arg_hash[n]
+	      next !!value if (role.is_unary)
+	      value = role.counterpart.object_type.assert_instance(constellation, [value]) if value
+	    elsif proto
+	      value = proto.send(n)
+	      next value if (role.is_unary)
+	    else
+	      value = nil
+	    end
 
-          # Now construct each of this object's identifying roles
-          irns = identifying_role_names
+	    if value.nil?		# 'false' is a valid value for a unary role
+	      raise MissingMandatoryRoleValueException.new(self, role) if role.mandatory
+	      next value
+	    end
 
-          has_hash = args[-1].is_a?(Hash)
-          if args.size == 1+(has_hash ? 1 : 0) and args[0].is_a?(self)
-            # We received a single argument of a compatible type
-            # With a secondary supertype or a type having separate identification,
-            # we would get the wrong identifier from arg.identifying_role_values:
-            key = 
-              values = identifying_role_values(args[0])
-            values = values + [arg_hash = args.pop] if has_hash
-          else
-            args, arg_hash = ActiveFacts::extract_hash_args(irns, args)
-            roles_and_values = irns.map{|role_sym| roles(role_sym)}.zip(args)
-            key = []    # Gather the actual key (AutoCounters are special)
-            values = roles_and_values.map do |role, arg|
-                if role.unary?
-                  # REVISIT: This could be absorbed into a special counterpart.object_type.assert_instance
-                  value = role_key = arg ? true : arg   # Preserve false and nil
-                elsif !arg
-                  value = role_key = nil
-                else
-=begin
-# REVISIT; These next few lines are bogus; they generate TypeError exceptions which are caught and ignored
-# A new approach will follow shortly which won't @create_instances that won't be needed
-                  if role.counterpart.object_type.is_entity_type
-                    add = !constellation.send(role.counterpart.object_type.basename.to_sym).include?([arg])
-                  else
-                    add = !constellation.send(role.counterpart.object_type.basename.to_sym).include?(arg)
-                  end
-=end
-                  value, role_key = role.counterpart.object_type.assert_instance(constellation, Array(arg))
-#                  @created_instances << [role.counterpart, value] if add
-                end
-                key << role_key
-                value
-              end
-            values << arg_hash if arg_hash and !arg_hash.empty?
-          end
+	    value.identifying_role_values
+	  end
+	end
 
-          #trace :assert, "Constructing new #{self} with #{values.inspect}" do
-          values << { :constellation => constellation }
-          instance = new(*values)
-          #end
+	def assert_instance(constellation, args)
+	  key = identifying_role_values(constellation, args)
 
-          assign_additional_roles(instance, arg_hash)
+	  # The args is now normalized to an array containing a single Hash element
+	  arg_hash = args[-1]
 
-          return *index_instance(instance, key, irns)
+	  # Find or make an instance of the class:
+          instance_index = constellation.instances[self]   # All instances of this class in this constellation
+          instance = instance_index[key]
+	  if (instance)
+	    # Check that all assertions about supertype keys are non-contradictory
+	    check_supertype_identifiers_match(instance, arg_hash)
+	  else
+	    # Check that no instance of any supertype matches the keys given
+	    check_no_supertype_instance_exists(constellation, arg_hash)
 
-        rescue DuplicateIdentifyingValueException
-          @created_instances.each do |role, v|
-            if !v.respond_to?(:retract)
-              v = constellation.send(role.object_type.basename.to_sym)[[v]]
-            end
-            v.retract if v
-          end
-          @created_instances = []
-          raise
-        end
+	    instance = new(constellation, arg_hash)
+	    constellation.candidate(instance)
+	  end
 
-        def assign_additional_roles(instance, arg_hash)
-          # Now assign any extra args in the hash which weren't identifiers (extra identifiers will be assigned again)
-          (arg_hash ? arg_hash.entries : []).each do |role_name, value|
-            role = roles(role_name)
+	  # Assign any extra roles that may have been passed.
+	  # An exception here leaves the object indexed,
+	  # but without the offending role (re-)assigned.
+	  arg_hash.each do |k, v|
+	    role = instance.class.roles(k)
+	    unless role.is_identifying && role.object_type == self
+	      value = constellation.assert(role.counterpart.object_type, v)
+	      instance.send(:"#{k}=", value)
+	    end
+	  end
 
-            if !instance.instance_index_counterpart(role).include?(value)
-              @created_instances << [role, value]
-            end
-            instance.send(role.setter, value)
-          end
-        end
+	  instance
+	end
 
-        def index_instance(instance, key = nil, key_roles = nil) #:nodoc:
-          # Derive a new key if we didn't receive one or if the roles are different:
-          unless key && key_roles && key_roles == identifying_role_names
-            key = (key_roles = identifying_role_names).map do |role_name|
-              instance.send role_name
-            end
-            raise "You must pass values for #{key_roles.inspect} to identify a #{self.name}" if key.compact == []
-          end
-
-          # Index the instance for this class in the constellation
-          instances = instance.constellation.instances[self]
-          instances[key] = instance
+        def index_instance(constellation, instance) #:nodoc:
+	  # Index the instance in the constellation's InstanceIndex for this class:
+	  instance_index = constellation.instances[self]
+	  key = instance.identifying_role_values(self)
+	  instance_index[key] = instance
 
           # Index the instance for each supertype:
-          supertypes.each do |supertype|
-            supertype.index_instance(instance, key, key_roles)
-          end
+	  supertypes.each do |supertype|
+	    supertype.index_instance(constellation, instance)
+	  end
 
-          return instance, key
-        end
+	  instance
+	end
 
         # A object_type that isn't a ValueType must have an identification scheme,
         # which is a list of roles it plays. The identification scheme may be
@@ -382,7 +346,7 @@ module ActiveFacts
         end
       end
 
-      def Entity.included other #:nodoc:
+      def self.included other #:nodoc:
         other.send :extend, ClassMethods
 
         # Register ourselves with the parent module, which has become a Vocabulary:

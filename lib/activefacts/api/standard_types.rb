@@ -16,6 +16,7 @@ module ActiveFacts
     # Adapter module to add value_type to all potential value classes
     module ValueClass #:nodoc:
       def value_type *args, &block #:nodoc:
+	# The inclusion of instance methods triggers ClassMethods to be included in the class too
         include ActiveFacts::API::Value
         value_type(*args, &block)
       end
@@ -24,27 +25,28 @@ module ActiveFacts
 end
 # Add the methods that convert our classes into ObjectType types:
 
-ValueClasses = [String, Date, DateTime, Time, Int, Real, AutoCounter, Decimal, Guid]
+ValueClasses = [String, Date, DateTime, Int, Real, AutoCounter, Decimal, Guid]
 ValueClasses.each{|c|
     c.send :extend, ActiveFacts::API::ValueClass
   }
 
+# Cannot subclass or delegate True, False or nil, so inject the required behaviour
 class TrueClass #:nodoc:
   def verbalise(role_name = nil); role_name ? "#{role_name}: true" : "true"; end
   def identifying_role_values; self; end
-  def self.identifying_role_values(*a); true; end
+  def self.identifying_role_values(*a); a.replace([{}]); true end
 end
 
 class FalseClass #:nodoc:
   def verbalise(role_name = nil); role_name ? "#{role_name}: false" : "false"; end
   def identifying_role_values; self; end
-  def self.identifying_role_values(*a); false; end
+  def self.identifying_role_values(*a); a.replace([{}]); false end
 end
 
 class NilClass #:nodoc:
   def verbalise; "nil"; end
   def identifying_role_values; self; end
-  def self.identifying_role_values(*a); nil; end
+  def self.identifying_role_values(*a); a.replace([{}]); nil end
 end
 
 class Class
@@ -52,6 +54,8 @@ class Class
   # The parameters are the names (Symbols) of the identifying roles.
   def identified_by *args, &b
     raise "#{basename} is not an entity type" if respond_to? :value_type  # Don't make a ValueType into an EntityType
+
+    # The inclusion of instance methods triggers ClassMethods to be included in the class too
     include ActiveFacts::API::Entity
     identified_by(*args, &b)
   end

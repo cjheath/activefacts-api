@@ -65,7 +65,7 @@ module ActiveFacts
       # * :restrict - a list of values or ranges which this role may take. Not used yet.
       def has_one(role_name, options = {})
         role_name, related, mandatory, related_role_name = extract_binary_params(false, role_name, options)
-        detect_fact_type_collision(:type => :has_one, :role => role_name, :related => related)
+        check_identifying_role_has_valid_cardinality(:has_one, role_name)
         define_binary_fact_type(false, role_name, related, mandatory, related_role_name)
       end
 
@@ -82,20 +82,20 @@ module ActiveFacts
       def one_to_one(role_name, options = {})
         role_name, related, mandatory, related_role_name =
           extract_binary_params(true, role_name, options)
-        detect_fact_type_collision(:type => :one_to_one, :role => role_name, :related => related)
+        check_identifying_role_has_valid_cardinality(:one_to_one, role_name)
         define_binary_fact_type(true, role_name, related, mandatory, related_role_name)
       end
 
-      def detect_fact_type_collision(fact)
-        if respond_to?(:identifying_role_names) && identifying_role_names.include?(fact[:role])
-          case fact[:type]
+      def check_identifying_role_has_valid_cardinality(type, role)
+        if is_entity_type && identifying_role_names.include?(role)
+          case type
           when :has_one
             if identifying_role_names.size == 1
-              raise "Entity type #{self} cannot be identified by a single role '#{fact[:role]}' unless that role is one_to_one"
+              raise "Entity type #{self} cannot be identified by a single role '#{role}' unless that role is one_to_one"
             end
           when :one_to_one
             if identifying_role_names.size > 1
-              raise "Entity type #{self} cannot be identified by a single role '#{fact[:role]}' unless that role is has_one"
+              raise "Entity type #{self} cannot be identified by a single role '#{role}' unless that role is has_one"
             end
           end
         end
@@ -108,51 +108,47 @@ module ActiveFacts
       # Without parameters, it returns the array of ObjectType supertypes
       # (one by Ruby inheritance, any others as defined using this method)
       def supertypes(*object_types)
-        class_eval do
-          @supertypes ||= []
-          all_supertypes = supertypes_transitive
-          object_types.each do |object_type|
-            next if all_supertypes.include? object_type
-            supertype =
-              case object_type
-              when Class
-                object_type
-              when Symbol
-                # No late binding here:
-                (object_type = vocabulary.const_get(object_type.to_s.camelcase))
-              else
-                raise "Illegal supertype #{object_type.inspect} for #{self.class.basename}"
-              end
-            raise "#{supertype.name} must be an object type in #{vocabulary.name}" unless supertype.respond_to?(:vocabulary) and supertype.vocabulary == self.vocabulary
+	@supertypes ||= []
+	all_supertypes = supertypes_transitive
+	object_types.each do |object_type|
+	  next if all_supertypes.include? object_type
+	  supertype =
+	    case object_type
+	    when Class
+	      object_type
+	    when Symbol
+	      # No late binding here:
+	      (object_type = vocabulary.const_get(object_type.to_s.camelcase))
+	    else
+	      raise "Illegal supertype #{object_type.inspect} for #{self.class.basename}"
+	    end
+	  raise "#{supertype.name} must be an object type in #{vocabulary.name}" unless supertype.respond_to?(:vocabulary) and supertype.vocabulary == self.vocabulary
 
-            if is_entity_type != supertype.is_entity_type
-              raise "#{self} < #{supertype}: A value type may not be a supertype of an entity type, and vice versa"
-            end
+	  if is_entity_type != supertype.is_entity_type
+	    raise "#{self} < #{supertype}: A value type may not be a supertype of an entity type, and vice versa"
+	  end
 
-            @supertypes << supertype
+	  @supertypes << supertype
 
-            # Realise the roles (create accessors) of this supertype.
-            # REVISIT: The existing accessors at the other end will need to allow this class as role counterpart
-            # REVISIT: Need to check all superclass roles recursively, unless we hit a common supertype
-            realise_supertypes(object_type, all_supertypes)
-          end
-          [(superclass.respond_to?(:vocabulary) ? superclass : nil), *@supertypes].compact
-        end
+	  # Realise the roles (create accessors) of this supertype.
+	  # REVISIT: The existing accessors at the other end will need to allow this class as role counterpart
+	  # REVISIT: Need to check all superclass roles recursively, unless we hit a common supertype
+	  realise_supertypes(object_type, all_supertypes)
+	end
+	[(superclass.respond_to?(:vocabulary) ? superclass : nil), *@supertypes].compact
       end
 
       # Return the array of all ObjectType supertypes, transitively.
       def supertypes_transitive
-        class_eval do
-          supertypes = []
-          v = superclass.respond_to?(:vocabulary) ? superclass.vocabulary : nil
-          supertypes << superclass if v.kind_of?(Module)
-          supertypes += (@supertypes ||= [])
-          sts = supertypes.inject([]) do |a, t|
-            next if a.include?(t)
-            a += [t] + t.supertypes_transitive
-          end.uniq
-          sts # The local variable unconfuses rcov
-        end
+	supertypes = []
+	v = superclass.respond_to?(:vocabulary) ? superclass.vocabulary : nil
+	supertypes << superclass if v.kind_of?(Module)
+	supertypes += (@supertypes ||= [])
+	sts = supertypes.inject([]) do |a, t|
+	  next if a.include?(t)
+	  a += [t] + t.supertypes_transitive
+	end.uniq
+	sts # The local variable unconfuses rcov
       end
 
       def subtypes
@@ -173,10 +169,6 @@ module ActiveFacts
         else
           define_many_to_one_accessor(role)
         end
-      end
-
-      def is_a? klass
-        super || supertypes_transitive.include?(klass)
       end
 
       private
@@ -220,118 +212,128 @@ module ActiveFacts
       end
 
       def define_unary_role_accessor(role)
-        class_eval do
-          define_method role.setter do |value|
-            assigned = case value
-              when nil; nil
-              when false; false
-              else true
-              end
-            instance_variable_set(role.variable, assigned)
-            # REVISIT: Provide a way to find all instances playing/not playing this role
-            # Analogous to true.all_thing_as_role_name...
-            assigned
-          end
-        end
+	define_method role.setter do |value|
+	  assigned = case value
+	    when nil; nil
+	    when false; false
+	    else true
+	    end
+	  instance_variable_set(role.variable, assigned)
+	  # REVISIT: Provide a way to find all instances playing/not playing this role
+	  # Analogous to true.all_thing_as_role_name...
+	  assigned
+	end
         define_single_role_getter(role)
       end
 
       def define_single_role_getter(role)
-        class_eval do
-          define_method role.getter do |*a|
-            raise "Parameters passed to #{self.class.name}\##{role.name}" if a.size > 0
-            instance_variable_get(role.variable)
-          end
-        end
+	define_method role.getter do |*a|
+	  raise "Parameters passed to #{self.class.name}\##{role.name}" if a.size > 0
+	  instance_variable_get(role.variable)
+	end
       end
 
       def define_one_to_one_accessor(role)
         define_single_role_getter(role)
 
-        class_eval do
-          define_method role.setter do |value|
+	define_method role.setter do |value|
+	  old = instance_variable_get(role.variable)
 
-            old = instance_variable_get(role.variable)
-            return true if old.equal?(value)         # Occurs when another instance having the same value is assigned
+	  # When exactly the same value instance is assigned, we're done:
+	  return true if old.equal?(value)
 
-            value = role.adapt(@constellation, value) if value
-            return true if old.equal?(value)         # Occurs when same value but not same instance is assigned
+	  if @constellation and value and o = role.counterpart.object_type and (!value.is_a?(o) || value.constellation != @constellation)
+	    value = @constellation.assert(o, value)
+	    return true if old.equal?(value)         # Occurs when same value but not same instance is assigned
+	  end
 
-            detect_inconsistencies(role, value)
+	  dependent_entities = nil
+	  if (role.is_identifying)
+#	    detect_inconsistencies(role, value)
 
-            if @constellation && old
-              keys = old.related_entities.map do |entity|
-                [entity.identifying_role_values, entity]
-              end
-            end
+	    # Find all object instances whose keys are dependent on this object's key
+	    if @constellation && old
+	      dependent_entities = old.related_entities.map do |entity|
+		[entity.identifying_role_values, entity]
+	      end
+	    end
+	  end
 
-            instance_variable_set(role.variable, value)
+	  instance_variable_set(role.variable, value)
 
-            # Remove self from the old counterpart:
-            old.send(role.counterpart.setter, nil) if old
+	  # Remove self from the old counterpart:
+	  old.send(role.counterpart.setter, nil) if old
 
-            # Assign self to the new counterpart
-            value.send(role.counterpart.setter, self) if value
+	  # REVISIT: Delay co-referencing here if the object is still a candidate
+	  if @constellation
+	    # Assign self to the new counterpart
+	    value.send(role.counterpart.setter, self) if value
 
-            if keys
-              keys.each do |key, entity|
-                entity.instance_index.refresh_key(key)
-              end
-            end
+	    # Propagate dependent key changes
+	    if dependent_entities
+	      dependent_entities.each do |old_key, entity|
+		entity.instance_index.refresh_key(old_key)
+	      end
+	    end
+	  end
 
-            value
-          end
-        end
+	  value
+	end
       end
 
       def define_one_to_many_accessor(role)
         define_single_role_getter(role)
 
-        class_eval do
-          define_method role.setter do |value|
-            role_var = role.variable
+	define_method role.setter do |value|
+	  role_var = role.variable
 
-            # Get old value, and jump out early if it's unchanged:
-            old = instance_variable_get(role_var)
-            return value if old.equal?(value)         # Occurs during one_to_one assignment, for example
+	  # Get old value, and jump out early if it's unchanged:
+	  old = instance_variable_get(role_var)
+	  return value if old.equal?(value)         # Occurs during one_to_one assignment, for example
 
-            value = role.adapt(constellation, value) if value
-            return value if old.equal?(value)         # Occurs when another instance having the same value is assigned
+	  if @constellation and value and o = role.counterpart.object_type and (!value.is_a?(o) || value.constellation != @constellation)
+	    value = @constellation.assert(o, value)
+	    return value if old.equal?(value)         # Occurs when another instance having the same value is assigned
+	  end
 
-            detect_inconsistencies(role, value) if value
+	  dependent_entities = nil
+	  if (role.is_identifying)
+#	    detect_inconsistencies(role, value) if value
 
-            if old && old.constellation
-              keys = old.related_entities.map do |entity|
-                [entity.identifying_role_values, entity]
-              end
-            end
+	    if old && old.constellation
+	      # If our identity has changed and we identify others, prepare to reindex them
+	      dependent_entities = old.related_entities.map do |entity|
+		[entity.identifying_role_values, entity]
+	      end
+	    end
+	  end
 
-            instance_variable_set(role_var, value)
+	  instance_variable_set(role_var, value)
 
-            # Remove "self" from the old counterpart:
-            old.send(getter = role.counterpart.getter).update(self, nil) if old
+	  # Remove "self" from the old counterpart:
+	  old.send(getter = role.counterpart.getter).update(self, nil) if old
 
-            # Add "self" into the counterpart
-            value.send(getter ||= role.counterpart.getter).update(old, self) if value
+	  if @constellation
+	    # REVISIT: Delay co-referencing here if the object is still a candidate
+	    # Add "self" into the counterpart
+	    value.send(getter ||= role.counterpart.getter).update(old, self) if value
 
-            if keys
-              keys.each do |key, entity|
-                entity.instance_index.refresh_key(key)
-              end
-            end
+	    if dependent_entities
+	      dependent_entities.each do |key, entity|
+		entity.instance_index.refresh_key(key)
+	      end
+	    end
+	  end
 
-            value
-          end
-        end
+	  value
+	end
       end
 
       def define_many_to_one_accessor(role)
-        class_eval do
-          define_method role.getter do
-            role_var = role.variable
-            instance_variable_get(role_var) or
-              instance_variable_set(role_var, RoleValues.new)
-          end
+	define_method role.getter do
+	  role_var = role.variable
+	  instance_variable_get(role_var) or
+	    instance_variable_set(role_var, RoleValues.new)
         end
       end
 
