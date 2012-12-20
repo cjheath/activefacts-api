@@ -98,6 +98,7 @@ describe "Object type role values" do
     end
   end
 
+=begin
   describe "Instantiating bare objects" do
     OBJECT_TYPES.each do |object_type|
       required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type]
@@ -118,6 +119,7 @@ describe "Object type role values" do
       end
     end
   end
+=end
 
   describe "A constellation" do
     before :each do

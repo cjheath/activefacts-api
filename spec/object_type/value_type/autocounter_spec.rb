@@ -24,8 +24,8 @@ describe "AutoCounter Value Type instances" do
       end
     end
     @constellation = ActiveFacts::API::Constellation.new(Mod)
-    @thing = Mod::Thing.new(:new)
-    @thing_id = Mod::ThingId.new
+    @thing = @constellation.Thing(:new)
+    @thing_id = @constellation.ThingId(:new)
   end
 
   it "should respond to verbalise" do
@@ -61,7 +61,7 @@ describe "AutoCounter Value Type instances" do
   end
 
   it "should allow an existing counter to be re-used" do
-    @new_thing = Mod::Thing.new(@thing_id)
+    @new_thing = @constellation.Thing(@thing_id)
     @new_thing.thing_id.should == @thing_id
   end
 
