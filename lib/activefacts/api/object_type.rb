@@ -243,7 +243,7 @@ module ActiveFacts
 	  return true if old.equal?(value)
 
 	  if @constellation and value and o = role.counterpart.object_type and (!value.is_a?(o) || value.constellation != @constellation)
-	    value = @constellation.assert(o, value)
+	    value = @constellation.assert(o, *Array(value))
 	    return true if old.equal?(value)         # Occurs when same value but not same instance is assigned
 	  end
 
@@ -292,7 +292,7 @@ module ActiveFacts
 	  return value if old.equal?(value)         # Occurs during one_to_one assignment, for example
 
 	  if @constellation and value and o = role.counterpart.object_type and (!value.is_a?(o) || value.constellation != @constellation)
-	    value = @constellation.assert(o, value)
+	    value = @constellation.assert(o, *Array(value))
 	    return value if old.equal?(value)         # Occurs when another instance having the same value is assigned
 	  end
 
