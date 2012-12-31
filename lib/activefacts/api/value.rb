@@ -113,7 +113,7 @@ module ActiveFacts
 	  # An exception here leaves the object as a candidate,
 	  # but without the offending role (re-)assigned.
 	  arg_hash.each do |k, v|
-	    instance.send(:"{k}=", v)
+	    instance.send(:"#{k}=", v)
 	  end
 
 	  instance
