@@ -17,7 +17,7 @@ module ActiveFacts
     class InstanceIndex
       extend Forwardable
       def_delegators :@hash, :size, :empty?, :each, :map,
-                     :detect, :values, :keys, :detect, :delete_if
+                     :detect, :values, :keys, :detect, :delete
 
       def initialize(constellation, klass)
         @constellation = constellation

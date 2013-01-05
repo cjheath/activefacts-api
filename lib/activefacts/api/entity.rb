@@ -25,7 +25,7 @@ module ActiveFacts
       #
       # The identifying roles of secondary supertypes must also be assigned
       # here.
-      def initialize(constellation, arg_hash)
+      def initialize(arg_hash)
 	raise "REVISIT: Unexpected parameters in call to #{self}.new" unless arg_hash.is_a?(Hash)
 
         super(arg_hash)
@@ -280,7 +280,7 @@ module ActiveFacts
 	    # Check that no instance of any supertype matches the keys given
 	    check_no_supertype_instance_exists(constellation, arg_hash)
 
-	    instance = new(constellation, arg_hash)
+	    instance = new_instance(constellation, arg_hash)
 	    constellation.candidate(instance)
 	  end
 

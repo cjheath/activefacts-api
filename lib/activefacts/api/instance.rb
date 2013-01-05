@@ -11,7 +11,7 @@ module ActiveFacts
     # Every Instance of a ObjectType (A Value type or an Entity type) includes the methods of this module:
     module Instance
       # What constellation does this Instance belong to (if any):
-      attr_accessor :constellation
+      attr_reader :constellation
 
       def initialize(args = []) #:nodoc:
         unless (self.class.is_entity_type)
@@ -130,27 +130,35 @@ module ActiveFacts
 
       # De-assign all functional roles and remove from constellation, if any.
       def retract
-        # Delete from the constellation first, while it remembers our identifying role values
-        @constellation.__retract(self) if @constellation
+        # Delete from the constellation first, while we remember our identifying role values
+        @constellation.deindex_instance(self) if @constellation
 
         # Now, for all roles (from this class and all supertypes), assign nil to all functional roles
         # The counterpart roles get cleared automatically.
-        ([self.class]+self.class.supertypes_transitive).each do |klass|
+	klasses = [self.class]+self.class.supertypes_transitive
+	klasses.each do |klass|
           klass.roles.each do |role_name, role|
             next if role.unary?
             counterpart = role.counterpart
-            if role.unique
-              # puts "Nullifying mandatory role #{role.name} of #{role.object_type.name}" if counterpart.mandatory
+	    counterpart_instances = send(role.name)
 
-              send role.setter, nil
+	    # Objects being created do not have to have non-identifying mandatory roles,
+	    # so we allow retracting to the same state.
+            if role.unique
+	      if counterpart_instances && counterpart.is_identifying
+		counterpart_instances.retract
+	      else
+		send role.setter, nil
+	      end
             else
               # puts "Not removing role #{role_name} from counterpart RoleValues #{counterpart.name}"
               # Duplicate the array using to_a, as the RoleValues here will be modified as we traverse it:
-              send(role.name).to_a.each do |v|
+	      counterpart_instances.to_a.each do |counterpart_instance|
+		# These actions deconstruct the RoleValues as we go:
                 if counterpart.is_identifying
-                  v.retract
+                  counterpart_instance.retract
                 else
-                  v.send(counterpart.setter, nil)
+                  counterpart_instance.send(counterpart.setter, nil)
                 end
               end
             end

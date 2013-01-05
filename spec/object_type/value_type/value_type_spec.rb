@@ -105,7 +105,8 @@ describe "Value Type class definitions" do
   end
 
   it "should allow configuration of Role value through constructor using role name" do
-    w = Mod::Weight.new(9.0, :name => "pounds")
+    c = ActiveFacts::API::Constellation.new(Mod)
+    w = c.Weight(9.0, :name => "pounds")
     w.name.should == "pounds"
   end
 end

@@ -58,6 +58,7 @@ module ActiveFacts
       def with_candidates &b
 	outermost = @candidates.nil?
 	@candidates ||= []
+	@on_admission ||= []
 	begin
 	  b.call
 	rescue Exception
@@ -69,16 +70,26 @@ module ActiveFacts
 	    # Index the accepted instances in the constellation:
 	    @candidates.each do |instance|
 	      instance.class.index_instance(self, instance)
-	      # REVISIT: instance.coreference_roles
+	    end
+	    @on_admission.each do |b|
+	      b.call
 	    end
 	    @candidates = nil
+	    @on_admission = nil
 	  end
+	end
+      end
+
+      def when_admitted &b
+	if @candidates.nil?
+	  b.call self
+	else
+	  @on_admission << b
 	end
       end
 
       def candidate instance
 	@candidates << instance unless @candidates[-1] == instance
-	instance.constellation = self
       end
 
       # Create a new empty Constellation over the given Vocabulary
@@ -108,10 +119,9 @@ module ActiveFacts
 
       # This method removes the given instance from this constellation's indexes
       # It must be called before the identifying roles get deleted or nullified.
-      def __retract(instance) #:nodoc:
-        # REVISIT: Need to search, as key values are gone already. Is there a faster way?
+      def deindex_instance(instance) #:nodoc:
         ([instance.class]+instance.class.supertypes_transitive).each do |klass|
-          instances[klass].delete_if{|k,v| v == instance }
+          instances[klass].delete(instance.identifying_role_values(klass))
         end
         # REVISIT: Need to nullify all the roles this object plays.
         # If mandatory on the counterpart side, this may/must propagate the delete (without mutual recursion!)

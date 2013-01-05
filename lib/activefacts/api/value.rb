@@ -32,7 +32,8 @@ module ActiveFacts
 
       # A value is its own key, unless it's a delegate for a raw value
       def identifying_role_values(klass = nil) #:nodoc:
-	raise "Value Types cannot return identifying_role_values for supertypes" if klass and klass != self.class
+	# The identifying role value for the supertype of a value type is always the same as for the subtype:
+	# raise "Value Types cannot return identifying_role_values for supertypes" if klass and klass != self.class
         __getobj__ rescue self
       end
 
@@ -83,11 +84,8 @@ module ActiveFacts
           # If a single arg is already the correct class or a subclass,
 	  # use it directly, otherwise create one.
 	  # This appears to be the only way to handle e.g. Date correctly
-          unless args.size == 1 and
-	      instance = args[0] and
-	      instance.is_a?(self)
-	    instance = new(*args)
-	    instance.constellation = constellation
+          unless args.size == 1 and instance = args[0] and instance.is_a?(self)
+	    instance = new_instance(constellation, *args)
           end
 	  args.replace([arg_hash])
 	  instance.identifying_role_values
@@ -104,7 +102,7 @@ module ActiveFacts
 	  else
 	    instance_index = constellation.instances[self]
 	    unless instance = instance_index[key]
-	      instance = new(*key)
+	      instance = new_instance(constellation, *key)
 	      constellation.candidate(instance)
 	    end
 	  end

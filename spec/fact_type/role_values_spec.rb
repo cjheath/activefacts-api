@@ -197,7 +197,7 @@ describe "Object type role values" do
       else
         it "should allow initialising value type #{object_type.name} with an instance of that value type" do
 	  params = object_identifying_parameters(object_type_name, values[0])
-          bare_value = object_type.new(*params)
+	  bare_value = object_type.new(*params)
           object = @constellation.send(object_type_name, bare_value)
 	  # Here, the bare_value is not the same object which has been added to the constellatiom
 

@@ -7,8 +7,8 @@
 # These extensions add ActiveFacts ObjectType and Instance behaviour into base Ruby value classes,
 # and allow any Class to become an Entity.
 #
-require 'date'
 require 'activefacts/api/numeric'
+require 'activefacts/api/date'
 require 'activefacts/api/guid'
 
 module ActiveFacts

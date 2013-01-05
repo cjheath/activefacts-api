@@ -1,5 +1,4 @@
 require 'delegate'
-require 'date'
 require 'securerandom'
 
 unless defined? SecureRandom.uuid

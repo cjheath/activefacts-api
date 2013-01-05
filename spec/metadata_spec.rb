@@ -13,6 +13,7 @@ describe "In a vocabulary" do
   end
 
   ObjectType_methods = [
+    :new_instance,
     :has_one, :maybe, :one_to_one,
     :roles, :subtypes, :supertypes, :vocabulary,
     # To make private:
@@ -26,8 +27,6 @@ describe "In a vocabulary" do
 
   Instance_methods = [
     :constellation, :retract, :is_a?,
-    # To make private:
-    :constellation=,
     # To remove or move to EntityType
     :related_entities, :detect_inconsistencies, :duplicate_identifying_values?,
     :instance_index, :instance_index_counterpart, :is_identified_by?, :is_unique?,

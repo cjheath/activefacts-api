@@ -133,7 +133,8 @@ describe "An instance of every type of ObjectType" do
     @test_by_date = @constellation.TestByDate(Date.new(2008,04,28))
     #@test_by_date = @constellation.TestByDate(2008,04,28)
     # Pass an array of values directly to DateTime.civil:
-    @test_by_date_time = @constellation.TestByDateTime([2008,04,28,10,28,15])
+    #!!! @test_by_date_time = @constellation.TestByDateTime([2008,04,28,10,28,15])
+    @test_by_date_time = @constellation.TestByDateTime(@date_time_value)
     #@test_by_date_time = @constellation.TestByDateTime(DateTime.new(2008,04,28,10,28,15))
     @test_by_decimal = @constellation.TestByDecimal('98765432109876543210')
     @test_by_guid = @constellation.TestByGuid('01234567-89ab-cdef-0123-456789abcdef')
@@ -144,7 +145,7 @@ describe "An instance of every type of ObjectType" do
     @test_by_auto_counter_new_sub = @constellation.TestByAutoCounterSub(:new)
     @test_by_string_sub = @constellation.TestByStringSub("six")
     @test_by_date_sub = @constellation.TestByDateSub(Date.new(2008,04,27))
-    @test_by_date_time_sub = @constellation.TestByDateTimeSub([2008,04,29,10,28,15])
+    #!!! @test_by_date_time_sub = @constellation.TestByDateTimeSub([2008,04,29,10,28,15])
     @test_by_decimal_sub = @constellation.TestByDecimalSub('98765432109876543210')
     @test_by_guid_sub = @constellation.TestByGuidSub('01234567-89ab-cdef-0123-456789abcdef')
 
@@ -165,7 +166,7 @@ describe "An instance of every type of ObjectType" do
     @test_sub_by_auto_counter_new = @constellation.TestSubByAutoCounter(:new)
     @test_sub_by_string = @constellation.TestSubByString("twotwo")
     @test_sub_by_date = @constellation.TestSubByDate(Date.new(2008,04*2,28))
-    @test_sub_by_date_time = @constellation.TestSubByDateTime([2008,04*2,28,10,28,15])
+    #!!! @test_sub_by_date_time = @constellation.TestSubByDateTime([2008,04*2,28,10,28,15])
     @test_sub_by_decimal = @constellation.TestSubByDecimal('987654321098765432109')
     @test_sub_by_guid = @constellation.TestSubByGuid('01234567-89ab-cdef-0123-456789abcde0')
 

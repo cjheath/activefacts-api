@@ -1,6 +1,6 @@
 #
 #       ActiveFacts Runtime API
-#       Numeric and Date delegates and hacks to handle immediate types.
+#       Numeric delegates and hacks to handle immediate types.
 #
 # Copyright (c) 2009 Clifford Heath. Read the LICENSE file.
 #
@@ -9,7 +9,6 @@
 # Date and DateTime don't have a sensible new() method, so we monkey-patch one here.
 #
 require 'delegate'
-require 'date'
 require 'bigdecimal'
 
 module ActiveFacts
@@ -86,43 +85,6 @@ class Real < SimpleDelegator
 
   def delegate_new(r = nil)               #:nodoc:
     Float(r)
-  end
-end
-
-# A Date can be constructed from any Date subclass, not just using the normal date constructors.
-class ::Date
-  class << self; alias_method :old_new, :new end
-  # Date.new cannot normally be called passing a Date as the parameter. This allows that.
-  def self.new(*a, &b)
-    if (a.size == 1 && a[0].is_a?(Date))
-      a = a[0]
-      civil(a.year, a.month, a.day, a.start)
-    elsif (a.size == 1 && a[0].is_a?(String))
-      parse(a[0])
-    else
-      a = [] if a == [nil]
-      civil(*a, &b)
-    end
-  end
-end
-
-# A DateTime can be constructed from any Date or DateTime subclass
-class ::DateTime
-  class << self; alias_method :old_new, :new end
-  # DateTime.new cannot normally be called passing a Date or DateTime as the parameter. This allows that.
-  def self.new(*a, &b)
-    if (a.size == 1)
-      a = a[0]
-      if (DateTime === a)
-        civil(a.year, a.month, a.day, a.hour, a.min, a.sec, a.start)
-      elsif (Date === a)
-        civil(a.year, a.month, a.day, 0, 0, 0, a.start)
-      else
-        civil(*a, &b)
-      end
-    else
-      civil(*a, &b)
-    end
   end
 end
 
