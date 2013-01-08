@@ -185,9 +185,8 @@ describe "A Constellation instance" do
     end
 
     it "should be allowed with an autocounter id" do
-      pending "This gets an uncommitted id"
       acme3 = @constellation.Surrogate(@acme1_id)
-      acme3.should == acme1
+      acme3.should == @acme1
     end
   end
 
@@ -214,38 +213,6 @@ describe "A Constellation instance" do
       @acv.surrogate.should == @person
     end
   end
-
-  it "should reject re-assertion with additional assignments"
-
-=begin
-  it "should support methods to assert instances via the class for that type" do
-    name = foo = acme = fred_fly = nil
-    lambda {
-	ni = @constellation.Name
-        name = @constellation.Name.assert("foo")
-        foo = @constellation.LegalEntity.assert("foo")
-        acme = @constellation.Company.assert("Acme, Inc", :auto_counter_val => :new)
-        fred_fly = @constellation.Person.assert("fred", "fly", :auto_counter_val => :new)
-    }.should_not raise_error
-    name.class.should == Mod::Name
-    name.constellation.should == @constellation
-
-    foo.class.should == Mod::LegalEntity
-    foo.constellation.should == @constellation
-    foo.inspect.should =~ / in Conste/
-    foo.verbalise.should =~ /LegalEntity\(/
-
-    acme.class.should == Mod::Company
-    acme.constellation.should == @constellation
-    acme.inspect.should =~ / in Conste/
-    acme.verbalise.should =~ /Company\(/
-
-    fred_fly.class.should == Mod::Person
-    fred_fly.constellation.should == @constellation
-    fred_fly.inspect.should =~ / in Conste/
-    fred_fly.verbalise.should =~ /Person\(/
-  end
-=end
 
   it "should support population blocks" do
     @constellation.populate do
@@ -568,7 +535,6 @@ describe "A Constellation instance" do
   end
 
   it "should allow assert using an object of the same type" do
-    pending "uncertain what should happen when one identifier is from a similar object and one from hash arguments"
     c = @constellation.Company("foo", :auto_counter_val => 23)
     c2 = ActiveFacts::API::Constellation.new(Mod)
     lambda {

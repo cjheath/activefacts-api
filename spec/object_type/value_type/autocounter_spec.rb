@@ -62,7 +62,7 @@ describe "AutoCounter Value Type instances" do
 
   it "should allow an existing counter to be re-used" do
     @new_thing = @constellation.Thing(@thing_id)
-    @new_thing.thing_id.should == @thing_id
+    @new_thing.thing_id.to_s.should == @thing_id.to_s
   end
 
   it "should return the ValueType in response to .class()" do

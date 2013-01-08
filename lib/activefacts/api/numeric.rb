@@ -113,16 +113,25 @@ module ActiveFacts
 end
 
 class AutoCounter
+  attr_reader :place_holder_number
   def initialize(i = :new)
     unless i == :new or i.is_a?(Integer) or i.is_a?(AutoCounter)
       raise "AutoCounter #{self.class} may not be #{i.inspect}"
     end
-    @@placeholder ||= 0
-    if i == :new
+    @@place_holder ||= 0
+    case i
+    when :new
       @value = nil
-      @initially = (@@placeholder+=1)
+      @place_holder_number = (@@place_holder+=1)
+    when AutoCounter
+      if i.defined?
+	@value = i.to_i
+      else
+	@place_holder_number = i.place_holder_number
+	@value = nil
+      end
     else
-      @initially = @value = i.to_i;
+      @place_holder_number = @value = i.to_i;
     end
   end
 
@@ -141,7 +150,7 @@ class AutoCounter
     if self.defined?
       @value.to_s 
     else
-      "new_#{@initially}"
+      "new_#{@place_holder_number}"
     end
   end
 
@@ -174,7 +183,7 @@ class AutoCounter
     if self.defined?
       @value.hash
     else
-      0
+      @place_holder_number
     end
   end
 
