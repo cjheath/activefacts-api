@@ -3,8 +3,14 @@
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
 
+#require 'ruby-debug'; Debugger.start
+#trap "INT" do
+#  puts caller*"\n\t"
+#  debugger
+#end
+
 describe "An instance of every type of ObjectType" do
-  before :each do
+  before :all do
     Object.send :remove_const, :Mod if Object.const_defined?("Mod")
     module Mod
       # These are the base value types we're going to test:
@@ -111,6 +117,7 @@ describe "An instance of every type of ObjectType" do
     # This next isn't in the same pattern; it makes a Decimal from a BigDecimal rather than a String (coverage reasons)
     @decimal_value = @constellation.DecimalVal(BigDecimal.new('98765432109876543210'))
     @guid_value = @constellation.GuidVal(:new)
+    @guid_as_value = @constellation.GuidVal(@guid)
 
     # Value SubType instances
     @int_sub_value = @constellation.IntSubVal(4)
@@ -132,12 +139,15 @@ describe "An instance of every type of ObjectType" do
     @test_by_string = @constellation.TestByString("two")
     @test_by_date = @constellation.TestByDate(Date.new(2008,04,28))
     #@test_by_date = @constellation.TestByDate(2008,04,28)
+    # Array packing/unpacking obfuscates the following case
+    # @test_by_date_time = @constellation.TestByDateTime([2008,04,28,10,28,15])
     # Pass an array of values directly to DateTime.civil:
-    #!!! @test_by_date_time = @constellation.TestByDateTime([2008,04,28,10,28,15])
     @test_by_date_time = @constellation.TestByDateTime(@date_time_value)
     #@test_by_date_time = @constellation.TestByDateTime(DateTime.new(2008,04,28,10,28,15))
     @test_by_decimal = @constellation.TestByDecimal('98765432109876543210')
-    @test_by_guid = @constellation.TestByGuid('01234567-89ab-cdef-0123-456789abcdef')
+
+    @test_by_guid = @constellation.TestByGuid(@guid)
+    @constellation.TestByGuid[[@guid_as_value]].should_not be_nil
 
     @test_by_int_sub = @constellation.TestByIntSub(2)
     @test_by_real_sub = @constellation.TestByRealSub(5.0)
@@ -145,7 +155,10 @@ describe "An instance of every type of ObjectType" do
     @test_by_auto_counter_new_sub = @constellation.TestByAutoCounterSub(:new)
     @test_by_string_sub = @constellation.TestByStringSub("six")
     @test_by_date_sub = @constellation.TestByDateSub(Date.new(2008,04,27))
-    #!!! @test_by_date_time_sub = @constellation.TestByDateTimeSub([2008,04,29,10,28,15])
+    # Array packing/unpacking obfuscates the following case
+    # @test_by_date_time_sub = @constellation.TestByDateTimeSub([2008,04,29,10,28,15])
+    # Pass an array of values directly to DateTime.civil:
+    @test_by_date_time_sub = @constellation.TestByDateTimeSub(@date_time_value)
     @test_by_decimal_sub = @constellation.TestByDecimalSub('98765432109876543210')
     @test_by_guid_sub = @constellation.TestByGuidSub('01234567-89ab-cdef-0123-456789abcdef')
 
@@ -158,6 +171,7 @@ describe "An instance of every type of ObjectType" do
     @test_by_date_time_entity = @constellation.TestByDateTimeEntity(@test_by_date_time)
     @test_by_decimal_entity = @constellation.TestByDecimalEntity(@test_by_decimal)
     @test_by_guid_entity = @constellation.TestByGuidEntity(@test_by_guid)
+    @constellation.TestByGuidEntity[[@test_by_guid]].should_not be_nil
 
     # Entity subtypes
     @test_sub_by_int = @constellation.TestSubByInt(2*2)
@@ -166,7 +180,8 @@ describe "An instance of every type of ObjectType" do
     @test_sub_by_auto_counter_new = @constellation.TestSubByAutoCounter(:new)
     @test_sub_by_string = @constellation.TestSubByString("twotwo")
     @test_sub_by_date = @constellation.TestSubByDate(Date.new(2008,04*2,28))
-    #!!! @test_sub_by_date_time = @constellation.TestSubByDateTime([2008,04*2,28,10,28,15])
+    # Array packing/unpacking obfuscates the following case
+    # @test_sub_by_date_time = @constellation.TestSubByDateTime([2008,04*2,28,10,28,15])
     @test_sub_by_decimal = @constellation.TestSubByDecimal('987654321098765432109')
     @test_sub_by_guid = @constellation.TestSubByGuid('01234567-89ab-cdef-0123-456789abcde0')
 
@@ -216,7 +231,7 @@ describe "An instance of every type of ObjectType" do
         @test_sub_by_int, @test_sub_by_real, @test_sub_by_auto_counter, @test_sub_by_auto_counter_new,
         @test_sub_by_string, @test_sub_by_date, @test_sub_by_date_time, @test_sub_by_decimal,
         @test_sub_by_guid,
-      ]
+      ].compact
     @entities_by_entity = [
         @test_by_int_entity,
         @test_by_real_entity,
@@ -227,7 +242,7 @@ describe "An instance of every type of ObjectType" do
         @test_by_date_time_entity,
         @test_by_decimal_entity,
         @test_by_guid_entity,
-      ]
+      ].compact
     @entities_by_entity_types = [
         Mod::TestByIntEntity, Mod::TestByRealEntity, Mod::TestByAutoCounterEntity, Mod::TestByAutoCounterEntity,
         Mod::TestByStringEntity, Mod::TestByDateEntity, Mod::TestByDateTimeEntity, Mod::TestByDecimalEntity,
@@ -312,7 +327,6 @@ describe "An instance of every type of ObjectType" do
 
     it "if an entity, should respond to verbalise" do
       (@entities+@entities_by_entity).each do |entity|
-        #puts entity.verbalise
         entity.respond_to?(:verbalise).should be_true
         verbalisation = entity.verbalise
         verbalisation.should =~ %r{\b#{entity.class.basename}\b}

@@ -34,10 +34,10 @@ module ActiveFacts
     end
 
     class DuplicateIdentifyingValueException < ActiveFactsRuntimeException
-      def initialize(desc)
-        super("Illegal attempt to assert #{desc[:class].basename} having identifying value" +
-              " (#{desc[:role].name} is #{desc[:value].verbalise})," +
-              " when #{desc[:value].related_entities.map(&:verbalise).join(", ")} already exists")
+      def initialize(klass, role_name, value)
+        super("Illegal attempt to assert #{klass.basename} having identifying value" +
+              " (#{role_name} is #{value.verbalise})," +
+              " when #{value.related_entities(false).map(&:verbalise).join(", ")} already exists")
       end
     end
   end

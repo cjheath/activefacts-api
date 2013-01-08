@@ -177,10 +177,11 @@ describe "A Constellation instance" do
 	@acme2 = @constellation.Company("Acme, Inc")
       }.should_not raise_error
 
+      # This creates a new auto_counter_val, changing the acme instance (and hence, both references to it)
       @acme2.auto_counter_val = :new
-      @acme2.should === @acme1
+      @acme2.should == @acme1
       @acme2.auto_counter_val.should_not be_defined
-      @acme2.auto_counter_val.to_s.should == @acme1_id.to_s
+      @acme2.auto_counter_val.to_s.should_not == @acme1_id.to_s
     end
 
     it "should be allowed with an autocounter id" do
@@ -299,8 +300,8 @@ describe "A Constellation instance" do
     @constellation.Name.keys.sort.should == ["baz"]
 
     @constellation.StringVal.keys.sort.should == ["baz"]
-    @constellation.StringVal.include?(baz).should == baz
-    @constellation.StringVal.include?("baz").should == baz
+    @constellation.StringVal[baz].should == baz
+    @constellation.StringVal["baz"].should == baz
   end
 
   describe "instance indices" do
@@ -386,7 +387,7 @@ describe "A Constellation instance" do
 
     @constellation.retract(smith)
 
-    @constellation.Person.size.should == 0
+    @constellation.Person.size.should == 2	  # FamilyName is not mandatory, so instances still exist
     fred.family_name.should be_nil
     george.family_name.should be_nil
     smith.all_person_as_family_name.size.should == 0

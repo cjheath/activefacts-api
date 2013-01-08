@@ -247,18 +247,20 @@ module ActiveFacts
 	  old = instance_variable_get(role.variable)
 
 	  # When exactly the same value instance is assigned, we're done:
-	  return true if old.equal?(value)
+	  return true if old == value
 
 	  if value and o = role.counterpart.object_type and (!value.is_a?(o) || value.constellation != @constellation)
 	    value = @constellation.assert(o, *Array(value))
-	    return true if old.equal?(value)         # Occurs when same value but not same instance is assigned
+	    # return true if old.equal?(value)         # Occurs when same value but not same instance is assigned
+	    return true if old == value
 	  end
 
 	  dependent_entities = nil
 	  if (role.is_identifying)
-#	    detect_inconsistencies(role, value)
+	    check_value_change_legality(role, value)
 
-	    # Find all object instances whose keys are dependent on this object's key
+	    # We're changing this object's key.
+	    # Find all object which are identified by this object, and save their old keys
 	    if @constellation && old
 	      dependent_entities = old.related_entities.map do |entity|
 		[entity.identifying_role_values, entity]
@@ -305,7 +307,7 @@ module ActiveFacts
 
 	  dependent_entities = nil
 	  if (role.is_identifying)
-#	    detect_inconsistencies(role, value) if value
+	    check_value_change_legality(role, value) if value
 
 	    if old && old.constellation
 	      # If our identity has changed and we identify others, prepare to reindex them

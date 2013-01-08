@@ -26,6 +26,8 @@ class ::Date
 	civil(a[0].year, a[0].month, a[0].day, a[0].start)
       when Date
 	a[0].clone
+      when NilClass
+	civil()
       else
 	civil(*a, &b)
       end
@@ -53,6 +55,8 @@ class ::DateTime
 	a[0].clone
       when Date
 	civil(a[0].year, a[0].month, a[0].day, 0, 0, 0, a[0].start)
+      when NilClass
+	civil()
       else
 	civil(*a, &b)
       end

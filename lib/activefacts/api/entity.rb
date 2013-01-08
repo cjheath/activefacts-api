@@ -35,7 +35,14 @@ module ActiveFacts
 	  irns.each do |role_name|
 	    role = klass.roles(role_name)
 	    key = arg_hash.delete(role_name)
-	    value = role.counterpart.object_type.assert_instance(constellation, Array(key))
+	    value =
+	      if key == nil
+		nil
+	      elsif role.is_unary
+		(key && true)	# Preserve nil and false
+	      else
+		role.counterpart.object_type.assert_instance(constellation, Array(key))
+	      end
 
 	    begin
 	      # REVISIT: How to avoid the key-change processing here?
@@ -238,7 +245,7 @@ module ActiveFacts
             raise "#{basename} expects only (#{irns*', '}) for its identifier, but you provided additional values #{args.inspect}"
 	  end
 
-	  # REVISIT: Why?
+	  # The arg_hash will be used to construct a new instance, if necessary
 	  args.push(arg_hash)
 
 	  irns.map do |role_name|
@@ -246,10 +253,11 @@ module ActiveFacts
 	  end.map do |role|
 	    if arg_hash.include?(n = role.name)	  # Do it this way to avoid problems where nil or false is provided
 	      value = arg_hash[n]
-	      next !!value if (role.is_unary)
+	      next (value && true) if (role.is_unary)
 	      value = role.counterpart.object_type.assert_instance(constellation, [value]) if value
 	    elsif proto
 	      value = proto.send(n)
+	      arg_hash[n] = value.identifying_role_values # Save the value for making a new instance
 	      next value if (role.is_unary)
 	    else
 	      value = nil
@@ -272,7 +280,7 @@ module ActiveFacts
 
 	  # Find or make an instance of the class:
           instance_index = constellation.instances[self]   # All instances of this class in this constellation
-          instance = instance_index[key]
+	  instance = constellation.has_candidate(self, key) || instance_index[key]
 	  if (instance)
 	    # Check that all assertions about supertype keys are non-contradictory
 	    check_supertype_identifiers_match(instance, arg_hash)
@@ -290,7 +298,14 @@ module ActiveFacts
 	  arg_hash.each do |k, v|
 	    role = instance.class.roles(k)
 	    unless role.is_identifying && role.object_type == self
-	      value = constellation.assert(role.counterpart.object_type, v)
+	      value =
+		if v == nil
+		  nil
+		elsif role.is_unary
+		  (v && true)	# Preserve nil and false
+		else
+		  role.counterpart.object_type.assert_instance(constellation, Array(v))
+		end
 	      instance.send(:"#{k}=", value)
 	    end
 	  end

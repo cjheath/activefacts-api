@@ -29,26 +29,6 @@ module ActiveFacts
         "<InstanceIndex for #{@klass.name} in #{@constellation.inspect}>"
       end
 
-      def include?(*args)
-        if args.size == 1 && args[0].is_a?(@klass)
-          key = args[0].identifying_role_values
-        else
-          begin
-            key = @klass.identifying_role_values(@constellation, args)
-          rescue TypeError => e
-            # This happens (and should not) during assert_instance when checking
-            # for new asserts of identifying values that might get rolled back
-            # when the assert fails (for example because of an implied subtyping change)
-            key = nil
-          rescue ActiveFactsRuntimeException => e
-            # This is currently only known to happen during a retract()
-            key = nil
-          end
-        end
-
-        @hash[key]
-      end
-
       def detect &b
         r = @hash.detect &b
         r ? r[1] : nil

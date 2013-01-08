@@ -101,8 +101,8 @@ module ActiveFacts
 	    instance = key  # AutoCounter is its own key
 	  else
 	    instance_index = constellation.instances[self]
-	    unless instance = instance_index[key]
-	      instance = new_instance(constellation, *key)
+	    unless instance = constellation.has_candidate(self, key) || instance_index[key]
+	      instance = new_instance(constellation, key)
 	      constellation.candidate(instance)
 	    end
 	  end

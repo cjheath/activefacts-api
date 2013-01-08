@@ -28,8 +28,8 @@ describe "In a vocabulary" do
   Instance_methods = [
     :constellation, :retract, :is_a?,
     # To remove or move to EntityType
-    :related_entities, :detect_inconsistencies, :duplicate_identifying_values?,
-    :instance_index, :instance_index_counterpart, :is_identified_by?, :is_unique?,
+    :related_entities, :check_value_change_legality,
+    :instance_index, :instance_index_counterpart, :is_identified_by?
   ]
   Value_methods = Instance_methods + [
     :verbalise, :identifying_role_values
@@ -72,6 +72,7 @@ describe "In a vocabulary" do
 	  when 'String'; 'foo'
 	  when 'DateTime'; [2008, 04, 20, 10, 28, 14]
 	  when 'Date'; '2012-12-11'
+	  when 'Time'; [2008, 04, 20, 10, 28, 14]
 	  when 'Int'; 23
 	  when 'Real'; 23.45
 	  when 'AutoCounter', 'Guid'; :new

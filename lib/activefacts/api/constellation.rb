@@ -56,9 +56,8 @@ module ActiveFacts
       # in the constellation and in the counterparts of their identifying roles,
       # and the candidates array is nullified.
       def with_candidates &b
-	outermost = @candidates.nil?
-	@candidates ||= []
-	@on_admission ||= []
+	# Multiple assignment reduces (s)teps while debugging
+	outermost, @candidates, @on_admission = @candidates.nil?, (@candidates || []), (@on_admission || [])
 	begin
 	  b.call
 	rescue Exception
@@ -67,15 +66,21 @@ module ActiveFacts
 	  raise
 	ensure
 	  if outermost
-	    # Index the accepted instances in the constellation:
-	    @candidates.each do |instance|
-	      instance.class.index_instance(self, instance)
+	    while @candidates
+	      # Index the accepted instances in the constellation:
+	      candidates = @candidates
+	      on_admission = @on_admission
+	      @candidates = nil
+	      @on_admission = nil
+	      candidates.each do |instance|
+		instance.class.index_instance(self, instance)
+	      end
+	      on_admission.each do |b|
+		b.call
+	      end
+	      # REVISIT: Admission should not create new candidates, but might start a fresh list
+	      # debugger if @candidates and @candidates.length > 0
 	    end
-	    @on_admission.each do |b|
-	      b.call
-	    end
-	    @candidates = nil
-	    @on_admission = nil
 	  end
 	end
       end
@@ -90,6 +95,10 @@ module ActiveFacts
 
       def candidate instance
 	@candidates << instance unless @candidates[-1] == instance
+      end
+
+      def has_candidate klass, key
+	@candidates && @candidates.detect{|c| c.is_a?(klass) && c.identifying_role_values == key }
       end
 
       # Create a new empty Constellation over the given Vocabulary
@@ -130,10 +139,9 @@ module ActiveFacts
       def define_class_accessor m, klass
 	(class << self; self; end).
 	  send(:define_method, m) do |*args|
-	    instance_index = instances[klass]
 	    if args.size == 0
 	      # Return the collection of all instances of this class in the constellation:
-	      instance_index
+	      instances[klass]
 	    else
 	      # Assert a new ground fact (object_type instance) of the specified class, identified by args:
 	      assert(klass, *args)

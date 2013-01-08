@@ -215,17 +215,11 @@ describe "Roles" do
     c2 = ActiveFacts::API::Constellation.new(Mod)
 
     e = c1.Employee("PuppetMaster")
-    identifier = c2.Identifier "Project2501" # , :employee => e
-    debugger; identifier.employee = e
-
-    print '>'*100
-    p identifier.employee.name
+    identifier = c2.Identifier "Project2501", :employee => e
     identifier.employee.name.should == "PuppetMaster"
   end
 
-=begin
   it "should be able to import an entity from another constellation which subclass another entity" do
-    pending "Causes infinite loop!"
     pending "fails because identify_role_values get only the current class identifying roles" do
       # in this example, it returns :identifier, but not :name from LegalEntity
       module Mod
@@ -243,5 +237,4 @@ describe "Roles" do
       identifier.person2.name.should == "Person2Name"
     end
   end
-=end
 end

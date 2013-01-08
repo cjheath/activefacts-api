@@ -25,7 +25,7 @@ module ActiveFacts
 end
 # Add the methods that convert our classes into ObjectType types:
 
-ValueClasses = [String, Date, DateTime, Int, Real, AutoCounter, Decimal, Guid]
+ValueClasses = [String, Date, DateTime, Time, Int, Real, AutoCounter, Decimal, Guid]
 ValueClasses.each{|c|
     c.send :extend, ActiveFacts::API::ValueClass
   }
