@@ -68,7 +68,6 @@ describe "identity" do
         @p2.should be_nil
         @c1.Name.values.should =~ [@juliar, @tony]
         @c1.Name.keys.should =~ [@juliar, @tony]
-        pending "This functionality was poorly implemented and has been temporarily switched off"
         @c1.TFN.keys.should =~ [123]
         @c1.Person.values.should =~ [@p1, @p3]
         @c1.Person.keys.should =~ [[@juliar],[@tony]]
