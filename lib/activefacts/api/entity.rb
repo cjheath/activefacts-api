@@ -202,7 +202,7 @@ module ActiveFacts
 
 	      existing_key = existing_value.identifying_role_values
 	      next if existing_key.identifying_role_values == new_key
-	      raise "#{basename} cannot be asserted to have #{supertype} identifier #{new_key.inspect} because the existing object has #{existing_key.inspect}"
+	      raise TypeConflictException.new(basename, supertype, new_key, existing_key)
 	    end
 	  end
 	end
@@ -212,7 +212,7 @@ module ActiveFacts
 	  supertypes_transitive.each do |supertype|
 	    key = supertype.identifying_role_values(constellation, [arg_hash])
 	    if constellation.instances[supertype][key]
-	      raise "#{basename} cannot be asserted due to the prior existence of a conflicting #{supertype} identified by #{key.inspect}"
+	      raise TypeMigrationException.new(basename, supertype, key)
 	    end
 	  end
 	end
@@ -222,6 +222,8 @@ module ActiveFacts
 	# value which is not the corrent class is received, we recurse to ask that class
 	# to coerce what we *do* have.
 	# The return value is an array of (and arrays of) raw values, not object instances.
+	#
+	# No new instances may be asserted, nor may any roles of objects in the constellation be changed
 	def identifying_role_values(constellation, args)
           irns = identifying_role_names
 
@@ -254,7 +256,10 @@ module ActiveFacts
 	    if arg_hash.include?(n = role.name)	  # Do it this way to avoid problems where nil or false is provided
 	      value = arg_hash[n]
 	      next (value && true) if (role.is_unary)
-	      value = role.counterpart.object_type.assert_instance(constellation, [value]) if value
+	      if value
+		klass = role.counterpart.object_type
+		value = klass.identifying_role_values(constellation, Array(value))
+	      end
 	    elsif proto
 	      value = proto.send(n)
 	      arg_hash[n] = value.identifying_role_values # Save the value for making a new instance
@@ -263,12 +268,9 @@ module ActiveFacts
 	      value = nil
 	    end
 
-	    if value.nil?		# 'false' is a valid value for a unary role
-	      raise MissingMandatoryRoleValueException.new(self, role) if role.mandatory
-	      next value
-	    end
+	    raise MissingMandatoryRoleValueException.new(self, role) if value.nil? && role.mandatory
 
-	    value.identifying_role_values
+	    value
 	  end
 	end
 

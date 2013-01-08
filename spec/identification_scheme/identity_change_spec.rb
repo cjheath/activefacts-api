@@ -51,7 +51,7 @@ describe "identity" do
       end
 
       it "should be denied" do
-        @change.should raise_error(DuplicateIdentifyingValueException)
+        @change.should raise_error(TypeMigrationException)
       end
 
       it "should not change instance subtype" do
@@ -61,7 +61,8 @@ describe "identity" do
       it "should have no side-effects" do
         begin
           @change.call
-        rescue DuplicateIdentifyingValueException => e
+        rescue TypeMigrationException => e
+	  # Now check that no unexpected change occurred
         end
 
         @p2.should be_nil
@@ -78,7 +79,7 @@ describe "identity" do
         @p2_tfn = @c1.TFN(789)
         begin
           @change.call
-        rescue DuplicateIdentifyingValueException => e
+        rescue TypeMigrationException => e
         end
 
         @c1.TFN.keys.should =~ [123, 789]
