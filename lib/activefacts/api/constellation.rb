@@ -187,8 +187,13 @@ module ActiveFacts
                   if (single_roles.size > 0)
                     role_values = 
                       single_roles.map{|role|
-                          [ role_name = role.to_s.camelcase,
-                            value = instance.send(role)]
+			  value =
+			    begin
+			      value = instance.send(role)
+			    rescue NoMethodError
+			      instance.class.roles(role) # This role has not yet been realised
+			    end
+			  [ role_name = role.to_s.camelcase, value ]
                         }.select{|role_name, value|
                           value
                         }.map{|role_name, value|

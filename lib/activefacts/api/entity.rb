@@ -45,16 +45,16 @@ module ActiveFacts
 	      end
 
 	    begin
-	      # REVISIT: How to avoid the key-change processing here?
 	      send(role.setter, value)
-	    rescue NoMethodError => e
-	      raise settable_roles_exception(e, role_name)
+#	    rescue NoMethodError => e
+#	      raise settable_roles_exception(e, role_name)
 	    end
 	    # instance_variable_set(role.setter, value)
 	  end
         end
       end
 
+=begin
       def settable_roles_exception e, role_name
         n = NoMethodError.new(
           "You cannot assert a #{self.class} until you define #{role_name}.\n" +
@@ -81,6 +81,7 @@ module ActiveFacts
             end.
           flatten
       end
+=end
 
     public
       def inspect #:nodoc:

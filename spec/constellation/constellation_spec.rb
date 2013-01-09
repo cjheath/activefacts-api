@@ -27,6 +27,7 @@ describe "A Constellation instance" do
       class Name < StringVal
         value_type
         #has_one :attr, Name
+	has_one :undefined_role		# This will be unsatisfied with the non-existence of the UndefinedRole class
       end
 
       class LegalEntity
@@ -44,8 +45,8 @@ describe "A Constellation instance" do
       end
 
       class Person < LegalEntity
-        identified_by :name, :family_name     # REVISIT: want a way to role_alias :name, :given_name
-        supertypes :surrogate		      # Use a Symbol binding this time
+        identified_by :name, :family_name	# REVISIT: want a way to role_alias :name, :given_name
+        supertypes :surrogate			# Use a Symbol binding this time
 
         has_one :family_name, :class => Name
         has_one :employer, :class => Company
@@ -84,6 +85,13 @@ describe "A Constellation instance" do
   it "should complain when accessing a class that isn't an object type" do
     class Mod::Bar; end
     lambda { @constellation.Bar }.should raise_error
+    lambda { @constellation.instances.Bar }.should raise_error
+  end
+
+  it "should deny handling an object type defined outside the current module" do
+    class ::Bar; end
+    lambda { @constellation.Bar }.should raise_error
+    lambda { @constellation.instances[Bar] }.should raise_error
   end
 
   it "should allow inspection" do
@@ -188,6 +196,12 @@ describe "A Constellation instance" do
       acme3 = @constellation.Surrogate(@acme1_id)
       acme3.should == @acme1
     end
+  end
+
+  it "Should raise an exception with assigning a role whose referent (object type) has not yet been defined" do
+    n = @constellation.Name("Fred")
+    # This does n;t raise the "settable_roles_exception". I'm no longer sure how I did this, so I can't get coverage on this code :(
+    proc { n.undefined_role = 'foo' }.should raise_error
   end
 
   # Maybe not complete yet
@@ -352,12 +366,12 @@ describe "A Constellation instance" do
     george.family_name.should == smith
     smith.all_person_as_family_name.size.should == 2
 
-    @constellation.retract(smith)
+    @constellation.retract(fred)
 
-    @constellation.Person.size.should == 2	  # FamilyName is not mandatory, so instances still exist
+    @constellation.Person.size.should == 1	  # Fred is gone, George still exists
+    @constellation.Person.values[0].name.should == 'George'
     fred.family_name.should be_nil
-    george.family_name.should be_nil
-    smith.all_person_as_family_name.size.should == 0
+    smith.all_person_as_family_name.size.should == 1
   end
 
   it "should fail to recognise references to unresolved forward referenced classes" do
@@ -365,7 +379,7 @@ describe "A Constellation instance" do
       class Foo
         identified_by :name
         one_to_one :name
-        has_one :bar
+        has_one :not_yet
         has_one :baz, :class => "BAZ"
       end
 
@@ -377,7 +391,7 @@ describe "A Constellation instance" do
     @c = ActiveFacts::API::Constellation.new(Mod2)
     le = @c.Foo("Foo")
     lambda {
-      le.bar
+      le.not_yet
     }.should raise_error(NoMethodError)
     lambda {
       le.baz
@@ -385,7 +399,7 @@ describe "A Constellation instance" do
 
     # Now define the classes and try again:
     module Mod2
-      class Bar < String
+      class NotYet < String
         value_type
       end
       class BAZ < String
@@ -393,8 +407,8 @@ describe "A Constellation instance" do
       end
     end
     lambda {
-      le.bar
-      le.bar = 'bar'
+      le.not_yet
+      le.not_yet = 'not_yet'
     }.should_not raise_error
     lambda {
       le.baz
@@ -501,17 +515,6 @@ describe "A Constellation instance" do
         end
       end
     }.should raise_error
-  end
-
-  it "should complain when role name and counter part mismatch" do
-    lambda {
-      module Mod
-        class CompanyName
-          identified_by :name
-          has_one :company, :class => :person
-        end
-      end
-    }.should raise_error(Exception, /indicates a different counterpart object_type/)
   end
 
   it "should error on invalid :class values" do

@@ -29,7 +29,7 @@ describe "In a vocabulary" do
     :constellation, :retract, :is_a?,
     # To remove or move to EntityType
     :related_entities, :check_value_change_legality,
-    :instance_index, :instance_index_counterpart, :is_identified_by?
+    :instance_index
   ]
   Value_methods = Instance_methods + [
     :verbalise, :identifying_role_values

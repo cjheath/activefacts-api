@@ -59,7 +59,7 @@ module ActiveFacts
 	# Check all roles of this instance
         self.class.roles.each do |role_name, role|
 	  # If the counterpart role is not identifying for its object type, skip it
-	  next unless role.counterpart.is_identifying
+	  next unless c = role.counterpart and c.is_identifying
 
 	  identified_instances = Array(self.send(role.getter))
 	  instances.concat(identified_instances)
@@ -70,24 +70,8 @@ module ActiveFacts
         instances
       end
 
-      # Determine if entity is an identifying value
-      # of the current instance.
-      def is_identified_by?(entity)
-        self.class.identifying_roles.detect do |role|
-          send(role.getter) == entity
-        end
-      end
-
       def instance_index
         @constellation.send(self.class.basename.to_sym)
-      end
-
-      def instance_index_counterpart(role)
-        if @constellation && role.counterpart
-          @constellation.instances[role.counterpart.object_type]
-        else
-          []
-        end
       end
 
       # Verbalise this instance

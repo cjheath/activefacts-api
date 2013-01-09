@@ -386,7 +386,7 @@ module ActiveFacts
         role_name = (Class === role_name ? a.name.snakecase : role_name).to_sym
 
         # The related class might be forward-referenced, so handle a Symbol/String instead of a Class.
-        related_name = options.delete(:class)
+        specified_class = related_name = options.delete(:class)
         case related_name
         when nil
           related = role_name # No :class provided, assume it matches the role_name
@@ -423,7 +423,7 @@ module ActiveFacts
 
         # Avoid a confusing mismatch:
         # Note that if you have a role "supervisor" and a sub-class "Supervisor", this'll bitch.
-        if (Class === related && (indicated = vocabulary.object_type(role_name)) && indicated != related)
+        if (!specified_class && Class === related && (indicated = vocabulary.object_type(role_name)) && indicated != related)
           raise "Role name #{role_name} indicates a different counterpart object_type #{indicated} than specified"
         end
 

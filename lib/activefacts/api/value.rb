@@ -18,11 +18,6 @@ module ActiveFacts
         arg_hash = args[-1].is_a?(Hash) ? args.pop.clone : nil
 
         super(args)
-
-        (arg_hash ? arg_hash.entries : []).each do |role_name, value|
-          role = self.class.roles(role_name)
-          send(role.setter, value)
-        end
       end
 
       # verbalise this Value
