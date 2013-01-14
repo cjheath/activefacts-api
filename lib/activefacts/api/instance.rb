@@ -74,13 +74,6 @@ module ActiveFacts
         @constellation.send(self.class.basename.to_sym)
       end
 
-      # Verbalise this instance
-      # REVISIT: Should it raise an error if it was not redefined ?
-      def verbalise
-        # REVISIT: Should it raise an error if it was not redefined ?
-        # This method should always be overridden in subclasses
-      end
-
       # De-assign all functional roles and remove from constellation, if any.
       def retract
         # Delete from the constellation first, while we remember our identifying role values

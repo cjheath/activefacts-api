@@ -6,6 +6,7 @@
 #
 # The methods of this module are added to Value type classes.
 #
+
 module ActiveFacts
   module API
 
@@ -134,15 +135,26 @@ module ActiveFacts
         end
       end
 
-      def self.included other #:nodoc:
-        other.send :extend, ClassMethods
+      def self.included klass #:nodoc:
+        klass.send :extend, ClassMethods
+
+        if !klass.respond_to?(:new_instance)
+          class << klass
+            def new_instance constellation, *args
+              instance = allocate
+              instance.instance_variable_set("@constellation", constellation)
+              instance.send(:initialize, *args)
+              instance
+            end
+          end
+        end
 
         # Register ourselves with the parent module, which has become a Vocabulary:
-        vocabulary = other.modspace
+        vocabulary = klass.modspace
         unless vocabulary.respond_to? :object_type  # Extend module with Vocabulary if necessary
           vocabulary.send :extend, Vocabulary
         end
-        vocabulary.__add_object_type(other)
+        vocabulary.__add_object_type(klass)
       end
     end
   end

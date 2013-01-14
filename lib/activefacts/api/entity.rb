@@ -55,6 +55,9 @@ module ActiveFacts
       end
 
 =begin
+# I forget how it was possible to reproduce this exception,
+# so I can't get code coverage over it. It might not be still possible,
+# but I can't be sure so I'll leave the code here for now.
       def settable_roles_exception e, role_name
         n = NoMethodError.new(
           "You cannot assert a #{self.class} until you define #{role_name}.\n" +
@@ -366,6 +369,13 @@ module ActiveFacts
 
       def self.included other #:nodoc:
         other.send :extend, ClassMethods
+
+	def other.new_instance constellation, *args
+	  instance = allocate
+	  instance.instance_variable_set("@constellation", constellation)
+	  instance.send(:initialize, *args)
+	  instance
+	end
 
         # Register ourselves with the parent module, which has become a Vocabulary:
         vocabulary = other.modspace

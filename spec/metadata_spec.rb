@@ -13,7 +13,6 @@ describe "In a vocabulary" do
   end
 
   ObjectType_methods = [
-    :new_instance,
     :has_one, :maybe, :one_to_one,
     :roles, :subtypes, :supertypes, :vocabulary,
     # To make private:
@@ -223,13 +222,26 @@ describe "In a vocabulary" do
 	end
       end
 
+      describe "when instantiated" do
+	before :each do
+	  @instance = @constellation.T(*constructor_args)
+	end
+
+	it "should be ok" do
+	  @instance.should_not be_nil
+	end
+
+	if @instance
+	end
+      end
+
       describe "An instance of #{case_name}" do
 	before :each do
-	  v = @constellation.T(*constructor_args)
-	  all_T_instance_methods = v.methods.select do |m|
-	      i = v.method(m).inspect
+	  @v = @constellation.T(*constructor_args)
+	  all_T_instance_methods = @v.methods.select do |m|
+	      i = @v.method(m).inspect
 	      i =~ /ActiveFacts/ || i =~ /identifying_role_values/
-	    end.sort
+	    end.sort.map(&:to_sym)
 	  @actual_instance_methods = all_T_instance_methods
 	end
 

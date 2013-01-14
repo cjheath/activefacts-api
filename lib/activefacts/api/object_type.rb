@@ -16,17 +16,10 @@ module ActiveFacts
         modspace        # The module that contains this object_type.
       end
 
-      def new_instance constellation, *args
-	instance = allocate
-	instance.instance_variable_set("@constellation", constellation)
-	instance.send(:initialize, *args)
-	instance
-      end
-
       # Each ObjectType maintains a list of the Roles it plays:
       def roles(role_name = nil)
-        unless instance_variable_defined? "@roles"
-          @roles = RoleCollection.new     # Initialize and extend without warnings.
+        unless instance_variable_defined? "@roles"  # Avoid "instance variable not defined" warning from ||=
+          @roles = RoleCollection.new
         end
         case role_name
         when nil

@@ -111,9 +111,9 @@ describe "An instance of every type of ObjectType" do
     @string_value = @constellation.StringVal("one")
     @date_value = @constellation.DateVal(2008, 04, 20)
     # Parse the date:
-    @date_value = Mod::DateVal.new '2nd Nov 2001'
+    @date_value = @constellation.DateVal('2nd Nov 2001')
     d = ::Date.civil(2008, 04, 20)
-    @date_time_value = Mod::DateTimeVal.new d # 2008, 04, 20, 10, 28, 14
+    @date_time_value = Mod::DateTimeVal.civil(2008, 04, 20, 10, 28, 14)
     # This next isn't in the same pattern; it makes a Decimal from a BigDecimal rather than a String (coverage reasons)
     @decimal_value = @constellation.DecimalVal(BigDecimal.new('98765432109876543210'))
     @guid_value = @constellation.GuidVal(:new)
@@ -137,13 +137,13 @@ describe "An instance of every type of ObjectType" do
     @test_by_auto_counter = @constellation.TestByAutoCounter(2)
     @test_by_auto_counter_new = @constellation.TestByAutoCounter(:new)
     @test_by_string = @constellation.TestByString("two")
-    @test_by_date = @constellation.TestByDate(Date.new(2008,04,28))
+    @test_by_date = @constellation.TestByDate(Date.civil(2008,04,28))
     #@test_by_date = @constellation.TestByDate(2008,04,28)
     # Array packing/unpacking obfuscates the following case
     # @test_by_date_time = @constellation.TestByDateTime([2008,04,28,10,28,15])
     # Pass an array of values directly to DateTime.civil:
     @test_by_date_time = @constellation.TestByDateTime(@date_time_value)
-    #@test_by_date_time = @constellation.TestByDateTime(DateTime.new(2008,04,28,10,28,15))
+    #@test_by_date_time = @constellation.TestByDateTime(DateTime.civil(2008,04,28,10,28,15))
     @test_by_decimal = @constellation.TestByDecimal('98765432109876543210')
 
     @test_by_guid = @constellation.TestByGuid(@guid)
@@ -154,7 +154,7 @@ describe "An instance of every type of ObjectType" do
     @test_by_auto_counter_sub = @constellation.TestByAutoCounterSub(6)
     @test_by_auto_counter_new_sub = @constellation.TestByAutoCounterSub(:new)
     @test_by_string_sub = @constellation.TestByStringSub("six")
-    @test_by_date_sub = @constellation.TestByDateSub(Date.new(2008,04,27))
+    @test_by_date_sub = @constellation.TestByDateSub(Date.civil(2008,04,27))
     # Array packing/unpacking obfuscates the following case
     # @test_by_date_time_sub = @constellation.TestByDateTimeSub([2008,04,29,10,28,15])
     # Pass an array of values directly to DateTime.civil:
@@ -179,7 +179,7 @@ describe "An instance of every type of ObjectType" do
     @test_sub_by_auto_counter = @constellation.TestSubByAutoCounter(2*2)
     @test_sub_by_auto_counter_new = @constellation.TestSubByAutoCounter(:new)
     @test_sub_by_string = @constellation.TestSubByString("twotwo")
-    @test_sub_by_date = @constellation.TestSubByDate(Date.new(2008,04*2,28))
+    @test_sub_by_date = @constellation.TestSubByDate(Date.civil(2008,04*2,28))
     # Array packing/unpacking obfuscates the following case
     # @test_sub_by_date_time = @constellation.TestSubByDateTime([2008,04*2,28,10,28,15])
     @test_sub_by_decimal = @constellation.TestSubByDecimal('987654321098765432109')
@@ -261,13 +261,13 @@ describe "An instance of every type of ObjectType" do
       ]
     @role_values = [
         3, 4.0, 5, 6,
-        "three", Date.new(2008,4,21), DateTime.new(2008,4,22,10,28,16),
+        "three", Date.civil(2008,4,21), DateTime.civil(2008,4,22,10,28,16),
         '98765432109876543210',
         '01234567-89ab-cdef-0123-456789abcdef'
       ]
     @role_alternate_values = [
         4, 5.0, 6, 7,
-        "four", Date.new(2009,4,21), DateTime.new(2009,4,22,10,28,16),
+        "four", Date.civil(2009,4,21), DateTime.civil(2009,4,22,10,28,16),
         '98765432109876543211',
         '01234567-89ab-cdef-0123-456789abcdef'
       ]
@@ -275,7 +275,7 @@ describe "An instance of every type of ObjectType" do
         @constellation.IntSubVal(6), Mod::RealSubVal.new(6.0),
         @constellation.AutoCounterSubVal(:new), Mod::AutoCounterSubVal.new(8),
         @constellation.StringSubVal("seven"),
-        @constellation.DateSubVal(2008,4,29), Mod::DateTimeSubVal.new(2008,4,30,10,28,16),
+        @constellation.DateSubVal(2008,4,29), @constellation.DateTimeSubVal(2008,4,30,10,28,16),
         @constellation.DecimalSubVal('98765432109876543210'),
         @constellation.DecimalSubVal('01234567-89ab-cdef-0123-456789abcdef'),
       ]
@@ -311,8 +311,13 @@ describe "An instance of every type of ObjectType" do
     end
 
     it "should inspect" do
-      (@value_instances+@entities+@entities_by_entity).each do |object|
-        object.inspect
+      (@value_instances+@entities+@entities_by_entity).each_with_index do |object, i|
+	begin
+	  object.inspect
+	rescue Exception => e
+	  puts "FAILED on #{object.class} at #{i}"
+	  raise
+	end
       end
     end
 
