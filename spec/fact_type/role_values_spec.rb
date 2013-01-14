@@ -21,10 +21,18 @@ module TestValueTypesModule
   end
   BASE_VALUE_TYPE_ROLE_NAMES = VALUE_TYPES.map { |base_type| base_type.name.snakecase }
   VALUE_TYPE_ROLE_NAMES = BASE_VALUE_TYPE_ROLE_NAMES.map { |n| [ :"#{n}_val", :"#{n}_sub_val" ] }.flatten
-  VALUE_TYPES.map do |value_type|
+
+  TestValueTypesModule.module_eval <<-END
+    class Extra < String
+      value_type
+    end
+  END
+
+  VALUE_TYPES.each do |value_type|
     code = <<-END
       class #{value_type.name}Val < #{value_type.name}
         value_type
+	has_one :extra
       end
 
       class #{value_type.name}ValSub < #{value_type.name}Val
@@ -34,6 +42,7 @@ module TestValueTypesModule
       class #{value_type.name}Entity
         identified_by :#{identifying_role_name = "id_#{value_type.name.snakecase}_val"}
         one_to_one :#{identifying_role_name}, :class => #{value_type.name}Val
+	has_one :extra
       end
 
       class #{value_type.name}EntitySub < #{value_type.name}Entity
@@ -98,6 +107,7 @@ describe "Object type role values" do
     end
   end
 
+=begin
   describe "Instantiating bare objects" do
     OBJECT_TYPES.each do |object_type|
       required_value_type = VALUE_TYPE_FOR_OBJECT_TYPE[object_type]
@@ -118,6 +128,7 @@ describe "Object type role values" do
       end
     end
   end
+=end
 
   describe "A constellation" do
     before :each do
@@ -168,20 +179,16 @@ describe "Object type role values" do
         end
       end
 
-      if object_type.respond_to?(:identifying_roles)
-        # REVISIT: Here, there are many possible problems with re-assigning identifying role values. We need tests!
-        # The implementation will need to be reworked to detect problems and reverse any partial changes before chucking an exception
-=begin
-        it "should not allow re-assigning a #{object_type_name} entity's identifying role value from #{values[0]} to #{values[1]}" do
+      if object_type.is_entity_type
+        it "should allow re-assigning a #{object_type_name} entity's identifying role value from #{values[0]} to #{values[1]}" do
           object = @constellation.send(object_type_name, *object_identifying_parameters(object_type_name, values[0]))
           object.class.identifying_roles.each do |identifying_role|
             next if identifying_role.name == :counter
             lambda {
               object.send(:"#{identifying_role.name}=", values[1])
-            }.should raise_error
+            }.should_not raise_error
           end
         end
-=end
 
         it "should allow nullifying and reassigning a #{object_type_name} entity's identifying role value" do
           object = @constellation.send(object_type_name, *object_identifying_parameters(object_type_name, values[0]))
@@ -194,21 +201,35 @@ describe "Object type role values" do
         end
       else
         it "should allow initialising value type #{object_type.name} with an instance of that value type" do
-          bare_value = object_type.new(*object_identifying_parameters(object_type_name, values[0]))
+	  params = object_identifying_parameters(object_type_name, values[0])
+	  if object_type.respond_to?(:civil)
+	    # Handle Date/Time specially:
+	    bare_value = object_type.civil(params[0].year)
+	  else
+	    bare_value = object_type.new(*params)
+	  end
           object = @constellation.send(object_type_name, bare_value)
+	  # Here, the bare_value is not the same object which has been added to the constellatiom
 
           # Now link the bare value to an Octopus:
           octopus = @constellation.Octopus(0)
           octopus_role_name = :"octopus_as_one_#{object_type_name.snakecase}"
-          bare_value.send(:"#{octopus_role_name}=", octopus)
-          counterpart_name = bare_value.class.roles[octopus_role_name].counterpart.name
+          object.send(:"#{octopus_role_name}=", octopus)
+          counterpart_name = object.class.roles[octopus_role_name].counterpart.name
 
           # Create a reference by assigning the object from a RoleProxy:
           proxy = octopus.send(counterpart_name)
+
           #proxy.should be_respond_to(:__getobj__)
-          object2 = @constellation.send(object_type_name, proxy)
+	  object2 = @constellation.send(object_type_name, proxy)
           object2.should == object
         end
+
+	it "should allow adding extra role assignments when asserting an instance" do
+          object = @constellation.send(object_type_name, *(object_identifying_parameters(object_type_name, values[0]) + [{:extra => 'foo'}]))
+	  object.extra.should == 'foo'
+	end
+
       end
     end
 

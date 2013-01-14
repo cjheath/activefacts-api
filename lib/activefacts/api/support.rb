@@ -50,25 +50,3 @@ class Module #:nodoc:
     name.gsub(/.*::/, '')
   end
 end
-
-module ActiveFacts #:nodoc:
-  # If the args array ends with a hash, remove it.
-  # If the remaining args are fewer than the arg_names,
-  # extract values from the hash and append them to args.
-  # Return the new args array and the hash.
-  # In any case leave the original args unmodified.
-  def self.extract_hash_args(arg_names, args)
-    if Hash === args[-1]
-      arg_hash = args[-1]     # Don't pop args, leave it unmodified
-      args = args[0..-2]
-      arg_hash = arg_hash.clone if (args.size < arg_names.size)
-      while args.size < arg_names.size
-        args << arg_hash[n = arg_names[args.size]]
-        arg_hash.delete(n)
-      end
-    else
-      arg_hash = {}
-    end
-    return args, arg_hash
-  end
-end

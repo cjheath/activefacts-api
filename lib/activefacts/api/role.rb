@@ -55,42 +55,13 @@ module ActiveFacts
         counterpart == nil
       end
 
-      def is_inherited?(klass)
-        klass.supertypes_transitive.include?(@object_type)
-      end
-
-      def counterpart_object_type
-        # This method is sometimes used when unaries are used in an entity's identifier.
-        @is_unary ? TrueClass : (counterpart ? counterpart.object_type : nil)
-      end
-
       def inspect
         "<Role #{object_type.name}.#{name}>"
       end
 
-      def adapt(constellation, value) #:nodoc:
-        # If the value is a compatible class, use it (if in another constellation, clone it),
-        # else create a compatible object using the value as constructor parameters.
-        if value.is_a?(counterpart.object_type)
-          # Check that the value is in a compatible constellation, clone if not:
-          if constellation && (vc = value.constellation) && vc != constellation
-            # Cross-constellation assignment!
-            # Just take the identifying_role_values to make a new object
-            value = constellation.send(value.class.basename, value.identifying_role_values)
-          end
-          value.constellation = constellation if constellation
-        else
-          value = [value] unless Array === value
-          raise "No parameters were provided to identify an #{counterpart.object_type.basename} instance" if value == []
-          if constellation
-            value = constellation.send(counterpart.object_type.basename.to_sym, *value)
-          else
-            #trace :assert, "Constructing new #{counterpart.object_type} with #{value.inspect}" do
-              value = counterpart.object_type.new(*value)
-            #end
-          end
-        end
-        value
+      def verbalise
+	"Role #{name} of #{object_type}, " +
+	  (@is_unary ? 'unary' : (counterpart ? 'played by' + counterpart.object_type : 'undefined'))
       end
 
     private

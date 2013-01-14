@@ -34,11 +34,26 @@ module ActiveFacts
     end
 
     class DuplicateIdentifyingValueException < ActiveFactsRuntimeException
-      def initialize(desc)
-        super("Illegal attempt to assert #{desc[:class].basename} having identifying value" +
-              " (#{desc[:role].name} is #{desc[:value].verbalise})," +
-              " when #{desc[:value].related_entities.map(&:verbalise).join(", ")} already exists")
+      def initialize(klass, role_name, value)
+        super("Illegal attempt to assert #{klass.basename} having identifying value" +
+              " (#{role_name} is #{value.verbalise})," +
+              " when #{value.related_entities(false).map(&:verbalise).join(", ")} already exists")
       end
     end
+
+    # When an existing object having multiple identification patterns is re-asserted, all the keys must match the existing object
+    class TypeConflictException < ActiveFactsRuntimeException
+      def initialize(klass, supertype, key, existing)
+	super "#{klass} cannot be asserted to have #{supertype} identifier #{key.inspect} because the existing object has #{existing.inspect}"
+      end
+    end
+
+    # When a new entity is asserted, but a supertype identifier matches an existing object of a different type, type migration is implied but unfortunately is impossible in Ruby
+    class TypeMigrationException < ActiveFactsRuntimeException
+      def initialize(klass, supertype, key)
+	super "#{klass} cannot be asserted due to the prior existence of a conflicting #{supertype} identified by #{key.inspect}"
+      end
+    end
+
   end
 end

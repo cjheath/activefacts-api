@@ -17,7 +17,7 @@ module ActiveFacts
     class InstanceIndex
       extend Forwardable
       def_delegators :@hash, :size, :empty?, :each, :map,
-                     :detect, :values, :keys, :detect, :delete_if
+                     :detect, :values, :keys, :detect, :delete
 
       def initialize(constellation, klass)
         @constellation = constellation
@@ -27,37 +27,6 @@ module ActiveFacts
 
       def inspect
         "<InstanceIndex for #{@klass.name} in #{@constellation.inspect}>"
-      end
-
-      # Assertion of an entity type or a value type
-      #
-      # When asserting an entity type, multiple entity type or value type
-      # may be created. Every instance (entity or value) created in this
-      # process will be removed if the entity type fail to be asserted.
-      def assert(*args)
-        instance, key = *@klass.assert_instance(@constellation, args)
-        @klass.created_instances = nil if instance.class.is_entity_type
-        instance
-      end
-
-      def include?(*args)
-        if args.size == 1 && args[0].is_a?(@klass)
-          key = args[0].identifying_role_values
-        else
-          begin
-            key = @klass.identifying_role_values(*args)
-          rescue TypeError => e
-            # This happens (and should not) during assert_instance when checking
-            # for new asserts of identifying values that might get rolled back
-            # when the assert fails (for example because of an implied subtyping change)
-            key = nil
-          rescue ActiveFactsRuntimeException => e
-            # This is currently only known to happen during a retract()
-            key = nil
-          end
-        end
-
-        @hash[key]
       end
 
       def detect &b

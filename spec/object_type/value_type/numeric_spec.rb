@@ -8,9 +8,9 @@ describe Int do
     @i = Int.new(1)
   end
 
-#  it "should be encodable in JSON" do
-#    @i.to_json.should == "1"
-#  end
+  it "should be encodable in JSON" do
+    @i.to_json.should == "1"
+  end
 
   it "should behave like an Integer" do
     1.should == @i
@@ -31,9 +31,9 @@ describe Real do
     @r = Real.new(1.0)
   end
 
-#  it "should be encodable in JSON" do
-#    @r.to_json.should == "1.0"
-#  end
+  it "should be encodable in JSON" do
+    @r.to_json.should == "1.0"
+  end
 
   it "should behave like a Float" do
     1.0.should == @r

@@ -14,7 +14,7 @@ describe Date do
 
   it "should construct with a nil argument" do
     proc {
-      @d = Date.new(nil)
+      @d = Date.new_instance(nil, nil)
     }.should_not raise_error
     @d.year.should == -4712
   end

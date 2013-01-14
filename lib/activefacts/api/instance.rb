@@ -11,12 +11,16 @@ module ActiveFacts
     # Every Instance of a ObjectType (A Value type or an Entity type) includes the methods of this module:
     module Instance
       # What constellation does this Instance belong to (if any):
-      attr_accessor :constellation
+      attr_reader :constellation
 
       def initialize(args = []) #:nodoc:
         unless (self.class.is_entity_type)
           begin
             super(*args)
+	  rescue TypeError => e
+	    if trace(:debug)
+	      p e; puts e.backtrace*"\n\t"; debugger; true
+	    end
           rescue ArgumentError => e
             e.message << " constructing a #{self.class}"
             raise
@@ -24,125 +28,83 @@ module ActiveFacts
         end
       end
 
-      # Detect inconsistencies within constellation if this entity was updated
-      # with the specified role/value pair.
-      def detect_inconsistencies(role, value)
-        if duplicate_identifying_values?(role, value)
-          exception_data = {
-            :value => value,
-            :role  => role,
-            :class => self.class
-          }
-
-          raise DuplicateIdentifyingValueException.new(exception_data)
-        end
+      def is_a? klass
+        super || self.class.supertypes_transitive.include?(klass)
       end
 
-      # Checks if instance have duplicate values within its constellation.
-      #
-      # Only works on identifying roles.
-      def duplicate_identifying_values?(role, value)
-        @constellation && role.is_identifying && !is_unique?(:role => role, :value => value)
-      end
+      # If this instance's role is updated to the new value, does that cause a collision?
+      # We need to check each superclass that has a different identification pattern
+      def check_value_change_legality(role, value)
+        return unless @constellation && role.is_identifying
 
-      # Checks if instance would still be unique if it was updated with
-      # args.
-      #
-      # args should be a hash containing the role and value to update
-      # and the name of the identifying value as the key.
-      #
-      # For example, if a Person is identified by name and family_name:
-      # updated_values = { :name => "John" }
-      # Would merge this hash with the one defining the current instance
-      # and verify in our constellation if it exists.
-      #
-      # The uniqueness of the entity will also be checked within its supertypes.
-      #
-      # An Employee -subtype of a Person- identified by its employee_id would
-      # collide with a Person if it has the same name. But `name` may not be
-      # an identifying value for the Employee identification scheme.
-      def is_unique?(args)
-        duplicate = ([self.class] + self.class.supertypes_transitive).detect do |klass|
-          old_identity = identity_by(klass)
-          if klass.identifying_roles.include?(args[:role])
-            new_identity = old_identity.merge(args[:role].getter => args[:value])
-            @constellation.instances[klass].include?(new_identity)
-          else
-            false
-          end
+	klasses = [self.class] + self.class.supertypes_transitive
+	last_identity = nil
+	last_irns = nil
+        duplicate = klasses.detect do |klass|
+          next false unless klass.identifying_roles.include?(role)
+	  irns = klass.identifying_role_names
+	  if last_irns != irns
+	    last_identity = identifying_role_values(klass)
+	    role_position = irns.index(role.name)
+	    last_identity[role_position] = value
+	  end
+	  @constellation.instances[klass][last_identity]
         end
 
-        !duplicate
+	raise DuplicateIdentifyingValueException.new(self.class, role.name, value) if duplicate
       end
 
-      # List entities which reference the current one.
-      #
-      # Once an entity is found, it will also search for
-      # related entities of this instance.
-      def related_entities(instances = [])
+      # List entities which have an identifying role played by this object.
+      def related_entities(indirectly = true, instances = [])
+	# Check all roles of this instance
         self.class.roles.each do |role_name, role|
-          instance_index_counterpart(role).each do |irv, instance|
-            if instance.class.is_entity_type && instance.is_identified_by?(self)
-              if !instances.include?(instance)
-                instances << instance
-                instance.related_entities(instances)
-              end
-            end
-          end
+	  # If the counterpart role is not identifying for its object type, skip it
+	  next unless c = role.counterpart and c.is_identifying
+
+	  identified_instances = Array(self.send(role.getter))
+	  instances.concat(identified_instances)
+	  identified_instances.each do |instance|
+	    instance.related_entities(indirectly, instances) if indirectly
+	  end
         end
         instances
-      end
-
-      # Determine if entity is an identifying value
-      # of the current instance.
-      def is_identified_by?(entity)
-        self.class.identifying_roles.detect do |role|
-          send(role.getter) == entity
-        end
       end
 
       def instance_index
         @constellation.send(self.class.basename.to_sym)
       end
 
-      def instance_index_counterpart(role)
-        if @constellation && role.counterpart
-          @constellation.send(role.counterpart.object_type.basename.to_sym)
-        else
-          []
-        end
-      end
-
-      # Verbalise this instance
-      # REVISIT: Should it raise an error if it was not redefined ?
-      def verbalise
-        # REVISIT: Should it raise an error if it was not redefined ?
-        # This method should always be overridden in subclasses
-      end
-
       # De-assign all functional roles and remove from constellation, if any.
       def retract
-        # Delete from the constellation first, while it remembers our identifying role values
-        @constellation.__retract(self) if @constellation
+        # Delete from the constellation first, while we remember our identifying role values
+        @constellation.deindex_instance(self) if @constellation
 
         # Now, for all roles (from this class and all supertypes), assign nil to all functional roles
         # The counterpart roles get cleared automatically.
-        ([self.class]+self.class.supertypes_transitive).each do |klass|
+	klasses = [self.class]+self.class.supertypes_transitive
+	klasses.each do |klass|
           klass.roles.each do |role_name, role|
             next if role.unary?
             counterpart = role.counterpart
-            if role.unique
-              # puts "Nullifying mandatory role #{role.name} of #{role.object_type.name}" if counterpart.mandatory
 
-              send role.setter, nil
+	    # Objects being created do not have to have non-identifying mandatory roles,
+	    # so we allow retracting to the same state.
+            if role.unique
+	      if counterpart.is_identifying && counterpart.mandatory
+		i = send(role.name) and i.retract
+	      else
+		send role.setter, nil
+	      end
             else
               # puts "Not removing role #{role_name} from counterpart RoleValues #{counterpart.name}"
               # Duplicate the array using to_a, as the RoleValues here will be modified as we traverse it:
-              send(role.name).to_a.each do |v|
-                if counterpart.is_identifying
-                  v.retract
+	      counterpart_instances = send(role.name)
+	      counterpart_instances.to_a.each do |counterpart_instance|
+		# These actions deconstruct the RoleValues as we go:
+                if counterpart.is_identifying && counterpart.mandatory
+                  counterpart_instance.retract
                 else
-                  v.send(counterpart.setter, nil)
+                  counterpart_instance.send(counterpart.setter, nil)
                 end
               end
             end
@@ -155,7 +117,7 @@ module ActiveFacts
         # Add Instance class methods here
       end
 
-      def Instance.included other #:nodoc:
+      def self.included other #:nodoc:
         other.send :extend, ClassMethods
       end
     end

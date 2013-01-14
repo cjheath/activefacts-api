@@ -27,6 +27,7 @@ describe "A Constellation instance" do
       class Name < StringVal
         value_type
         #has_one :attr, Name
+	has_one :undefined_role		# This will be unsatisfied with the non-existence of the UndefinedRole class
       end
 
       class LegalEntity
@@ -34,18 +35,18 @@ describe "A Constellation instance" do
         one_to_one :name, :mandatory => true
       end
 
-      class SurrogateId
+      class Surrogate
         identified_by :auto_counter_val
         one_to_one :auto_counter_val
       end
 
       class Company < LegalEntity
-        supertypes SurrogateId
+        supertypes Surrogate
       end
 
       class Person < LegalEntity
-        identified_by :name, :family_name     # REVISIT: want a way to role_alias :name, :given_name
-        supertypes :surrogate_id              # Use a Symbol binding this time
+        identified_by :name, :family_name	# REVISIT: want a way to role_alias :name, :given_name
+        supertypes :surrogate			# Use a Symbol binding this time
 
         has_one :family_name, :class => Name
         has_one :employer, :class => Company
@@ -84,6 +85,13 @@ describe "A Constellation instance" do
   it "should complain when accessing a class that isn't an object type" do
     class Mod::Bar; end
     lambda { @constellation.Bar }.should raise_error
+    lambda { @constellation.instances.Bar }.should raise_error
+  end
+
+  it "should deny handling an object type defined outside the current module" do
+    class ::Bar; end
+    lambda { @constellation.Bar }.should raise_error
+    lambda { @constellation.instances[Bar] }.should raise_error
   end
 
   it "should allow inspection" do
@@ -99,7 +107,14 @@ describe "A Constellation instance" do
 #    @constellation.query.should == Mod
 #  end
 
-  it "should support methods to assert instances via the instance index for that type" do
+  it "should create methods to assert instances" do
+    # Check that methods have not yet been created:
+    @constellation.should_not respond_to(:Name)
+    @constellation.should_not respond_to(:LegalEntity)
+    @constellation.should_not respond_to(:Company)
+    @constellation.should_not respond_to(:Person)
+
+    # Assert instances
     name = foo = acme = fred_fly = nil
     lambda {
         name = @constellation.Name("foo")
@@ -107,6 +122,14 @@ describe "A Constellation instance" do
         acme = @constellation.Company("Acme, Inc", :auto_counter_val => :new)
         fred_fly = @constellation.Person("fred", "fly", :auto_counter_val => :new)
     }.should_not raise_error
+
+    # Check that methods have not yet been created:
+    @constellation.should respond_to(:Name)
+    @constellation.should respond_to(:LegalEntity)
+    @constellation.should respond_to(:Company)
+    @constellation.should respond_to(:Person)
+
+    # Check the instances
     name.class.should == Mod::Name
     name.constellation.should == @constellation
 
@@ -143,47 +166,66 @@ describe "A Constellation instance" do
     fred_fly1.object_id.should == fred_fly2.object_id
   end
 
-  it "should reject re-assertion with additional assignments" do
-    name1 = @constellation.Name("foo")
-    foo1 = @constellation.LegalEntity("foo")
-    acme1 = @constellation.Company("Acme, Inc", :auto_counter_val => :new)
-    acme1_id = acme1.auto_counter_val.to_s
+  describe "re-assertion with any one of multiple identifiers" do
+    before :each do
+      # Create some instances:
+      @name1 = @constellation.Name("foo")		# Value type
+      @foo1 = @constellation.LegalEntity("foo")	# Entity Type with simple identifier
+      @acme1 = @constellation.Company("Acme, Inc", :auto_counter_val => :new)
+      @acme1_id = @acme1.auto_counter_val
+    end
 
-    name2 = @constellation.Name("foo")
-    foo2 = @constellation.LegalEntity("foo")
-    acme2 = nil
-    lambda { acme2 = @constellation.Company("Acme, Inc", :auto_counter_val => :new) }.should_not raise_error
-    acme2.auto_counter_val = :new
-    acme2.should == acme1
-    acme2.auto_counter_val.should_not be_defined
-    acme2.auto_counter_val.to_s.should == acme1_id
+    it "should be allowed with a normal value type id" do
+      # Reassert the instances:
+      @name2 = @constellation.Name("foo")
+      @foo2 = @constellation.LegalEntity("foo")
+      @acme2 = nil
+      lambda {
+	# Without the auto_counter_val
+	@acme2 = @constellation.Company("Acme, Inc")
+      }.should_not raise_error
+
+      # This creates a new auto_counter_val, changing the acme instance (and hence, both references to it)
+      @acme2.auto_counter_val = :new
+      @acme2.should == @acme1
+      @acme2.auto_counter_val.should_not be_defined
+      @acme2.auto_counter_val.to_s.should_not == @acme1_id.to_s
+    end
+
+    it "should be allowed with an autocounter id" do
+      acme3 = @constellation.Surrogate(@acme1_id)
+      acme3.should == @acme1
+    end
   end
 
-  it "should support methods to assert instances via the class for that type" do
-    name = foo = acme = fred_fly = nil
-    lambda {
-        name = @constellation.Name.assert("foo")
-        foo = @constellation.LegalEntity.assert("foo")
-        acme = @constellation.Company.assert("Acme, Inc", :auto_counter_val => :new)
-        fred_fly = @constellation.Person.assert("fred", "fly", :auto_counter_val => :new)
-    }.should_not raise_error
-    name.class.should == Mod::Name
-    name.constellation.should == @constellation
+  it "Should raise an exception with assigning a role whose referent (object type) has not yet been defined" do
+    n = @constellation.Name("Fred")
+    # This does n;t raise the "settable_roles_exception". I'm no longer sure how I did this, so I can't get coverage on this code :(
+    proc { n.undefined_role = 'foo' }.should raise_error
+  end
 
-    foo.class.should == Mod::LegalEntity
-    foo.constellation.should == @constellation
-    foo.inspect.should =~ / in Conste/
-    foo.verbalise.should =~ /LegalEntity\(/
+  # Maybe not complete yet
+  describe "assigning additional arguments on asserting a value type" do
+    before :each do
+      # This should work, but...
+      # birth_name = @constellation.Name("Smith", :person_as_birth_name => {:name => "Janet", :family_name => "Jones", :auto_counter_val => :new})
+      # for now, use the following form
+      @birth_name = @constellation.Name("Smith", :person_as_birth_name => ["Janet", "Jones", {:auto_counter_val => :new}])
+      @person = @birth_name.person_as_birth_name
+    end
 
-    acme.class.should == Mod::Company
-    acme.constellation.should == @constellation
-    acme.inspect.should =~ / in Conste/
-    acme.verbalise.should =~ /Company\(/
+    it "should create required instances" do
+      @person.should_not be_nil
+      @person.family_name.should == "Jones"
+      @person.name.should == "Janet"
+      @person.birth_name.should == "Smith"
+    end
 
-    fred_fly.class.should == Mod::Person
-    fred_fly.constellation.should == @constellation
-    fred_fly.inspect.should =~ / in Conste/
-    fred_fly.verbalise.should =~ /Person\(/
+    it "should initialise secondary supertypes" do
+      @acv = @person.auto_counter_val
+      @acv.should_not be_nil
+      @acv.surrogate.should == @person
+    end
   end
 
   it "should support population blocks" do
@@ -194,7 +236,7 @@ describe "A Constellation instance" do
       Company("Acme, Inc", :auto_counter_val => :new)
     end
     @constellation.Name.size.should == 5
-    @constellation.SurrogateId.size.should == 2
+    @constellation.Surrogate.size.should == 2
   end
 
   it "should verbalise itself" do
@@ -202,28 +244,31 @@ describe "A Constellation instance" do
       Name("bar")
       LegalEntity("foo")
       c = Company("Acme, Inc", :auto_counter_val => :new)
-      p = Person("Fred", "Nerk", :auto_counter_val => :new, :employer => c)
+      c.is_a?(Mod::Surrogate).should == true
+      c.auto_counter_val.should_not == nil
+      p = Person("Fred", "Nerk", :auto_counter_val => :new)
+      p.employer = c
       p.birth_name = "Nerk"
     end
     s = @constellation.verbalise
     names = s.split(/\n/).grep(/\tEvery /).map{|l| l.sub(/.*Every (.*):$/, '\1')}
-    expected = ["AutoCounterVal", "Company", "LegalEntity", "Name", "Person", "StringVal", "SurrogateId"]
+    expected = ["Company", "LegalEntity", "Name", "Person", "StringVal", "Surrogate"]
     names.sort.should == expected
   end
 
   it "should support string capitalisation functions" do
-    names = ["Company", "LegalEntity", "Name", "Person", "StringVal", "SurrogateId"]
+    names = ["Company", "LegalEntity", "Name", "Person", "StringVal", "Surrogate"]
     camelwords = names.map{|n| n.camelwords }
-    camelwords.should == [["Company"], ["Legal", "Entity"], ["Name"], ["Person"], ["String", "Val"], ["Surrogate", "Id"]]
+    camelwords.should == [["Company"], ["Legal", "Entity"], ["Name"], ["Person"], ["String", "Val"], ["Surrogate"]]
 
     snakes = names.map{|n| n.snakecase }
-    snakes.should == ["company", "legal_entity", "name", "person", "string_val", "surrogate_id"]
+    snakes.should == ["company", "legal_entity", "name", "person", "string_val", "surrogate"]
 
     camelupper = snakes.map{|n| n.camelcase }
-    camelupper.should == ["Company", "LegalEntity", "Name", "Person", "StringVal", "SurrogateId"]
+    camelupper.should == ["Company", "LegalEntity", "Name", "Person", "StringVal", "Surrogate"]
 
     camellower = snakes.map{|n| n.camelcase(:lower) }
-    camellower.should == ["company", "legalEntity", "name", "person", "stringVal", "surrogateId"]
+    camellower.should == ["company", "legalEntity", "name", "person", "stringVal", "surrogate"]
   end
 
   it "should allow inspection of instance indices" do
@@ -236,8 +281,8 @@ describe "A Constellation instance" do
     @constellation.Name.keys.sort.should == ["baz"]
 
     @constellation.StringVal.keys.sort.should == ["baz"]
-    @constellation.StringVal.include?(baz).should == baz
-    @constellation.StringVal.include?("baz").should == baz
+    @constellation.StringVal[baz].should == baz
+    @constellation.StringVal["baz"].should == baz
   end
 
   describe "instance indices" do
@@ -270,8 +315,8 @@ describe "A Constellation instance" do
     @constellation.LegalEntity.keys.sort.should include [name]
     @constellation.LegalEntity.keys.sort.should include [fred]
 
-    @constellation.SurrogateId.values.should include acme
-    @constellation.SurrogateId.values.should include fred_fly
+    @constellation.Surrogate.values.should include acme
+    @constellation.Surrogate.values.should include fred_fly
   end
 
   it "should handle one-to-ones correctly" do
@@ -286,23 +331,47 @@ describe "A Constellation instance" do
   end
 
   it "should allow retraction of instances" do
+    @constellation.Person
     person = @constellation.Person "Fred", "Smith", :auto_counter_val => :new, :birth_name => "Nerk"
+    smith = @constellation.Name("Smith")
 
-    @constellation.retract(@constellation.Name("Smith"))
+    # Check things are indexed properly:
+    @constellation.Surrogate.size.should == 1
+    @constellation.LegalEntity.size.should == 1
+    @constellation.Person.size.should == 1
+    person.family_name.should == smith
+    smith.all_person_as_family_name.size.should == 1
+
+    @constellation.retract(smith)
+
+    @constellation.Name["Fred"].should_not be_nil   # FamilyName is not mandatory, so Fred still exists
     @constellation.Name["Smith"].should be_nil
-    @constellation.Name["Fred"].should_not be_nil
+
+    @constellation.Surrogate.size.should == 1
+    @constellation.LegalEntity.size.should == 1
+    @constellation.Person.size.should == 1
 
     person.family_name.should be_nil
-    @constellation.retract(@constellation.Name("Fred"))
-    @constellation.Name["Fred"].should be_nil
+
+    smith.all_person_as_family_name.size.should == 0
   end
 
   it "should retract linked instances (cascading)" do
-    @constellation.Person "Fred", "Smith", :auto_counter_val => :new, :birth_name => "Nerk"
-    @constellation.Person "George", "Smith", :auto_counter_val => :new, :birth_name => "Patrick"
+    fred = @constellation.Person "Fred", "Smith", :auto_counter_val => :new, :birth_name => "Nerk"
+    george = @constellation.Person "George", "Smith", :auto_counter_val => :new, :birth_name => "Patrick"
+    smith = @constellation.Name("Smith")
+
     @constellation.Person.size.should == 2
-    @constellation.retract(@constellation.Name("Smith"))
-    @constellation.Person.size.should == 0
+    fred.family_name.should == smith
+    george.family_name.should == smith
+    smith.all_person_as_family_name.size.should == 2
+
+    @constellation.retract(fred)
+
+    @constellation.Person.size.should == 1	  # Fred is gone, George still exists
+    @constellation.Person.values[0].name.should == 'George'
+    fred.family_name.should be_nil
+    smith.all_person_as_family_name.size.should == 1
   end
 
   it "should fail to recognise references to unresolved forward referenced classes" do
@@ -310,7 +379,7 @@ describe "A Constellation instance" do
       class Foo
         identified_by :name
         one_to_one :name
-        has_one :bar
+        has_one :not_yet
         has_one :baz, :class => "BAZ"
       end
 
@@ -322,7 +391,7 @@ describe "A Constellation instance" do
     @c = ActiveFacts::API::Constellation.new(Mod2)
     le = @c.Foo("Foo")
     lambda {
-      le.bar
+      le.not_yet
     }.should raise_error(NoMethodError)
     lambda {
       le.baz
@@ -330,7 +399,7 @@ describe "A Constellation instance" do
 
     # Now define the classes and try again:
     module Mod2
-      class Bar < String
+      class NotYet < String
         value_type
       end
       class BAZ < String
@@ -338,8 +407,8 @@ describe "A Constellation instance" do
       end
     end
     lambda {
-      le.bar
-      le.bar = 'bar'
+      le.not_yet
+      le.not_yet = 'not_yet'
     }.should_not raise_error
     lambda {
       le.baz
@@ -448,21 +517,10 @@ describe "A Constellation instance" do
     }.should raise_error
   end
 
-  it "should complain when role name and counter part mismatch" do
-    lambda {
-      module Mod
-        class CompanyName
-          identified_by :name
-          has_one :company, :class => :person
-        end
-      end
-    }.should raise_error(Exception, /indicates a different counterpart object_type/)
-  end
-
   it "should error on invalid :class values" do
     lambda {
       module Mod
-        class SurrogateId
+        class Surrogate
           has_one :Name, :class => 3
         end
       end
@@ -472,7 +530,7 @@ describe "A Constellation instance" do
   it "should error on misleading :class values" do
     lambda {
       module Mod
-        class SurrogateId
+        class Surrogate
           has_one :Name, :class => Extra
         end
       end
@@ -496,12 +554,24 @@ describe "A Constellation instance" do
     }.should_not raise_error
   end
 
-  it "should allow cross-constellation assignment" do
+  it "should copy values during cross-constellation assignment" do
     c = @constellation.Company("foo", :auto_counter_val => 23)
+
+    # Now make a new constellation and use the above values to initialise new instances
+    p = nil
     lambda {
       c2 = ActiveFacts::API::Constellation.new(Mod)
       p = c2.Person('Fred', 'Smith', :auto_counter_val => :new)
-      p.employer = [c, {:auto_counter_val => :new}]
+      p.employer = [ c.name, {:auto_counter_val => c.auto_counter_val}]
     }.should_not raise_error
+    c.auto_counter_val.should_not === p.employer.auto_counter_val
+    c.auto_counter_val.should_not == p.employer.auto_counter_val
+    c.auto_counter_val.to_s.should == p.employer.auto_counter_val.to_s
+    p.employer.should_not === c
+
+    lambda {
+      # Disallowed because it re-assigns the auto_counter_val identification value
+      p.employer = [ "foo", {:auto_counter_val => :new}]
+    }.should raise_error
   end
 end

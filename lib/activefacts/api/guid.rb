@@ -1,5 +1,4 @@
 require 'delegate'
-require 'date'
 require 'securerandom'
 
 unless defined? SecureRandom.uuid
@@ -30,6 +29,10 @@ class Guid
     @value == value
   end
 
+  def == value
+    @value == value.to_s
+  end
+
   def inspect
     "\#<Guid #{@value}>"
   end
@@ -41,17 +44,5 @@ class Guid
   def eql?(o)                           #:nodoc:
     to_s.eql?(o.to_s)
   end
-
-#  def self.inherited(other)             #:nodoc:
-#    def other.identifying_role_values(*args)
-#      return nil if args == [:new]  # A new object has no identifying_role_values
-#      if args.size == 1
-#        return args[0] if args[0].is_a?(AutoCounter)
-#        return args[0].send(self.basename.snakecase.to_sym) if args[0].respond_to?(self.basename.snakecase.to_sym)
-#      end
-#      return new(*args)
-#    end
-#    super
-#  end
 
 end

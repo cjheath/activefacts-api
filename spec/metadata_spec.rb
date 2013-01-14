@@ -9,14 +9,14 @@ describe "In a vocabulary" do
     Object.send :remove_const, :Mod if Object.const_defined?("Mod")
     module Mod
     end
-    # @constellation = ActiveFacts::API::Constellation.new(Mod)
+    @constellation = ActiveFacts::API::Constellation.new(Mod)
   end
 
   ObjectType_methods = [
-    :has_one, :is_a?, :maybe, :one_to_one,
+    :has_one, :maybe, :one_to_one,
     :roles, :subtypes, :supertypes, :vocabulary,
     # To make private:
-    :detect_fact_type_collision, :realise_role, :supertypes_transitive,
+    :check_identifying_role_has_valid_cardinality, :realise_role, :supertypes_transitive,
   ]
 
   ValueType_methods = [
@@ -25,12 +25,10 @@ describe "In a vocabulary" do
   ]
 
   Instance_methods = [
-    :constellation, :retract,
-    # To make private:
-    :constellation=,
+    :constellation, :retract, :is_a?,
     # To remove or move to EntityType
-    :related_entities, :detect_inconsistencies, :duplicate_identifying_values?,
-    :instance_index, :instance_index_counterpart, :is_identified_by?, :is_unique?,
+    :related_entities, :check_value_change_legality,
+    :instance_index
   ]
   Value_methods = Instance_methods + [
     :verbalise, :identifying_role_values
@@ -42,7 +40,7 @@ describe "In a vocabulary" do
     :index_instance, :inherited,
     :verbalise,
     # To make private:
-    :assign_additional_roles,
+    :check_no_supertype_instance_exists, :check_supertype_identifiers_match,
     :identification_inherited_from, :identification_inherited_from=,
     :find_inherited_role,
     :overrides_identification_of, :overrides_identification_of=,
@@ -53,11 +51,12 @@ describe "In a vocabulary" do
   Entity_methods = Instance_methods + [
     :verbalise, :identifying_role_values,
     # To remove hide or rewrite:
-    :identity_by, :identity_as_hash, :settable_roles, :settable_roles_exception,
+    :identity_by, :identity_as_hash
   ]
 
   Cases =
-    ValueClasses.map do |klass| # [String, Date, DateTime, Time, Int, Real, AutoCounter, Decimal, Guid]
+    ValueClasses.map do |klass| # [String, Date, DateTime, Int, Real, AutoCounter, Decimal, Guid]
+      x=
       { :name => "a #{klass}",
 	:definition => %Q{
 	  class T < #{klass}
@@ -69,17 +68,21 @@ describe "In a vocabulary" do
 	:instance_methods => Value_methods,
 	:constructor_args => Array(
 	  case klass.name
-	  when /String/; 'foo'
-	  when /DateTime/; [2008, 04, 20, 10, 28, 14]
-	  when /Date\E/; '2012-12-11'
-	  when /Time*/; nil
-	  when /Int/; 23
-	  when /Real/; 23.45
-	  when /AutoCounter/, /Guid/; :new
-	  when /Decimal/; '12345.5678'
+	  when 'String'; 'foo'
+	  when 'DateTime'; [2008, 04, 20, 10, 28, 14]
+	  when 'Date'; '2012-12-11'
+	  when 'Time'; [2008, 04, 20, 10, 28, 14]
+	  when 'Int'; 23
+	  when 'Real'; 23.45
+	  when 'AutoCounter', 'Guid'; :new
+	  when 'Decimal'; '12345.5678'
+	  else
+	    raise "Please define constructor args for #{klass}"
 	  end
 	).compact
       }
+      debugger if x[:constructor_args].empty?
+      x
     end + [
       { :name => "a Value Sub Type",
 	:definition => %q{
@@ -219,22 +222,39 @@ describe "In a vocabulary" do
 	end
       end
 
+      describe "when instantiated" do
+	before :each do
+	  @instance = @constellation.T(*constructor_args)
+	end
+
+	it "should be ok" do
+	  @instance.should_not be_nil
+	end
+
+	if @instance
+	end
+      end
+
       describe "An instance of #{case_name}" do
 	before :each do
-	  v = Mod::T.new(*constructor_args)
-	  all_T_instance_methods = v.methods.select{|m| v.method(m).inspect =~ /ActiveFacts/}.map(&:to_s).sort
-	  @instance_methods = (all_T_instance_methods-''.methods).map(&:to_s).sort
+	  @v = @constellation.T(*constructor_args)
+	  all_T_instance_methods = @v.methods.select do |m|
+	      i = @v.method(m).inspect
+	      i =~ /ActiveFacts/ || i =~ /identifying_role_values/
+	    end.sort.map(&:to_sym)
+	  @actual_instance_methods = all_T_instance_methods
 	end
 
 	it "should have the appropriate instance methods" do
-	  # @instance_methods.should == instance_methods.map(&:to_s).sort
+	  # @actual_instance_methods.should == instance_methods.map(&:to_s).sort
 	  # Weaken our expectation to just that nothing should be missing (extra methods are ok)
-	  (instance_methods.map(&:to_s) - @instance_methods).should == []
+	  missing_methods = instance_methods - @actual_instance_methods
+	  missing_methods.should == []
 	end
 
 	instance_methods.each do |m|
 	  it "should respond to #{case_name}\##{m}" do
-	    v = Mod::T.new(*constructor_args)
+	    v = @constellation.T(*constructor_args)
 	    v.should respond_to(m)
 	    if Instance_methods.include?(m)
 	      v.method(m).inspect.should =~ /Mod::T(#[a-z_0-9]*[?=]? )?\((defined in )?ActiveFacts::API::Instance[) ]/

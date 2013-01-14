@@ -51,7 +51,7 @@ describe "identity" do
       end
 
       it "should be denied" do
-        @change.should raise_error(DuplicateIdentifyingValueException)
+        @change.should raise_error(TypeMigrationException)
       end
 
       it "should not change instance subtype" do
@@ -61,13 +61,13 @@ describe "identity" do
       it "should have no side-effects" do
         begin
           @change.call
-        rescue DuplicateIdentifyingValueException => e
+        rescue TypeMigrationException => e
+	  # Now check that no unexpected change occurred
         end
 
         @p2.should be_nil
         @c1.Name.values.should =~ [@juliar, @tony]
         @c1.Name.keys.should =~ [@juliar, @tony]
-        pending "This functionality was poorly implemented and has been temporarily switched off"
         @c1.TFN.keys.should =~ [123]
         @c1.Person.values.should =~ [@p1, @p3]
         @c1.Person.keys.should =~ [[@juliar],[@tony]]
@@ -78,7 +78,7 @@ describe "identity" do
         @p2_tfn = @c1.TFN(789)
         begin
           @change.call
-        rescue DuplicateIdentifyingValueException => e
+        rescue TypeMigrationException => e
         end
 
         @c1.TFN.keys.should =~ [123, 789]

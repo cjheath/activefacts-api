@@ -42,6 +42,7 @@ describe "An Entity Type" do
 
     describe "when asserted" do
       before :each do
+        @bus = @c.Business
         @bus = @c.Business('Acme')
         @acme = @c.Name['Acme']
       end

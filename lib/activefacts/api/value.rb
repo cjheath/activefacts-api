@@ -6,6 +6,7 @@
 #
 # The methods of this module are added to Value type classes.
 #
+
 module ActiveFacts
   module API
 
@@ -15,14 +16,9 @@ module ActiveFacts
 
       # Value instance methods:
       def initialize(*args) #:nodoc:
-        hash = args[-1].is_a?(Hash) ? args.pop.clone : nil
+        arg_hash = args[-1].is_a?(Hash) ? args.pop.clone : nil
 
         super(args)
-
-        (hash ? hash.entries : []).each do |role_name, value|
-          role = self.class.roles(role_name)
-          send(role.setter, value)
-        end
       end
 
       # verbalise this Value
@@ -31,7 +27,9 @@ module ActiveFacts
       end
 
       # A value is its own key, unless it's a delegate for a raw value
-      def identifying_role_values #:nodoc:
+      def identifying_role_values(klass = nil) #:nodoc:
+	# The identifying role value for the supertype of a value type is always the same as for the subtype:
+	# raise "Value Types cannot return identifying_role_values for supertypes" if klass and klass != self.class
         __getobj__ rescue self
       end
 
@@ -75,47 +73,58 @@ module ActiveFacts
           "#{basename} = #{superclass.basename}();"
         end
 
-        def identifying_role_values(*args)  #:nodoc:
-	  if s = (super rescue nil)
-	    return s  # The superclass knows how to do this, don't default
-	  end
-          # If the single arg is the correct class or a subclass, use it directly
-          if (args.size == 1 and (arg = args[0]).is_a?(self))   # No secondary supertypes allowed for value types
-            return arg.identifying_role_values
+        def identifying_role_values(constellation, args)   #:nodoc:
+	  # Normalise positional arguments into an arguments hash (this changes the passed parameter)
+	  arg_hash = args[-1].is_a?(Hash) ? args.pop : {}
+
+          # If a single arg is already the correct class or a subclass,
+	  # use it directly, otherwise create one.
+	  # This appears to be the only way to handle e.g. Date correctly
+          unless args.size == 1 and instance = args[0] and instance.is_a?(self)
+	    instance = new_instance(constellation, *args)
           end
-          new(*args).identifying_role_values
+	  args.replace([arg_hash])
+	  instance.identifying_role_values
         end
 
-        def assert_instance(constellation, args)  #:nodoc:
-          # Build the key for this instance from the args
-          # The key of an instance is the value or array of keys of the identifying values.
-          # The key values aren't necessarily present in the constellation, even after this.
-          key = identifying_role_values(*args)
+	def assert_instance(constellation, args)
+	  new_identifier = args == [:new]
+	  key = identifying_role_values(constellation, args)
+	  # args are now normalized to an array containing a single Hash element
+	  arg_hash = args[0]
 
-          # Find and return an existing instance matching this key
-          instances = constellation.instances[self]   # All instances of this class in this constellation
-          instance = instances[key]
-          return instance, key if instance      # A matching instance of this class
+	  if new_identifier
+	    instance = key  # AutoCounter is its own key
+	  else
+	    instance_index = constellation.instances[self]
+	    unless instance = constellation.has_candidate(self, key) || instance_index[key]
+	      instance = new_instance(constellation, key)
+	      constellation.candidate(instance)
+	    end
+	  end
 
-          #trace :assert, "Constructing new #{self} with #{args.inspect}" do
-            instance = new(*args)
-          #end
+	  # Assign any extra roles that may have been passed.
+	  # An exception here leaves the object as a candidate,
+	  # but without the offending role (re-)assigned.
+	  arg_hash.each do |k, v|
+	    instance.send(:"#{k}=", v)
+	  end
 
-          instance.constellation = constellation
-          return *index_instance(instance)
-        end
+	  instance
+	end
 
-        def index_instance(instance, key = nil, key_roles = nil) #:nodoc:
-          instances = instance.constellation.instances[self]
+        def index_instance(constellation, instance) #:nodoc:
+	  # Index the instance in the constellation's InstanceIndex for this class:
+          instances = constellation.instances[self]
           key = instance.identifying_role_values
           instances[key] = instance
 
           # Index the instance for each supertype:
           supertypes.each do |supertype|
-            supertype.index_instance(instance, key)
+            supertype.index_instance(constellation, instance)
           end
 
-          return instance, key
+          instance
         end
 
         def inherited(other)  #:nodoc:
@@ -126,15 +135,26 @@ module ActiveFacts
         end
       end
 
-      def self.included other #:nodoc:
-        other.send :extend, ClassMethods
+      def self.included klass #:nodoc:
+        klass.send :extend, ClassMethods
+
+        if !klass.respond_to?(:new_instance)
+          class << klass
+            def new_instance constellation, *args
+              instance = allocate
+              instance.instance_variable_set("@constellation", constellation)
+              instance.send(:initialize, *args)
+              instance
+            end
+          end
+        end
 
         # Register ourselves with the parent module, which has become a Vocabulary:
-        vocabulary = other.modspace
+        vocabulary = klass.modspace
         unless vocabulary.respond_to? :object_type  # Extend module with Vocabulary if necessary
           vocabulary.send :extend, Vocabulary
         end
-        vocabulary.__add_object_type(other)
+        vocabulary.__add_object_type(klass)
       end
     end
   end

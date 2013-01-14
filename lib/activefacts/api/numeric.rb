@@ -1,6 +1,6 @@
 #
 #       ActiveFacts Runtime API
-#       Numeric and Date delegates and hacks to handle immediate types.
+#       Numeric delegates and hacks to handle immediate types.
 #
 # Copyright (c) 2009 Clifford Heath. Read the LICENSE file.
 #
@@ -9,7 +9,6 @@
 # Date and DateTime don't have a sensible new() method, so we monkey-patch one here.
 #
 require 'delegate'
-require 'date'
 require 'bigdecimal'
 
 module ActiveFacts
@@ -36,9 +35,9 @@ module ActiveFacts
         __getobj__.to_s *a
       end
 
-#      def to_json(*a)                       #:nodoc:
-#        __getobj__.to_s
-#      end
+      def to_json(*a)                       #:nodoc:
+        __getobj__.to_s
+      end
 
       def hash                              #:nodoc:
         __getobj__.hash
@@ -89,57 +88,50 @@ class Real < SimpleDelegator
   end
 end
 
-# A Date can be constructed from any Date subclass, not just using the normal date constructors.
-class ::Date
-  class << self; alias_method :old_new, :new end
-  # Date.new cannot normally be called passing a Date as the parameter. This allows that.
-  def self.new(*a, &b)
-    if (a.size == 1 && a[0].is_a?(Date))
-      a = a[0]
-      civil(a.year, a.month, a.day, a.start)
-    elsif (a.size == 1 && a[0].is_a?(String))
-      parse(a[0])
-    else
-      a = [] if a == [nil]
-      civil(*a, &b)
-    end
-  end
-end
-
-# A DateTime can be constructed from any Date or DateTime subclass
-class ::DateTime
-  class << self; alias_method :old_new, :new end
-  # DateTime.new cannot normally be called passing a Date or DateTime as the parameter. This allows that.
-  def self.new(*a, &b)
-    if (a.size == 1)
-      a = a[0]
-      if (DateTime === a)
-        civil(a.year, a.month, a.day, a.hour, a.min, a.sec, a.start)
-      elsif (Date === a)
-        civil(a.year, a.month, a.day, 0, 0, 0, a.start)
-      else
-        civil(*a, &b)
-      end
-    else
-      civil(*a, &b)
-    end
-  end
-end
-
 # The AutoCounter class is an integer, but only after the value
 # has been established in the database.
 # Construct it with the value :new to get an uncommitted value.
 # You can use this new instance as a value of any role of this type, including to identify an entity instance.
 # The assigned value will be filled out everywhere it needs to be, upon save.
+module ActiveFacts
+  module AutoCounterClass
+    def identifying_role_values(constellation, args)
+      arg_hash = args[-1].is_a?(Hash) ? args.pop : {}
+      n = 
+	case
+	when args == [:new]	# A new object has no identifying_role_values
+	  :new
+	when args.size == 1 && args[0].is_a?(AutoCounter)
+	  args[0]		# An AutoCounter is its own key
+	else
+	  new(*args)
+	end
+      args.replace([arg_hash])
+      n
+    end
+  end
+end
+
 class AutoCounter
+  attr_reader :place_holder_number
   def initialize(i = :new)
-    raise "AutoCounter #{self.class} may not be #{i.inspect}" unless i == :new or i.is_a?(Integer) or i.is_a?(AutoCounter)
-    @@placeholder ||= 0
-    if i == :new
+    unless i == :new or i.is_a?(Integer) or i.is_a?(AutoCounter)
+      raise "AutoCounter #{self.class} may not be #{i.inspect}"
+    end
+    @@place_holder ||= 0
+    case i
+    when :new
       @value = nil
-      @initially = (@@placeholder+=1)
+      @place_holder_number = (@@place_holder+=1)
+    when AutoCounter
+      if i.defined?
+	@value = i.to_i
+      else
+	@place_holder_number = i.place_holder_number
+	@value = nil
+      end
     else
-      @initially = @value = i.to_i;
+      @place_holder_number = @value = i.to_i;
     end
   end
 
@@ -158,7 +150,7 @@ class AutoCounter
     if self.defined?
       @value.to_s 
     else
-      "new_#{@initially}"
+      "new_#{@place_holder_number}"
     end
   end
 
@@ -169,13 +161,17 @@ class AutoCounter
 
   # An AutoCounter may only be used in numeric expressions after a definite value has been assigned
   def to_i
-    raise ArgumentError, "Illegal attempt to get integer value of an uncommitted AutoCounter" unless @value
+    unless @value
+      raise ArgumentError, "Illegal attempt to get integer value of an uncommitted AutoCounter"
+    end
     @value
   end
 
   # Coerce "i" to be of the same type as self
   def coerce(i)
-    raise ArgumentError, "Illegal attempt to use the value of an uncommitted AutoCounter" unless @value
+    unless @value
+      raise ArgumentError, "Illegal attempt to use the value of an uncommitted AutoCounter"
+    end
     [ i.to_i, @value ]
   end
 
@@ -187,7 +183,7 @@ class AutoCounter
     if self.defined?
       @value.hash
     else
-      0
+      @place_holder_number
     end
   end
 
@@ -195,25 +191,16 @@ class AutoCounter
     to_s.eql?(o.to_s)
   end
 
-  def self.identifying_role_values(*args)
-    return nil if args == [:new]  # A new object has no identifying_role_values
-    if args.size == 1
-      return args[0] if args[0].is_a?(AutoCounter)
-      if args[0].class.is_entity_type
-	# REVISIT: Crazy hack to temporarily work around Vincent's breakage.
-	# If passed an entity type, and it or any supertype has a single identifying role which is an AutoCounter, use that value
-	irv = nil
-	([args[0].class]+args[0].class.supertypes_transitive).
-	  detect{|t|
-	    r = t.identifying_roles
-	    r.size == 1 and
-	      r[0].counterpart.object_type.ancestors.include?(AutoCounter) and
-	      irv = args[0].send(r[0].getter)
-	  }
-	return irv
-      end
+  def identifying_role_values
+    self
+  end
+
+#  extend ActiveFacts::AutoCounterClass
+  def self.inherited(other)             #:nodoc:
+    other.class_eval do
+      extend ActiveFacts::AutoCounterClass
     end
-    return new(*args)
+    super
   end
 
   def clone

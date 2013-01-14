@@ -22,9 +22,8 @@ module TestMultiPartIdentifierModule
 end
 
 describe "Multi-part identifiers" do
-  include ActiveFacts::API
   before :each do
-    @c = Constellation.new(TestMultiPartIdentifierModule)
+    @c = ActiveFacts::API::Constellation.new(TestMultiPartIdentifierModule)
     @p = @c.Parent(:new)
     @c0 = @c.Child(@p, 0)
     @c2 = @c.Child(@p, 2)
