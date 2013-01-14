@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "activefacts-api"
-  s.version = "0.9.3"
+  s.version = "0.9.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Clifford Heath"]
-  s.date = "2012-11-01"
+  s.date = "2013-01-14"
   s.description = "\nThe ActiveFacts API is a Ruby DSL for managing constellations of elementary facts.\nEach fact is either existential (a value or an entity), characteristic (boolean) or\nbinary relational (A rel B). Relational facts are consistently co-referenced, so you\ncan traverse them efficiently in any direction. Each constellation maintains constraints\nover the fact population.\n"
   s.email = "clifford.heath@gmail.com"
   s.extra_rdoc_files = [
@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
     "activefacts-api.gemspec",
     "lib/activefacts/api.rb",
     "lib/activefacts/api/constellation.rb",
+    "lib/activefacts/api/date.rb",
     "lib/activefacts/api/entity.rb",
     "lib/activefacts/api/exceptions.rb",
     "lib/activefacts/api/guid.rb",
@@ -52,6 +53,7 @@ Gem::Specification.new do |s|
     "spec/identification_scheme/identification_spec.rb",
     "spec/identification_scheme/identity_change_spec.rb",
     "spec/identification_scheme/identity_supertype_change_spec.rb",
+    "spec/metadata_spec.rb",
     "spec/object_type/entity_type/entity_type_spec.rb",
     "spec/object_type/entity_type/multipart_identification_spec.rb",
     "spec/object_type/value_type/autocounter_spec.rb",
