@@ -171,7 +171,7 @@ describe "An instance of every type of ObjectType" do
     @test_by_date_time_entity = @constellation.TestByDateTimeEntity(@test_by_date_time)
     @test_by_decimal_entity = @constellation.TestByDecimalEntity(@test_by_decimal)
     @test_by_guid_entity = @constellation.TestByGuidEntity(@test_by_guid)
-    @constellation.TestByGuidEntity[[@test_by_guid]].should_not be_nil
+    @constellation.TestByGuidEntity[[@test_by_guid.identifying_role_values]].should_not be_nil
 
     # Entity subtypes
     @test_sub_by_int = @constellation.TestSubByInt(2*2)

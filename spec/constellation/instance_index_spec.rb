@@ -51,7 +51,7 @@ describe ActiveFacts::API::InstanceIndex do
 
   describe "#flatten_key" do
     it "should use identifying role values when using an entity type" do
-      @constellation.EntityA[@a].should == @a
+      @constellation.EntityA[@a.identifying_role_values].should == @a
     end
 
     it "should recursively try to use identifying role values within an array" do

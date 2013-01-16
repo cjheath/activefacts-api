@@ -4,7 +4,6 @@
 #
 # Copyright (c) 2009 Clifford Heath. Read the LICENSE file.
 #
-
 require 'forwardable'
 
 module ActiveFacts
@@ -35,27 +34,16 @@ module ActiveFacts
       end
 
       def []=(key, value)   #:nodoc:
-        @hash[flatten_key(key)] = value
+        @hash[key] = value
       end
 
       def [](key)
-        @hash[flatten_key(key)]
+        @hash[key]
       end
 
       def refresh_key(key)
         value = @hash.delete(key)
         @hash[value.identifying_role_values] = value if value
-      end
-
-      private
-      def flatten_key(key)
-        if key.is_a?(Array)
-          key.map { |identifier| flatten_key(identifier) }
-        elsif key.respond_to?(:identifying_role_values)
-          key.identifying_role_values
-        else
-          key
-        end
       end
     end
   end

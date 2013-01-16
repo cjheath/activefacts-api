@@ -46,7 +46,7 @@ module ActiveFacts
 	  if last_irns != irns
 	    last_identity = identifying_role_values(klass)
 	    role_position = irns.index(role.name)
-	    last_identity[role_position] = value
+	    last_identity[role_position] = value.identifying_role_values
 	  end
 	  @constellation.instances[klass][last_identity]
         end

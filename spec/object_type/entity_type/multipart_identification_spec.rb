@@ -31,9 +31,10 @@ describe "Multi-part identifiers" do
   end
 
   it "should allow children to be found in the instance index" do
-    @c.Child[[@p, 0]].should == @c0
-    @c.Child[[@p, 1]].should == @c1
-    @c.Child[[@p, 2]].should == @c2
+    pv = @p.identifying_role_values
+    @c.Child[[pv, 0]].should == @c0
+    @c.Child[[pv, 1]].should == @c1
+    @c.Child[[pv, 2]].should == @c2
   end
 
   it "should sort child keys in the instance index" do

@@ -205,7 +205,7 @@ module ActiveFacts
 	      next if existing_value == new_key	  # This can happen when the counterpart is a value type
 
 	      existing_key = existing_value.identifying_role_values
-	      next if existing_key.identifying_role_values == new_key
+	      next if existing_key == new_key
 	      raise TypeConflictException.new(basename, supertype, new_key, existing_key)
 	    end
 	  end
@@ -266,7 +266,8 @@ module ActiveFacts
 	      end
 	    elsif proto
 	      value = proto.send(n)
-	      arg_hash[n] = value.identifying_role_values # Save the value for making a new instance
+	      value = value.identifying_role_values
+	      arg_hash[n] = value # Save the value for making a new instance
 	      next value if (role.is_unary)
 	    else
 	      value = nil
