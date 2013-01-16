@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "activefacts-api"
-  s.version = "0.9.4"
+  s.version = "0.9.5"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Clifford Heath"]
-  s.date = "2013-01-14"
+  s.date = "2013-01-16"
   s.description = "\nThe ActiveFacts API is a Ruby DSL for managing constellations of elementary facts.\nEach fact is either existential (a value or an entity), characteristic (boolean) or\nbinary relational (A rel B). Relational facts are consistently co-referenced, so you\ncan traverse them efficiently in any direction. Each constellation maintains constraints\nover the fact population.\n"
   s.email = "clifford.heath@gmail.com"
   s.extra_rdoc_files = [
