@@ -30,7 +30,7 @@ module ActiveFacts
       def identifying_role_values(klass = nil) #:nodoc:
 	# The identifying role value for the supertype of a value type is always the same as for the subtype:
 	# raise "Value Types cannot return identifying_role_values for supertypes" if klass and klass != self.class
-        __getobj__ rescue self
+	respond_to?(:__getobj__) ? __getobj__ : self
       end
 
       # All ValueType classes include the methods defined here

@@ -32,11 +32,15 @@ module ActiveFacts
           __bind(camel)
           c
         else
-          begin
-            const_get(camel)
-          rescue NameError
-            nil
-          end
+	  if defined?(camel)
+	    begin
+	      const_get(camel)
+	    rescue NameError
+	      nil
+	    end
+	  else
+	    nil
+	  end
         end
       end
 

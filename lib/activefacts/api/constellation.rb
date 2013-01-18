@@ -34,8 +34,17 @@ module ActiveFacts
     class Constellation
       attr_reader :vocabulary
 
-      def valid_object_type klass
-	klass.is_a?(Class) and klass.modspace == @vocabulary and klass.respond_to?(:assert_instance)
+      def invalid_object_type klass
+	case
+	when !klass.is_a?(Class)
+	  'is not a Class'
+	when klass.modspace != @vocabulary
+	  "is defined in #{klass.modspace}, not #{@vocabulary.name}"
+	when !klass.respond_to?(:assert_instance)
+	  "is not declared as an object type"
+	else
+	  nil
+	end
       end
 
       # "instances" is an index (keyed by the Class object) of indexes to instances.
@@ -43,8 +52,8 @@ module ActiveFacts
       # The method_missing definition supports the syntax: c.MyClass.each{|k, v| ... }
       def instances
 	@instances ||= Hash.new do |h,k|
-	    unless valid_object_type k
-	      raise "A constellation over #{@vocabulary.name} can only index instances of classes in that vocabulary, not #{k.inspect}"
+	    if reason = invalid_object_type(k)
+	      raise "A constellation over #{@vocabulary.name} cannot index instances of #{k} because it #{reason}"
 	    end
 	    h[k] = InstanceIndex.new(self, k)
 	  end
@@ -155,11 +164,11 @@ module ActiveFacts
       # With parameters, assert an instance of the object_type identified by the values passed as args.
       def method_missing(m, *args, &b)
         klass = @vocabulary.const_get(m)
-	if valid_object_type klass
+	if invalid_object_type klass
+	  super
+        else
 	  define_class_accessor m, klass
           send(m, *args, &b)
-        else
-          super
         end
       end
 
@@ -188,9 +197,9 @@ module ActiveFacts
                     role_values = 
                       single_roles.map{|role|
 			  value =
-			    begin
+			    if instance.respond_to?(role)
 			      value = instance.send(role)
-			    rescue NoMethodError
+			    else
 			      instance.class.roles(role) # This role has not yet been realised
 			    end
 			  [ role_name = role.to_s.camelcase, value ]

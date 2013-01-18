@@ -84,8 +84,8 @@ describe "A Constellation instance" do
 
   it "should complain when accessing a class that isn't an object type" do
     class Mod::Bar; end
-    lambda { @constellation.Bar }.should raise_error
-    lambda { @constellation.instances.Bar }.should raise_error
+    proc { @constellation.Bar }.should raise_error
+    proc { @constellation.instances[Mod::Bar] }.should raise_error
   end
 
   it "should deny handling an object type defined outside the current module" do
@@ -200,7 +200,7 @@ describe "A Constellation instance" do
 
   it "Should raise an exception with assigning a role whose referent (object type) has not yet been defined" do
     n = @constellation.Name("Fred")
-    # This does n;t raise the "settable_roles_exception". I'm no longer sure how I did this, so I can't get coverage on this code :(
+    # This does not raise the "settable_roles_exception". I'm no longer sure how I did this, so I can't get coverage on this code :(
     proc { n.undefined_role = 'foo' }.should raise_error
   end
 
