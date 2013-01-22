@@ -252,7 +252,11 @@ module ActiveFacts
       def define_one_to_one_accessor(role)
         define_single_role_getter(role)
 
-	define_method role.setter do |value, mutual_propagation = true|
+	# What I want is the following, but it doesn't work in Ruby 1.8
+	# define_method role.setter do |value, mutual_propagation = true|
+	define_method role.setter do |*a|
+	  value, mutual_propagation = *a
+	  mutual_propagation = true if a.size < 2
 	  role_var = role.variable
 
 	  # Get old value, and jump out early if it's unchanged:
@@ -291,7 +295,11 @@ module ActiveFacts
       def define_one_to_many_accessor(role)
         define_single_role_getter(role)
 
-	define_method role.setter do |value, mutual_propagation = true|
+	# What I want is the following, but it doesn't work in Ruby 1.8
+	# define_method role.setter do |value, mutual_propagation = true|
+	define_method role.setter do |*a|
+	  value, mutual_propagation = *a
+	  mutual_propagation = true if a.size < 2
 	  role_var = role.variable
 
 	  # Get old value, and jump out early if it's unchanged:
