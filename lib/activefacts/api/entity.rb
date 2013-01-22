@@ -26,7 +26,7 @@ module ActiveFacts
       # The identifying roles of secondary supertypes must also be assigned
       # here.
       def initialize(arg_hash)
-	raise "REVISIT: Unexpected parameters in call to #{self}.new" unless arg_hash.is_a?(Hash)
+	raise ArgumentError.new("#{self}.new expects a hash. You should use assert instead anyhow") unless arg_hash.is_a?(Hash)
 
         super(arg_hash)
 
@@ -300,7 +300,7 @@ module ActiveFacts
 
 	  # Complain if we have left-over arguments
 	  if args.size > 0
-            raise "#{basename} expects only (#{irns*', '}) for its identifier, but you provided additional values #{args.inspect}"
+            raise UnexpectedIdentifyingValueException.new(self, irns, args)
 	  end
 
 	  # The arg_hash will be used to construct a new instance, if necessary
@@ -391,7 +391,7 @@ module ActiveFacts
         # which is a list of roles it plays. The identification scheme may be
         # inherited from a superclass.
         def identified_by(*args) #:nodoc:
-          raise "You must list the roles which will identify #{self.basename}" unless args.size > 0
+          raise MissingIdentificationException.new(self) unless args.size > 0
 
           # Catch the case where we state the same identification as our superclass:
           inherited_role_names = identifying_role_names

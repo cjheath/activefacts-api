@@ -16,7 +16,7 @@ class Guid
     elsif (v = i.to_s).length == 36 and !(v !~ /[^0-9a-f]/i)
       @value = v.clone.freeze
     else
-      raise "Illegal non-Guid value #{i.inspect} given for Guid"
+      raise ArgumentError.new("Illegal non-Guid value #{i.inspect} given for Guid")
     end
   end
 

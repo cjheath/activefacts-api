@@ -447,7 +447,7 @@ describe "A Constellation instance" do
           supertypes Bignum
         end
       end
-    }.should raise_error(RuntimeError)
+    }.should raise_error(ActiveFacts::API::InvalidSupertypeException)
 
     lambda {
       module Mod
@@ -455,7 +455,7 @@ describe "A Constellation instance" do
           supertypes 3
         end
       end
-    }.should raise_error(RuntimeError)
+    }.should raise_error(ActiveFacts::API::InvalidSupertypeException)
   end
 
   it "should allow supertypes with supertypes" do

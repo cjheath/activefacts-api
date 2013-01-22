@@ -100,11 +100,11 @@ module ActiveFacts
           case type
           when :has_one
             if identifying_role_names.size == 1
-              raise "Entity type #{self} cannot be identified by a single role '#{role}' unless that role is one_to_one"
+	      raise InvalidIdentificationException.new(self, role, true)
             end
           when :one_to_one
             if identifying_role_names.size > 1
-              raise "Entity type #{self} cannot be identified by a single role '#{role}' unless that role is has_one"
+	      raise InvalidIdentificationException.new(self, role, false)
             end
           end
         end
@@ -129,12 +129,14 @@ module ActiveFacts
 	      # No late binding here:
 	      (object_type = vocabulary.const_get(object_type.to_s.camelcase))
 	    else
-	      raise "Illegal supertype #{object_type.inspect} for #{self.class.basename}"
+	      raise InvalidSupertypeException.new("Illegal supertype #{object_type.inspect} for #{self.class.basename}")
 	    end
-	  raise "#{supertype.name} must be an object type in #{vocabulary.name}" unless supertype.respond_to?(:vocabulary) and supertype.vocabulary == self.vocabulary
+	  unless supertype.respond_to?(:vocabulary) and supertype.vocabulary == self.vocabulary
+	    raise InvalidSupertypeException.new("#{supertype.name} must be an object type in #{vocabulary.name}")
+	  end
 
 	  if is_entity_type != supertype.is_entity_type
-	    raise "#{self} < #{supertype}: A value type may not be a supertype of an entity type, and vice versa"
+	    raise InvalidSupertypeException.new("#{self} < #{supertype}: A value type may not be a supertype of an entity type, and vice versa")
 	  end
 
 	  @supertypes << supertype
@@ -203,8 +205,11 @@ module ActiveFacts
 
       # Shared code for both kinds of binary fact type (has_one and one_to_one)
       def define_binary_fact_type(one_to_one, role_name, related, mandatory, related_role_name)
-        # REVISIT: What if the role exists on a supertype? This won't prevent that:
-        raise "#{name} cannot have more than one role named #{role_name}" if roles[role_name]
+	# REVISIT: This should be all_roles, to catch duplicate role name in a supertype
+	# if all_roles[role_name]
+	if roles[role_name]
+	  raise DuplicateRoleException.new("#{name} cannot have more than one role named #{role_name}")
+	end
         roles[role_name] = role = Role.new(self, nil, role_name, mandatory)
 
         # There may be a forward reference here where role_name is a Symbol,
@@ -237,7 +242,9 @@ module ActiveFacts
 
       def define_single_role_getter(role)
 	define_method role.getter do |*a|
-	  raise "Parameters passed to #{self.class.name}\##{role.name}" if a.size > 0
+	  if a.size > 0
+	    raise ArgumentError.new("wrong number of arguments (#{a.size} for 0)")
+	  end
 	  instance_variable_get(role.variable)
 	end
       end
@@ -380,7 +387,7 @@ module ActiveFacts
           related = related_name
           related_name = related_name.to_s.snakecase
         else
-          raise "Invalid type for :class option on :#{role_name}"
+          raise ArgumentError.new("Invalid type #{related_name.class} for :class option on :#{role_name}, must be a Class, Symbol or String")
         end
 
         # resolve the Symbol to a Class now if possible:
@@ -401,11 +408,15 @@ module ActiveFacts
         reading = options.delete(:reading)        # REVISIT: Implement verbalisation
         role_value_constraint = options.delete(:restrict)   # REVISIT: Implement role value constraints
 
-        raise "Unrecognised options on #{role_name}: #{options.keys.inspect}" unless options.empty?
+	additional_role_options options
 
-        # Avoid a confusing mismatch:
-        # Note that if you have a role "supervisor" and a sub-class "Supervisor", this'll bitch.
-        if (!specified_class && Class === related && (indicated = vocabulary.object_type(role_name)) && indicated != related)
+	raise UnrecognisedOptionsException.new("role", role_name, options.keys) unless options.empty?
+
+        # If you have a role "supervisor" and a sub-class "Supervisor", this'll bitch.
+        if !specified_class and		# No specified :class was provided
+	    related.is_a?(Class) and
+	    (indicated = vocabulary.object_type(role_name)) and
+	    indicated != related
           raise "Role name #{role_name} indicates a different counterpart object_type #{indicated} than specified"
         end
 
@@ -426,6 +437,10 @@ module ActiveFacts
           mandatory,
           other_role_method.to_sym 
         ]
+      end
+
+      def additional_role_options options
+	# This is a hook for extensions to override. Any extension options should be deleted from the options hash.
       end
 
       def when_bound(object_type, *args, &block)

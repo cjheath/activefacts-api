@@ -53,7 +53,7 @@ module ActiveFacts
       def instances
 	@instances ||= Hash.new do |h,k|
 	    if reason = invalid_object_type(k)
-	      raise "A constellation over #{@vocabulary.name} cannot index instances of #{k} because it #{reason}"
+	      raise InvalidObjectType.new(@vocabulary, k, reason)
 	    end
 	    h[k] = InstanceIndex.new(self, k)
 	  end

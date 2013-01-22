@@ -116,7 +116,7 @@ class AutoCounter
   attr_reader :place_holder_number
   def initialize(i = :new)
     unless i == :new or i.is_a?(Integer) or i.is_a?(AutoCounter)
-      raise "AutoCounter #{self.class} may not be #{i.inspect}"
+      raise ArgumentError.new("AutoCounter #{self.class} may not be #{i.inspect}")
     end
     @@place_holder ||= 0
     case i

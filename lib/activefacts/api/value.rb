@@ -28,8 +28,7 @@ module ActiveFacts
 
       # A value is its own key, unless it's a delegate for a raw value
       def identifying_role_values(klass = nil) #:nodoc:
-	# The identifying role value for the supertype of a value type is always the same as for the subtype:
-	# raise "Value Types cannot return identifying_role_values for supertypes" if klass and klass != self.class
+	# The identifying role value for the supertype of a value type is always the same as for the subtype
 	respond_to?(:__getobj__) ? __getobj__ : self
       end
 
@@ -41,7 +40,7 @@ module ActiveFacts
           # REVISIT: args could be a hash, with keys :length, :scale, :unit, :allow
           options = (args[-1].is_a?(Hash) ? args.pop : {})
           options.each do |key, value|
-            raise "unknown value type option #{key}" unless respond_to?(key)
+	    raise UnrecognisedOptionsException.new('value_type', basename, key) unless respond_to?(key)
             send(key, value)
           end
         end

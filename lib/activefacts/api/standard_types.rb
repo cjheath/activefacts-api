@@ -59,7 +59,7 @@ class Class
   # Make this Class into a ObjectType and if necessary its module into a Vocabulary.
   # The parameters are the names (Symbols) of the identifying roles.
   def identified_by *args, &b
-    raise "#{basename} is not an entity type" if respond_to? :value_type  # Don't make a ValueType into an EntityType
+    raise InvalidEntityException(self) if respond_to? :value_type  # Don't make a ValueType into an EntityType
 
     # The inclusion of instance methods triggers ClassMethods to be included in the class too
     include ActiveFacts::API::Entity
