@@ -43,7 +43,7 @@ module ActiveFacts
 
       def refresh_key(key)
         value = @hash.delete(key)
-        @hash[value.identifying_role_values] = value if value
+        @hash[value.identifying_role_values(@klass)] = value if value
       end
     end
   end

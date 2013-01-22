@@ -15,6 +15,7 @@ describe "In a vocabulary" do
   ObjectType_methods = [
     :has_one, :maybe, :one_to_one,
     :roles, :subtypes, :supertypes, :vocabulary,
+    :all_roles,
     # To make private:
     :check_identifying_role_has_valid_cardinality, :realise_role, :supertypes_transitive,
   ]
@@ -27,7 +28,7 @@ describe "In a vocabulary" do
   Instance_methods = [
     :constellation, :retract, :is_a?,
     # To remove or move to EntityType
-    :related_entities, :check_value_change_legality,
+    :related_entities, :check_identification_change_legality,
     :instance_index
   ]
   Value_methods = Instance_methods + [

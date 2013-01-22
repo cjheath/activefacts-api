@@ -191,7 +191,7 @@ class AutoCounter
     to_s.eql?(o.to_s)
   end
 
-  def identifying_role_values
+  def identifying_role_values klass = nil
     self
   end
 

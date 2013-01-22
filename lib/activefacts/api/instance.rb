@@ -34,19 +34,20 @@ module ActiveFacts
 
       # If this instance's role is updated to the new value, does that cause a collision?
       # We need to check each superclass that has a different identification pattern
-      def check_value_change_legality(role, value)
+      def check_identification_change_legality(role, value)
         return unless @constellation && role.is_identifying
 
 	klasses = [self.class] + self.class.supertypes_transitive
 	last_identity = nil
 	last_irns = nil
+	counterpart_class = role.counterpart ? role.counterpart.object_type : value.class
         duplicate = klasses.detect do |klass|
           next false unless klass.identifying_roles.include?(role)
 	  irns = klass.identifying_role_names
 	  if last_irns != irns
 	    last_identity = identifying_role_values(klass)
 	    role_position = irns.index(role.name)
-	    last_identity[role_position] = value.identifying_role_values
+	    last_identity[role_position] = value.identifying_role_values(counterpart_class)
 	  end
 	  @constellation.instances[klass][last_identity]
         end
@@ -90,11 +91,19 @@ module ActiveFacts
 	    # Objects being created do not have to have non-identifying mandatory roles,
 	    # so we allow retracting to the same state.
             if role.unique
+	      i = send(role.getter)
+	      next unless i
 	      if counterpart.is_identifying && counterpart.mandatory
-		i = send(role.name) and i.retract
+		i.retract
 	      else
-		send role.setter, nil
+		if (counterpart.unique)
+		  # REVISIT: This will incorrectly fail to propagate a key change for a non-mandatory role
+		  i.send(counterpart.setter, nil, false)
+		else
+		  i.send(role.counterpart.getter).update(self, nil)
+		end
 	      end
+	      instance_variable_set(role.variable, nil)
             else
               # puts "Not removing role #{role_name} from counterpart RoleValues #{counterpart.name}"
               # Duplicate the array using to_a, as the RoleValues here will be modified as we traverse it:
@@ -104,9 +113,10 @@ module ActiveFacts
                 if counterpart.is_identifying && counterpart.mandatory
                   counterpart_instance.retract
                 else
-                  counterpart_instance.send(counterpart.setter, nil)
+                  counterpart_instance.send(counterpart.setter, nil, false)
                 end
               end
+	      instance_variable_set(role.variable, nil)
             end
           end
         end

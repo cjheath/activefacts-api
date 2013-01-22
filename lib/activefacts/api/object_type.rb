@@ -46,6 +46,15 @@ module ActiveFacts
         end
       end
 
+      def all_roles
+	return @all_roles if @all_roles
+	@all_roles = roles.dup
+	supertypes_transitive.each do |klass|
+	  @all_roles.merge!(klass.roles)
+	end
+	@all_roles
+      end
+
       # Define a unary fact type attached to this object_type; in essence, a boolean attribute.
       #
       # Example: maybe :is_ceo
@@ -236,46 +245,36 @@ module ActiveFacts
       def define_one_to_one_accessor(role)
         define_single_role_getter(role)
 
-	define_method role.setter do |value|
-	  old = instance_variable_get(role.variable)
+	define_method role.setter do |value, mutual_propagation = true|
+	  role_var = role.variable
 
-	  # When exactly the same value instance is assigned, we're done:
-	  return true if old == value
+	  # Get old value, and jump out early if it's unchanged:
+	  old = instance_variable_get(role_var)
+	  return value if old == value
 
+	  # assert a new instance for the role value if necessary
 	  if value and o = role.counterpart.object_type and (!value.is_a?(o) || value.constellation != @constellation)
 	    value = @constellation.assert(o, *Array(value))
-	    # return true if old.equal?(value)         # Occurs when same value but not same instance is assigned
-	    return true if old == value
+	    return value if old == value
 	  end
 
-	  dependent_entities = nil
-	  if (role.is_identifying)
-	    check_value_change_legality(role, value)
+	  if (role.is_identifying)	# We're changing this object's key. Check legality and prepare to propagate
+	    check_identification_change_legality(role, value)
 
-	    # We're changing this object's key.
-	    # Find all object which are identified by this object, and save their old keys
-	    if @constellation && old
-	      dependent_entities = old.related_entities.map do |entity|
-		[entity.identifying_role_values, entity]
-	      end
-	    end
+	    # puts "Starting to analyse impact of changing 1-1 #{role.inspect} to #{value.inspect}"
+	    impacts = analyse_impacts(role)
 	  end
 
-	  instance_variable_set(role.variable, value)
+	  instance_variable_set(role_var, value)
 
 	  # Remove self from the old counterpart:
-	  old.send(role.counterpart.setter, nil) if old
+	  old.send(role.counterpart.setter, nil, false) if old and mutual_propagation
 
 	  @constellation.when_admitted do
 	    # Assign self to the new counterpart
 	    value.send(role.counterpart.setter, self) if value
 
-	    # Propagate dependent key changes
-	    if dependent_entities
-	      dependent_entities.each do |old_key, entity|
-		entity.instance_index.refresh_key(old_key)
-	      end
-	    end
+	    apply_impacts(impacts) if impacts	# Propagate dependent key changes
 	  end
 
 	  value
@@ -285,46 +284,36 @@ module ActiveFacts
       def define_one_to_many_accessor(role)
         define_single_role_getter(role)
 
-	define_method role.setter do |value|
+	define_method role.setter do |value, mutual_propagation = true|
 	  role_var = role.variable
 
 	  # Get old value, and jump out early if it's unchanged:
 	  old = instance_variable_get(role_var)
-	  return value if old.equal?(value)         # Occurs during one_to_one assignment, for example
+	  return value if old == value
 
 	  # assert a new instance for the role value if necessary
 	  if value and o = role.counterpart.object_type and (!value.is_a?(o) || value.constellation != @constellation)
 	    value = @constellation.assert(o, *Array(value))
-	    return value if old.equal?(value)         # Occurs when another instance having the same value is assigned
+	    return value if old == value	# Occurs when another instance having the same value is assigned
 	  end
 
-	  dependent_entities = nil
-	  if (role.is_identifying)
-	    check_value_change_legality(role, value) if value
+	  if (role.is_identifying)	# We're changing this object's key. Check legality and prepare to propagate
+	    check_identification_change_legality(role, value)
 
-	    if old && old.constellation
-	      # If our identity has changed and we identify others, prepare to reindex them
-	      dependent_entities = old.related_entities.map do |entity|
-		[entity.identifying_role_values, entity]
-	      end
-	    end
+	    # puts "Starting to analyse impact of changing 1-N #{role.inspect} to #{value.inspect}"
+	    impacts = analyse_impacts(role)
 	  end
 
 	  instance_variable_set(role_var, value)
 
 	  # Remove "self" from the old counterpart:
-	  old.send(getter = role.counterpart.getter).update(self, nil) if old
+	  old.send(getter = role.counterpart.getter).update(self, nil) if old && mutual_propagation
 
 	  @constellation.when_admitted do
-	    # REVISIT: Delay co-referencing here if the object is still a candidate
 	    # Add "self" into the counterpart
 	    value.send(getter ||= role.counterpart.getter).update(old, self) if value
 
-	    if dependent_entities
-	      dependent_entities.each do |key, entity|
-		entity.instance_index.refresh_key(key)
-	      end
-	    end
+	    apply_impacts(impacts) if impacts	# Propagate dependent key changes
 	  end
 
 	  value

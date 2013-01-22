@@ -60,7 +60,9 @@ class ::DateTime
 end
 
 class ::Time
-  def identifying_role_values; self; end
+  def identifying_role_values klass = nil
+    self
+  end
 
   def self.new_instance constellation, *a
     t =

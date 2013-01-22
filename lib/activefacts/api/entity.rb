@@ -129,9 +129,10 @@ module ActiveFacts
 
       # Return the array of the values of this instance's identifying roles
       def identifying_role_values(klass = self.class)
-        klass.identifying_role_names.map do |role_name|
-          value = send(role_name)
-	  value.identifying_role_values
+        klass.identifying_roles.map do |role|
+          value = send(role.name)
+	  counterpart_class = role.counterpart && role.counterpart.object_type
+          value.identifying_role_values(counterpart_class)
         end
       end
 
@@ -150,6 +151,56 @@ module ActiveFacts
           roles_hash[role.getter] = send(role.getter)
         end
         roles_hash
+      end
+
+      # This role is identifying, so if is changed, not only
+      # must the current object be re-indexed, but also entities
+      # identified by this entity.  Save the current key and
+      # class for each such instance.
+      # This function is transitive!
+      def analyse_impacts role
+	impacts = []
+
+	# Consider the object itself and all its supertypes
+	([self.class]+self.class.supertypes_transitive).map do |supertype|
+	  next unless supertype.identifying_roles.include?(role)
+
+	  old_key = identifying_role_values(supertype)
+	  # puts "Need to reindex #{self.class} as #{supertype} from #{old_key.inspect}"
+	  impacts << [supertype, self, old_key]
+	end
+
+	# Now consider objects whose identifiers include this object.
+	# Find our roles in those identifiers first.
+	impacted_roles = []
+	self.class.all_roles.each do |n, role|
+	  if role.counterpart && role.counterpart.is_identifying
+	    # puts "Changing #{role.inspect} affects #{role.inspect}"
+	    impacted_roles << role
+	  end
+	end
+
+	impacted_roles.each do |role|
+	  affected_instances = Array(instance_variable_get(role.variable))
+	  # puts "considering #{affected_instances.size} #{role.object_type.name} instances that include #{role.inspect}: #{affected_instances.map(&:identifying_role_values).inspect}"
+	  affected_instances.each do |counterpart|
+	    impacts.concat(counterpart.analyse_impacts(role.counterpart))
+	  end
+	end
+	impacts
+      end
+
+      def apply_impacts impacts
+	impacts.each do |klass, entity, old_key|
+	  instance_index = entity.constellation.instances[klass]
+	  new_key = entity.identifying_role_values(klass)
+	  # puts "Reindexing #{klass} from #{old_key.inspect} to #{new_key.inspect}"
+
+	  if new_key != old_key
+	    instance_index.delete(old_key)
+	    instance_index[new_key] = entity
+	  end
+	end
       end
 
       # All classes that become Entity types receive the methods of this class as class methods:
@@ -190,21 +241,22 @@ module ActiveFacts
 
 	def check_supertype_identifiers_match instance, arg_hash
 	  supertypes_transitive.each do |supertype|
-	    supertype.identifying_role_names.each do |role_name|
-	      next unless arg_hash.include?(role_name)	  # No contradiction here
-	      new_value = arg_hash[role_name]
-	      existing_value = instance.send(role_name.to_sym)
+	    supertype.identifying_roles.each do |role|
+	      next unless arg_hash.include?(role.name)	  # No contradiction here
+	      new_value = arg_hash[role.name]
+	      existing_value = instance.send(role.name.to_sym)
 
 	      # Quick check for an exact match:
-	      next if existing_value == new_value or existing_value.identifying_role_values == new_value
+	      counterpart_class = role.counterpart && role.counterpart.object_type
+	      next if existing_value == new_value or existing_value.identifying_role_values(counterpart_class) == new_value
 
 	      # Coerce the new value to identifying values for the counterpart role's type:
-	      role = supertype.roles(role_name)
+	      role = supertype.roles(role.name)
 	      new_key = role.counterpart.object_type.identifying_role_values(instance.constellation, [new_value])
 	      # REVISIT: Check that the next line actually gets hit, otherwise strip it out
 	      next if existing_value == new_key	  # This can happen when the counterpart is a value type
 
-	      existing_key = existing_value.identifying_role_values
+	      existing_key = existing_value.identifying_role_values(counterpart_class)
 	      next if existing_key == new_key
 	      raise TypeConflictException.new(basename, supertype, new_key, existing_key)
 	    end
@@ -266,7 +318,8 @@ module ActiveFacts
 	      end
 	    elsif proto
 	      value = proto.send(n)
-	      value = value.identifying_role_values
+	      counterpart_class = role.counterpart && role.counterpart.object_type
+	      value = value.identifying_role_values(counterpart_class)
 	      arg_hash[n] = value # Save the value for making a new instance
 	      next value if (role.is_unary)
 	    else

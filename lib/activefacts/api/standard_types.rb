@@ -33,19 +33,25 @@ ValueClasses.each{|c|
 # Cannot subclass or delegate True, False or nil, so inject the required behaviour
 class TrueClass #:nodoc:
   def verbalise(role_name = nil); role_name ? "#{role_name}: true" : "true"; end
-  def identifying_role_values; self; end
+  def identifying_role_values klass = nil
+    self
+  end
   def self.identifying_role_values(*a); a.replace([{}]); true end
 end
 
 class FalseClass #:nodoc:
   def verbalise(role_name = nil); role_name ? "#{role_name}: false" : "false"; end
-  def identifying_role_values; self; end
+  def identifying_role_values klass = nil
+    self
+  end
   def self.identifying_role_values(*a); a.replace([{}]); false end
 end
 
 class NilClass #:nodoc:
   def verbalise; "nil"; end
-  def identifying_role_values; self; end
+  def identifying_role_values klass = nil
+    self
+  end
   def self.identifying_role_values(*a); a.replace([{}]); nil end
 end
 

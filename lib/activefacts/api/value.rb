@@ -84,7 +84,7 @@ module ActiveFacts
 	    instance = new_instance(constellation, *args)
           end
 	  args.replace([arg_hash])
-	  instance.identifying_role_values
+	  instance.identifying_role_values(self)
         end
 
 	def assert_instance(constellation, args)
@@ -116,7 +116,7 @@ module ActiveFacts
         def index_instance(constellation, instance) #:nodoc:
 	  # Index the instance in the constellation's InstanceIndex for this class:
           instances = constellation.instances[self]
-          key = instance.identifying_role_values
+          key = instance.identifying_role_values(self)
           instances[key] = instance
 
           # Index the instance for each supertype:

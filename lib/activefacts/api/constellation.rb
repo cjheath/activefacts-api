@@ -107,7 +107,7 @@ module ActiveFacts
       end
 
       def has_candidate klass, key
-	@candidates && @candidates.detect{|c| c.is_a?(klass) && c.identifying_role_values == key }
+	@candidates && @candidates.detect{|c| c.is_a?(klass) && c.identifying_role_values(klass) == key }
       end
 
       # Create a new empty Constellation over the given Vocabulary
