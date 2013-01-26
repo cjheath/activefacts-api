@@ -55,7 +55,7 @@ module ActiveFacts
 	    if reason = invalid_object_type(k)
 	      raise InvalidObjectType.new(@vocabulary, k, reason)
 	    end
-	    h[k] = InstanceIndex.new(self, k)
+	    h[k] = InstanceIndex.new(self, k, !!(@options[:sort] || ENV['ACTIVEFACTS_SORT']))
 	  end
       end
 
@@ -111,8 +111,9 @@ module ActiveFacts
       end
 
       # Create a new empty Constellation over the given Vocabulary
-      def initialize(vocabulary)
+      def initialize(vocabulary, options = {})
         @vocabulary = vocabulary
+	@options = options
       end
 
       def assert(klass, *args)
