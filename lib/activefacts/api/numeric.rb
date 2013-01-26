@@ -191,6 +191,18 @@ class AutoCounter
     to_s.eql?(o.to_s)
   end
 
+  def <=>(o)				#:nodoc:
+    if self.defined? && !o == [] && o.defined?
+      if (c = (self.class <=> o.class.name)) != 0
+	return c
+      else
+	return to_i <=> o.to_i
+      end
+    else
+      to_s.<=>(o.to_s)
+    end
+  end
+
   def identifying_role_values klass = nil
     self
   end

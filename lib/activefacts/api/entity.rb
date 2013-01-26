@@ -132,8 +132,8 @@ module ActiveFacts
         klass.identifying_roles.map do |role|
           value = send(role.name)
 	  counterpart_class = role.counterpart && role.counterpart.object_type
-          value.identifying_role_values(counterpart_class)
-        end
+	  value.identifying_role_values(counterpart_class)
+	end
       end
 
       # Identifying role values in a hash form.

@@ -260,7 +260,7 @@ describe "An Entity Type" do
       end
 
       it "should be found in the constellation using the value" do
-        @c.Room[[@b.identifying_role_values, @rn]].should == @r
+        @c.Room[[@b.identifying_role_values, @rn.identifying_role_values]].should == @r
         @c.Room[[@b.identifying_role_values, 101]].should == @r
         @c.Room[[['Mackay'], 101]].should == @r
       end

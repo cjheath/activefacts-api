@@ -45,4 +45,8 @@ class Guid
     to_s.eql?(o.to_s)
   end
 
+  def <=>(o)				#:nodoc:
+    to_s.<=>(o.to_s)
+  end
+
 end
