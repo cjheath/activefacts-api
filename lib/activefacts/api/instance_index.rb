@@ -4,7 +4,6 @@
 #
 # Copyright (c) 2009 Clifford Heath. Read the LICENSE file.
 #
-require 'forwardable'
 require 'rbtree'
 
 module ActiveFacts
@@ -24,9 +23,9 @@ module ActiveFacts
 	)
       end
 
-#      def inspect
-#	"KeyArray"+super
-#      end
+      def inspect
+	"KeyArray"+super
+      end
 
       def <=>(other)
 	unless other.is_a?(Array)	# Any kind of Array, not just KeyArray
@@ -57,9 +56,27 @@ module ActiveFacts
     # arguments (where ObjectType is the object_type name you're interested in)
     #
     class InstanceIndex
-      extend Forwardable
-      def_delegators :@hash, :size, :empty?, :each, :map,
-                     :detect, :values, :keys, :detect
+
+      # Should be in module ForwardableWithArityChecking
+      def self.def_single_delegator(accessor, method, *expected_arities)
+	str = %{
+	  def #{method}(*args, &block)
+	    if #{expected_arities.size == 0 ? "block" : "!block || !#{expected_arities.inspect}.include?(block.arity)" }
+	      raise ArgumentError.new("Arity mismatch on #{name}\##{method}, got \#{block ? block.arity : 'none'} want #{expected_arities.inspect} at \#{caller*"\n\t"})")
+	    end
+	    #{accessor}.__send__(:#{method}, *args, &block)
+	  end
+	}
+	eval(str)
+      end
+
+      def_single_delegator :@hash, :size
+      def_single_delegator :@hash, :empty?
+      def_single_delegator :@hash, :each, 1, 2, -3
+      def_single_delegator :@hash, :map, 1, 2, -3
+      def_single_delegator :@hash, :detect, 1
+      def_single_delegator :@hash, :values
+      def_single_delegator :@hash, :keys
 
       def initialize(constellation, klass, sort)
         @constellation = constellation

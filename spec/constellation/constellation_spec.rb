@@ -289,7 +289,7 @@ describe "A Constellation instance" do
     it "should support each" do
       baz = @constellation.Name("baz")
       count = 0
-      @constellation.Name.each { |rv| count += 1 }
+      @constellation.Name.each { |k, v| count += 1 }
       count.should == 1
     end
 
