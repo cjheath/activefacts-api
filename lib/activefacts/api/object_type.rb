@@ -322,11 +322,11 @@ module ActiveFacts
 	  instance_variable_set(role_var, value)
 
 	  # Remove "self" from the old counterpart:
-	  old.send(getter = role.counterpart.getter).update(self, nil) if old && mutual_propagation
+	  old.send(getter = role.counterpart.getter).delete_instance(self) if old && mutual_propagation
 
 	  @constellation.when_admitted do
 	    # Add "self" into the counterpart
-	    value.send(getter ||= role.counterpart.getter).update(old, self) if value
+	    value.send(getter ||= role.counterpart.getter).add_instance(self) if value
 
 	    apply_impacts(impacts) if impacts	# Propagate dependent key changes
 	  end

@@ -100,7 +100,7 @@ module ActiveFacts
 		  # REVISIT: This will incorrectly fail to propagate a key change for a non-mandatory role
 		  i.send(counterpart.setter, nil, false)
 		else
-		  i.send(role.counterpart.getter).update(self, nil)
+		  i.send(role.counterpart.getter).delete_instance(self)
 		end
 	      end
 	      instance_variable_set(role.variable, nil)

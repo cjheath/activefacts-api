@@ -48,9 +48,15 @@ module ActiveFacts
         size > 1 ? nil : @a[0]
       end
 
+      def add_instance(value)
+        @a << value
+      end
+
+      def delete_instance(value)
+        @a.delete value
+      end
+
       def update(old, value)
-        @a.delete(old) if old
-        @a << value if value
       end
 
       def verbalise
