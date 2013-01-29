@@ -24,24 +24,25 @@ module ActiveFacts
 	)
       end
 
-      def inspect
-	"KeyArray"+super
-      end
+#      def inspect
+#	"KeyArray"+super
+#      end
 
       def <=>(other)
 	unless other.is_a?(Array)	# Any kind of Array, not just KeyArray
 	  return 1
 	end
 
-	0.upto size do |i|
-	  diff = (s = self[i]) <=> (o = other[i])
+	0.upto(size-1) do |i|
+	  diff = ((s = self[i]) <=> (o = other[i]) rescue nil)
 	  case diff
 	  when 0	# Same value, whether exactly the same class or not
 	    next
 	  when nil	# Non-comparable values
 	    return -1 if s == nil	# Ensure that nil values come before other values
 	    return 1 if o == nil
-	    return s.class.name <=> o.class.name  # Otherwise just ensure stable sorting
+	    diff = s.class.name <=> o.class.name  # Otherwise just ensure stable sorting
+	    return diff if diff != 0
 	  else
 	    return diff
 	  end
