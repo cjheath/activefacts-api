@@ -139,8 +139,15 @@ module ActiveFacts
       # This method removes the given instance from this constellation's indexes
       # It must be called before the identifying roles get deleted or nullified.
       def deindex_instance(instance) #:nodoc:
+	last_irns = nil
+	last_irvs = instance
         ([instance.class]+instance.class.supertypes_transitive).each do |klass|
-          instances[klass].delete(instance.identifying_role_values(klass))
+	  if instance.is_a?(Entity) and last_irns != (n = klass.identifying_role_names)
+	    # Build new identifying_role_values only when the identifying_role_names change:
+	    last_irvs = instance.identifying_role_values(klass)
+	    last_irns = n
+	  end
+          instances[klass].delete(last_irvs)
         end
         # REVISIT: Need to nullify all the roles this object plays.
         # If mandatory on the counterpart side, this may/must propagate the delete (without mutual recursion!)

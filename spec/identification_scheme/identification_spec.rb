@@ -337,6 +337,7 @@ describe "An Entity Type" do
         end
 
         it "the old value's back-reference is set to nil" do
+          # @rn.all_room.should_not include @r
           @rn.all_room.to_a.should_not include @r
         end
 

@@ -38,7 +38,7 @@ describe "Multi-part identifiers" do
   end
 
   it "should sort child keys in the instance index" do
-    pending "Key sorting is not supported in this version" unless @p.all_child.respond_to? :keys
+    pending "Key sorting is not supported on this index" unless @c.Child.sort
     @c.Child.keys.should == [[[@p.parent_id], 0], [[@p.parent_id], 1], [[@p.parent_id], 2]]
     @c.Child.map{|k, c| c.position}.should == [@c0.position, @c1.position, @c2.position]
   end

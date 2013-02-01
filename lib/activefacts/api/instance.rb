@@ -83,6 +83,15 @@ module ActiveFacts
         # Now, for all roles (from this class and all supertypes), assign nil to all functional roles
         # The counterpart roles get cleared automatically.
 	klasses = [self.class]+self.class.supertypes_transitive
+
+	irvks = {}  # identifying_role_values by class
+	klasses.each do |klass|
+	  if !irvks[klass] and klass.roles.detect{|_, role| role.counterpart and !role.counterpart.unique and send(role.getter) }
+	    # We will need the identifying_role_values for this role's object_type
+	    irvks[klass] = identifying_role_values(klass)
+	  end
+	end
+
 	klasses.each do |klass|
           klass.roles.each do |role_name, role|
             next if role.unary?
@@ -94,13 +103,15 @@ module ActiveFacts
 	      i = send(role.getter)
 	      next unless i
 	      if counterpart.is_identifying && counterpart.mandatory
+		# We play a mandatory identifying role in i; so retract that (it'll clear our instance variable)
 		i.retract
 	      else
 		if (counterpart.unique)
 		  # REVISIT: This will incorrectly fail to propagate a key change for a non-mandatory role
 		  i.send(counterpart.setter, nil, false)
 		else
-		  i.send(role.counterpart.getter).delete_instance(self)
+		  rv = i.send(role.counterpart.getter)
+		  rv.delete_instance(self, irvks[role.object_type])
 		end
 	      end
 	      instance_variable_set(role.variable, nil)

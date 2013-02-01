@@ -319,14 +319,16 @@ module ActiveFacts
 	    impacts = analyse_impacts(role)
 	  end
 
+	  old_key = identifying_role_values(role.object_type) if old && mutual_propagation
+
 	  instance_variable_set(role_var, value)
 
 	  # Remove "self" from the old counterpart:
-	  old.send(getter = role.counterpart.getter).delete_instance(self) if old && mutual_propagation
+	  old.send(getter = role.counterpart.getter).delete_instance(self, old_key) if old_key
 
 	  @constellation.when_admitted do
 	    # Add "self" into the counterpart
-	    value.send(getter ||= role.counterpart.getter).add_instance(self) if value
+	    value.send(getter ||= role.counterpart.getter).add_instance(self, identifying_role_values(role.object_type)) if value
 
 	    apply_impacts(impacts) if impacts	# Propagate dependent key changes
 	  end

@@ -56,6 +56,7 @@ module ActiveFacts
     # arguments (where ObjectType is the object_type name you're interested in)
     #
     class InstanceIndex
+      attr_reader :sort
 
       # Should be in module ForwardableWithArityChecking
       def self.def_single_delegator(accessor, method, *expected_arities)
