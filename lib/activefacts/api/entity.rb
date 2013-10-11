@@ -45,7 +45,9 @@ module ActiveFacts
 	      end
 
 	    begin
+	      @constellation.send(:instance_variable_set, :@suspend_duplicate_key_check, true)
 	      send(role.setter, value)
+	      @constellation.send(:instance_variable_set, :@suspend_duplicate_key_check, false)
 #	    rescue NoMethodError => e
 #	      raise settable_roles_exception(e, role_name)
 	    end
