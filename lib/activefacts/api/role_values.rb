@@ -11,7 +11,7 @@ module ActiveFacts
       attr_accessor :sort
 
       def initialize sort = false
-	@sort = !!(sort || ENV["ACTIVEFACTS_SORT"])
+	@sort = !!(sort || ENV[@@af_sort_name ||= "ACTIVEFACTS_SORT"])
         @a = @sort ? RBTree.new : []
       end
 

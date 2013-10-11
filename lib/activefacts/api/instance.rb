@@ -4,8 +4,6 @@
 #
 # Copyright (c) 2009 Clifford Heath. Read the LICENSE file.
 #
-# Instance methods are extended into all instances, whether of value or entity types.
-#
 module ActiveFacts
   module API
     # Every Instance of a ObjectType (A Value type or an Entity type) includes the methods of this module:

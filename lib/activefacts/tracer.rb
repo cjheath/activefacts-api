@@ -18,7 +18,7 @@ module ActiveFacts
       # First time, initialise the tracing environment
       @indent = 0
       @keys = {}
-      if (e = ENV["TRACE"])
+      if (e = ENV[@@trace_name ||= "TRACE"])
         e.split(/[^_a-zA-Z0-9]/).each{|k| enable(k) }
         if @keys[:help]
           at_exit {

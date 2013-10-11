@@ -18,7 +18,7 @@ module ActiveFacts
 
       # Each ObjectType maintains a list of the Roles it plays:
       def roles(role_name = nil)
-        unless instance_variable_defined? "@roles"  # Avoid "instance variable not defined" warning from ||=
+        unless instance_variable_defined?(@@roles_name ||= "@roles")  # Avoid "instance variable not defined" warning from ||=
           @roles = RoleCollection.new
         end
         case role_name

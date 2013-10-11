@@ -4,7 +4,11 @@ require 'securerandom'
 unless defined? SecureRandom.uuid
   # I think this only applies to 1.8.6 (and JRuby/Rubinius in 1.8 mode) now:
   def SecureRandom.uuid
-    hex(16).sub(/(........)(....)(....)(....)(............)/,'\1-\2-\3-\4-\5')
+    hex(16).
+      sub(
+	@@format_pattern ||= /(........)(....)(....)(....)(............)/,
+	@@format_string ||= '\1-\2-\3-\4-\5'
+      )
   end
 end
 

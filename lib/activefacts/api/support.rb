@@ -7,9 +7,7 @@
 
 # Define Infinity as a constant, if it's not already defined:
 # We use this to define open-ended ranges.
-begin
-  Object.const_get("Infinity")
-rescue NameError
+unless Object.const_defined?("Infinity")
   Infinity = 1.0/0.0
 end
 

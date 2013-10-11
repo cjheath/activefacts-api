@@ -99,8 +99,8 @@ module ActiveFacts
       # When used as a hash key, the hash key of this entity instance is calculated
       # by hashing the values of its identifying roles
       def hash
-        self.class.identifying_role_names.map{|role_name|
-            instance_variable_get("@#{role_name}")
+        self.class.identifying_roles.map{|role|
+            instance_variable_get(role.variable)
           }.inject(0) { |h,v|
             h ^= v.hash
             h
@@ -426,7 +426,7 @@ module ActiveFacts
 
 	def other.new_instance constellation, *args
 	  instance = allocate
-	  instance.instance_variable_set("@constellation", constellation)
+	  instance.instance_variable_set(@@constellation_variable_name ||= "@constellation", constellation)
 	  instance.send(:initialize, *args)
 	  instance
 	end

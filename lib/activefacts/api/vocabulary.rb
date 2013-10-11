@@ -32,7 +32,7 @@ module ActiveFacts
           __bind(camel)
           c
         else
-	  if defined?(camel)
+	  if const_defined?(camel)
 	    begin
 	      const_get(camel)
 	    rescue NameError

@@ -81,3 +81,8 @@ Rake::RDocTask.new do |rdoc|
   rdoc.rdoc_files.include('README*')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
+
+task :wait do
+  print "Waiting for you to hit Enter"
+  $stdin.gets
+end
