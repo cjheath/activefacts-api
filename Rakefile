@@ -42,7 +42,7 @@ end
 
 namespace :spec do
   namespace :rubies do
-    SUPPORTED_RUBIES = %w{ 1.8.7 1.9.2 1.9.3 jruby-1.7.0 rbx }
+    SUPPORTED_RUBIES = %w{ 1.8.7 1.9.2 1.9.3 2.0.0 jruby-1.7.0 rbx }
 
     desc "Run Rspec tests on all supported rubies"
     task :all_tasks => [:install_gems, :exec]
@@ -56,6 +56,19 @@ namespace :spec do
     task :exec do
       sh %{ rvm #{SUPPORTED_RUBIES.join(',')} exec bundle exec rake spec }
     end
+
+    SUPPORTED_RUBIES.each do |ruby|
+      desc "Run `bundle install` on #{ruby}"
+      task :"install_gems_#{ruby}" do
+	sh %{ rvm #{ruby} exec bundle install }
+      end
+
+      desc "Run `bundle exec rake` on #{ruby}"
+      task :"exec_#{ruby}" do
+	sh %{ rvm #{ruby} exec bundle exec rake spec }
+      end
+    end
+
   end
 end
 

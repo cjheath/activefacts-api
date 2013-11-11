@@ -1,4 +1,5 @@
-source 'https://rubygems.org'
+#source 'https://rubygems.org'
+source 'http://rubygems.railscamp.org'
 
 gem 'rake', :group => [:development, :test]
 gem 'rbtree-pure'
@@ -7,7 +8,7 @@ group :development do
   gem 'jeweler'
   gem 'rspec', '~>2.6.0'
   gem 'ruby-debug', :platforms => [:mri_18]
-  gem 'debugger', :platforms => [:mri_19]
+  gem 'debugger', :platforms => [:mri_19, :mri_20]
   gem 'pry', :platforms => [:jruby, :rbx]
 end
 
