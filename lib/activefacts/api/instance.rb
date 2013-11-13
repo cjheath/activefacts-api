@@ -136,10 +136,6 @@ module ActiveFacts
         include ObjectType
         # Add Instance class methods here
       end
-
-      def self.included other #:nodoc:
-        other.send :extend, ClassMethods
-      end
     end
   end
 end
