@@ -364,7 +364,7 @@ describe "An instance of every type of ObjectType" do
     a = c.AutoCounterVal(:new)
     lambda {
       b = 2 + a
-    }.should raise_error
+    }.should raise_error(TypeError)
     a.assign(3)
     lambda {
       b = 2 + a
@@ -376,21 +376,21 @@ describe "An instance of every type of ObjectType" do
     c = ActiveFacts::API::Constellation.new(Mod)
     lambda {
       c.TestByInt(:int_val => nil)
-    }.should raise_error
+    }.should raise_error(ActiveFacts::API::MissingMandatoryRoleValueException)
   end
 
   it "should complain when too many identifying values are provided for an entity" do
     c = ActiveFacts::API::Constellation.new(Mod)
     lambda {
       c.TestByInt(2, 3)
-    }.should raise_error
+    }.should raise_error(ActiveFacts::API::UnexpectedIdentifyingValueException)
   end
 
   it "should complain when wrong type is used for an entity" do
     c = ActiveFacts::API::Constellation.new(Mod)
     lambda {
       c.TestByInt("Not an Int")
-    }.should raise_error
+    }.should raise_error(ArgumentError)
   end
 
   it "should handle a non-mandatory missing identifying role" do

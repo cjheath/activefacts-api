@@ -30,7 +30,7 @@ describe 'identity change on subtype' do
   end
 
   it "should fail if the value is the same" do
-    lambda { @b = @constellation.EntityB(123, 'abc') }.should raise_error
+    lambda { @b = @constellation.EntityB(123, 'abc') }.should raise_error(ActiveFacts::API::UnexpectedIdentifyingValueException)
   end
 
   context "on a deep-subtype" do

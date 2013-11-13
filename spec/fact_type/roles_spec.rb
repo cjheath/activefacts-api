@@ -96,6 +96,35 @@ describe "Roles" do
     }.should raise_error(ActiveFacts::API::CrossVocabularyRoleException)
   end
 
+  it "should prevent usage of undefined options on a role" do
+    lambda {
+      module Mod
+        class Existing1 < String
+          value_type
+          has_one :name, :foo => :anything
+        end
+      end
+    }.should raise_error(ActiveFacts::API::UnrecognisedOptionsException)
+
+    lambda {
+      module Mod
+        class Existing1 < String
+          value_type
+          one_to_one :name, :foo => :anything
+        end
+      end
+    }.should raise_error(ActiveFacts::API::UnrecognisedOptionsException)
+
+    lambda {
+      module Mod
+        class Existing1 < String
+          value_type
+          maybe :is_broken, :foo => :anything
+        end
+      end
+    }.should raise_error(ActiveFacts::API::UnrecognisedOptionsException)
+  end
+
   it "should provide value type metadata" do
     Mod::Name.length.should == 40
     Mod::Name.scale.should == 0

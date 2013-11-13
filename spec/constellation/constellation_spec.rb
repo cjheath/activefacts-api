@@ -79,19 +79,19 @@ describe "A Constellation instance" do
 
   it "should complain when accessing a non-class as a method" do
     Mod::Foo = 23
-    lambda { @constellation.Foo }.should raise_error
+    lambda { @constellation.Foo }.should raise_error(NoMethodError)
   end
 
   it "should complain when accessing a class that isn't an object type" do
     class Mod::Bar; end
-    proc { @constellation.Bar }.should raise_error
-    proc { @constellation.instances[Mod::Bar] }.should raise_error
+    proc { @constellation.Bar }.should raise_error(NoMethodError)
+    proc { @constellation.instances[Mod::Bar] }.should raise_error(ActiveFacts::API::InvalidObjectType)
   end
 
   it "should deny handling an object type defined outside the current module" do
     class ::Bar; end
-    lambda { @constellation.Bar }.should raise_error
-    lambda { @constellation.instances[Bar] }.should raise_error
+    lambda { @constellation.Bar }.should raise_error(NoMethodError)
+    lambda { @constellation.instances[Bar] }.should raise_error(ActiveFacts::API::InvalidObjectType)
   end
 
   it "should allow inspection" do
@@ -201,7 +201,7 @@ describe "A Constellation instance" do
   it "Should raise an exception with assigning a role whose referent (object type) has not yet been defined" do
     n = @constellation.Name("Fred")
     # This does not raise the "settable_roles_exception". I'm no longer sure how I did this, so I can't get coverage on this code :(
-    proc { n.undefined_role = 'foo' }.should raise_error
+    proc { n.undefined_role = 'foo' }.should raise_error(NoMethodError)
   end
 
   # Maybe not complete yet
@@ -429,7 +429,7 @@ describe "A Constellation instance" do
           has_one :thingummy, :class => Outside::Other
         end
       end
-    }.should raise_error
+    }.should raise_error(ActiveFacts::API::CrossVocabularyRoleException)
   end
 
   it "should disallow unrecognised supertypes" do
@@ -514,7 +514,7 @@ describe "A Constellation instance" do
           supertypes :name
         end
       end
-    }.should raise_error
+    }.should raise_error(ActiveFacts::API::InvalidSupertypeException)
   end
 
   it "should error on invalid :class values" do
@@ -524,7 +524,7 @@ describe "A Constellation instance" do
           has_one :Name, :class => 3
         end
       end
-    }.should raise_error
+    }.should raise_error(ArgumentError)
   end
 
   it "should error on misleading :class values" do
@@ -534,7 +534,7 @@ describe "A Constellation instance" do
           has_one :Name, :class => Extra
         end
       end
-    }.should raise_error
+    }.should raise_error(NameError)
   end
 
   it "should allow assert using an object of the same type" do
@@ -572,6 +572,6 @@ describe "A Constellation instance" do
     lambda {
       # Disallowed because it re-assigns the auto_counter_val identification value
       p.employer = [ "foo", {:auto_counter_val => :new}]
-    }.should raise_error
+    }.should raise_error(ActiveFacts::API::TypeConflictException)
   end
 end

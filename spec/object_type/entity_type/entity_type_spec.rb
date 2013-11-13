@@ -75,12 +75,12 @@ describe "Entity Type class definitions" do
     Mod::Person.roles.include?(:name).should be_true
   end
 
-  it "should fail on a ValClass" do
+  it "should fail on a ValueType" do
     lambda{
       class SomeClass < String
-        identified_by
+        identified_by :foo
       end
-    }.should raise_error
+    }.should raise_error(ActiveFacts::API::InvalidEntityException)
   end
 
   it "should return the identifying roles" do
@@ -88,15 +88,15 @@ describe "Entity Type class definitions" do
   end
 
   it "should prevent a role name from matching a object_type that exists unless that object_type is the counterpart" do
-    lambda {
-        module Mod
-          class LegalEntity
-          end
-          class Bad
-            identified_by :name
-            has_one :name, LegalEntity
-          end
-        end
-      }.should raise_error
+    proc do
+      module Mod
+	class LegalEntity
+	end
+	class Bad
+	  identified_by :name
+	  has_one :name, :class => LegalEntity
+	end
+      end
+    end.should raise_error(ActiveFacts::API::CrossVocabularyRoleException)
   end
 end

@@ -37,7 +37,7 @@ describe "An Entity Type" do
             has_one :name
           end
         end
-      end.should raise_error
+      end.should raise_error(ActiveFacts::API::InvalidIdentificationException)
     end
 
     describe "when asserted" do
@@ -84,7 +84,7 @@ describe "An Entity Type" do
       it "should fail if the new value already exists" do
         proc do
           @fly.name = 'Acme'
-        end.should raise_error
+        end.should raise_error(ActiveFacts::API::DuplicateIdentifyingValueException)
       end
 
       it "should not fail if the new value is self" do
@@ -234,7 +234,7 @@ describe "An Entity Type" do
             one_to_one :number    # Error, invalid identifier
           end
         end
-      end.should raise_error
+      end.should raise_error(ActiveFacts::API::InvalidIdentificationException)
     end
 
     describe "when asserted" do
@@ -294,7 +294,7 @@ describe "An Entity Type" do
 
       it "should fail if the new value already exists" do
         @c.Room(@b, 102)
-        lambda { @r.number = 102 }.should raise_error
+        lambda { @r.number = 102 }.should raise_error(ActiveFacts::API::DuplicateIdentifyingValueException)
       end
 
       describe "to a previously-nonexistent value" do

@@ -47,7 +47,7 @@ describe "Guid Value Type instances" do
   it "should allow prevent invalid role assignment" do
     lambda {
         @thing.thing_id = "foo"
-      }.should raise_error
+      }.should raise_error(ArgumentError)
   end
 
   it "should allow an existing guid to be re-used" do

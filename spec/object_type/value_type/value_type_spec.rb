@@ -101,7 +101,7 @@ describe "Value Type class definitions" do
       class NameNotString
         value_type
       end
-    }.should raise_error
+    }.should raise_error(NameError)
   end
 
   it "should allow configuration of Role value through constructor using role name" do

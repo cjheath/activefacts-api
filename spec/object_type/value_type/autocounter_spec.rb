@@ -47,7 +47,7 @@ describe "AutoCounter Value Type instances" do
   it "should allow prevent invalid role assignment" do
     lambda {
         @thing.thing_id = "foo"
-      }.should raise_error
+      }.should raise_error(ArgumentError)
   end
 
   it "should not allow its value to be re-assigned" do
@@ -57,7 +57,7 @@ describe "AutoCounter Value Type instances" do
     lambda {
         @thing.thing_id.assign(4)
         #@thing.thing_id.assign(@thing_id)
-      }.should raise_error
+      }.should raise_error(ArgumentError)
   end
 
   it "should allow an existing counter to be re-used" do
@@ -72,7 +72,7 @@ describe "AutoCounter Value Type instances" do
   it "should not allow a counter to be cloned" do
     lambda {
       @thing_id.clone
-    }.should raise_error
+    }.should raise_error(RuntimeError)
   end
 
   it "should allow an existing counter-identified object to be re-used" do

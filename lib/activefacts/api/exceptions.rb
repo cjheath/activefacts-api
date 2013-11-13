@@ -33,7 +33,7 @@ module ActiveFacts
 	  if is_single
 	    "#{object_type} has a single identifying role '#{role}' which is has_one, but must be one_to_one"
 	  else
-	    raise "#{object_type} has an identifying role '#{role}' which is one_to_one, but must be has_one"
+	    "#{object_type} has an identifying role '#{role}' which is one_to_one, but must be has_one"
 	  end
 	super msg
       end
@@ -47,7 +47,7 @@ module ActiveFacts
 
     class InvalidObjectType < SchemaException
       def initialize vocabulary, klass, reason
-	raise "A constellation over #{vocabulary.name} cannot index instances of #{klass} because it #{reason}"
+	super "A constellation over #{vocabulary.name} cannot index instances of #{klass} because it #{reason}"
       end
     end
 
@@ -59,7 +59,7 @@ module ActiveFacts
 
     class UnrecognisedOptionsException < SchemaException
       def initialize declaration, instance, option_names
-        raise "Unrecognised options on declaration of #{declaration} #{instance}: #{option_names.inspect}"
+        super "Unrecognised options on declaration of #{declaration} #{instance}: #{option_names.inspect}"
       end
     end
 
