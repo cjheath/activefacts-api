@@ -55,11 +55,12 @@ module ActiveFacts
 
       def verbalise
         "Vocabulary #{name}:\n\t" +
-          @object_type.keys.sort.map{|object_type|
-              c = @object_type[object_type]
-              __bind(c.basename)
-              c.verbalise + "\n\t\t// Roles played: " + c.roles.verbalise
-            }*"\n\t"
+          @object_type.keys.sort.map do |object_type|
+	    c = @object_type[object_type]
+	    __bind(c.basename)
+	    c.verbalise + "\n\t\t// Roles played: " + c.roles.verbalise
+	  end.
+	  join("\n\t")
       end
 
       def __add_object_type(klass)  #:nodoc:

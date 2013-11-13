@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Clifford Heath"]
-  s.date = "2013-01-29"
+  s.date = "2013-11-03"
   s.description = "\nThe ActiveFacts API is a Ruby DSL for managing constellations of elementary facts.\nEach fact is either existential (a value or an entity), characteristic (boolean) or\nbinary relational (A rel B). Relational facts are consistently co-referenced, so you\ncan traverse them efficiently in any direction. Each constellation maintains constraints\nover the fact population.\n"
   s.email = "clifford.heath@gmail.com"
   s.extra_rdoc_files = [
@@ -68,11 +68,11 @@ Gem::Specification.new do |s|
   s.homepage = "http://github.com/cjheath/activefacts-api"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.24"
+  s.rubygems_version = "2.0.5"
   s.summary = "A fact-based data model DSL and API"
 
   if s.respond_to? :specification_version then
-    s.specification_version = 3
+    s.specification_version = 4
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<rbtree-pure>, [">= 0"])

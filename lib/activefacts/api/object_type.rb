@@ -58,7 +58,8 @@ module ActiveFacts
       # Define a unary fact type attached to this object_type; in essence, a boolean attribute.
       #
       # Example: maybe :is_ceo
-      def maybe(role_name)
+      def maybe(role_name, options = {})
+	raise UnrecognisedOptionsException.new("role", role_name, options.keys) unless options.empty?
         realise_role(roles[role_name] = Role.new(self, TrueClass, role_name))
       end
 
@@ -352,7 +353,6 @@ module ActiveFacts
       # :class => the related class (Class object or Symbol). Not allowed if role_name was a class.
       # :mandatory => true. There must be a related object for this object to be valid.
       # :counterpart => Symbol/String. The name of the counterpart role. Will be to_s.snakecase'd and maybe augmented with "all_" and/or "_as_<role_name>"
-      # :reading => "forward/reverse". Forward and reverse readings. Must include MARKERS for the player names. May include adjectives. REVISIT: define MARKERS!
       # LATER:
       # :order => :local_role OR lambda{} (for sort_by)
       # :restrict => Range or Array of Range/value or respond_to?(include?)
@@ -415,11 +415,6 @@ module ActiveFacts
 
         related_role_name = related_role_name.to_s if related_role_name = options.delete(:counterpart)
 
-        reading = options.delete(:reading)        # REVISIT: Implement verbalisation
-        role_value_constraint = options.delete(:restrict)   # REVISIT: Implement role value constraints
-
-	additional_role_options options
-
 	raise UnrecognisedOptionsException.new("role", role_name, options.keys) unless options.empty?
 
         # If you have a role "supervisor" and a sub-class "Supervisor", this'll bitch.
@@ -447,10 +442,6 @@ module ActiveFacts
           mandatory,
           other_role_method.to_sym 
         ]
-      end
-
-      def additional_role_options options
-	# This is a hook for extensions to override. Any extension options should be deleted from the options hash.
       end
 
       def when_bound(object_type, *args, &block)

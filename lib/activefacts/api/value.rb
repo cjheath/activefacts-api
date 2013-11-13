@@ -40,7 +40,7 @@ module ActiveFacts
           # REVISIT: args could be a hash, with keys :length, :scale, :unit, :allow
           options = (args[-1].is_a?(Hash) ? args.pop : {})
           options.each do |key, value|
-	    raise UnrecognisedOptionsException.new('value_type', basename, key) unless respond_to?(key)
+	    raise UnrecognisedOptionsException.new('ValueType', basename, key) unless respond_to?(key)
             send(key, value)
           end
         end

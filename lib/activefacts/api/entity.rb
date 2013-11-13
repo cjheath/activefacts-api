@@ -393,6 +393,12 @@ module ActiveFacts
         # which is a list of roles it plays. The identification scheme may be
         # inherited from a superclass.
         def identified_by(*args) #:nodoc:
+          options = (args[-1].is_a?(Hash) ? args.pop : {})
+          options.each do |key, value|
+	    raise UnrecognisedOptionsException.new('EntityType', basename, key) unless respond_to?(key)
+            send(key, value)
+          end
+
           raise MissingIdentificationException.new(self) unless args.size > 0
 
           # Catch the case where we state the same identification as our superclass:
