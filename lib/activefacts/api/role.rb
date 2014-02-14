@@ -14,24 +14,33 @@ module ActiveFacts
     # or _one_to_one_, and the other is created on the counterpart class.
     # Each ObjectType class maintains a RoleCollection hash of the roles it plays.
     class Role
+      attr_reader   :fact_type        # The FactType to which this role belongs
       attr_reader   :object_type      # The ObjectType to which this role belongs
-      attr_reader   :is_unary
       attr_reader   :name             # The name of the role (a Symbol)
-      attr_accessor :counterpart      # All roles except unaries have a counterpart Role
       attr_reader   :unique           # Is this role played by at most one instance, or more?
       attr_reader   :mandatory        # In a valid fact population, is this role required to be played?
       attr_reader   :value_constraint # Counterpart Instances playing this role must meet this constraint
       attr_reader   :is_identifying   # Is this an identifying role for object_type?
 
-      def initialize(object_type, counterpart, name, mandatory = false, unique = true)
+      def initialize(fact_type, object_type, name, mandatory, unique)
+	@fact_type = fact_type
+	@fact_type.all_role << self
         @object_type = object_type
-        @is_unary = counterpart == TrueClass
-        @counterpart = @is_unary ? nil : counterpart
         @name = name
         @mandatory = mandatory
         @unique = unique
         @is_identifying = @object_type.is_entity_type && @object_type.identifying_role_names.include?(@name)
         associate_role(@object_type)
+      end
+
+      # Is this role a unary (created by maybe)?
+      def unary?
+        # N.B. A role with a forward reference looks unary until it is resolved.
+	@fact_type.all_role.size == 1
+      end
+
+      def counterpart
+	@counterpart ||= (@fact_type.all_role - [self])[0]
       end
 
       # Return the name of the getter method
@@ -49,19 +58,13 @@ module ActiveFacts
         @variable ||= "@#{@name}"
       end
 
-      # Is this role a unary (created by maybe)? If so, it has no counterpart
-      def unary?
-        # N.B. A role with a forward reference looks unary until it is resolved.
-        counterpart == nil
-      end
-
       def inspect
         "<Role #{object_type.name}.#{name}>"
       end
 
       def verbalise
 	"Role #{name} of #{object_type}, " +
-	  (@is_unary ? 'unary' : (counterpart ? 'played by' + counterpart.object_type : 'undefined'))
+	  (unary? ? 'unary' : (counterpart ? 'played by' + counterpart.object_type : 'undefined'))
       end
 
     private

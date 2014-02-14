@@ -35,6 +35,7 @@ require 'activefacts/api/vocabulary'            # A Ruby module may become a Voc
 require 'activefacts/api/instance_index'        # The index used by a constellation to record every instance
 require 'activefacts/api/constellation'         # A Constellation is a query result or fact population
 require 'activefacts/api/object_type'           # A Ruby class may become a ObjectType in a Vocabulary
+require 'activefacts/api/fact_type'             # Each role belongs to a single fact type
 require 'activefacts/api/role'                  # A ObjectType has a collection of Roles
 require 'activefacts/api/role_values'           # The container used for sets of role players in many_one's
 require 'activefacts/api/instance'              # An Instance is an instance of a ObjectType class

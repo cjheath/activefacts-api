@@ -60,7 +60,8 @@ module ActiveFacts
       # Example: maybe :is_ceo
       def maybe(role_name, options = {})
 	raise UnrecognisedOptionsException.new("role", role_name, options.keys) unless options.empty?
-        realise_role(roles[role_name] = Role.new(self, TrueClass, role_name))
+	fact_type = FactType.new
+        realise_role(roles[role_name] = Role.new(fact_type, self, role_name, false, true))
       end
 
       # Define a binary fact type relating this object_type to another,
@@ -169,7 +170,7 @@ module ActiveFacts
 
       # Every new role added or inherited comes through here:
       def realise_role(role) #:nodoc:
-        if (role.is_unary)
+        if (role.unary?)
           # Unary role
           define_unary_role_accessor(role)
         elsif (role.unique)
@@ -211,18 +212,15 @@ module ActiveFacts
 	if roles[role_name]
 	  raise DuplicateRoleException.new("#{name} cannot have more than one role named #{role_name}")
 	end
-        roles[role_name] = role = Role.new(self, nil, role_name, mandatory)
+	fact_type = FactType.new
+        roles[role_name] = role = Role.new(fact_type, self, role_name, mandatory, true)
 
         # There may be a forward reference here where role_name is a Symbol,
         # and the block runs later when that Symbol is bound to the object_type.
         when_bound(related, self, role_name, related_role_name) do |target, definer, role_name, related_role_name|
-          if (one_to_one)
-            target.roles[related_role_name] = role.counterpart = Role.new(target, role, related_role_name, false)
-          else
-            target.roles[related_role_name] = role.counterpart = Role.new(target, role, related_role_name, false, false)
-          end
+	  counterpart = target.roles[related_role_name] = Role.new(fact_type, target, related_role_name, false, one_to_one)
           realise_role(role)
-          target.realise_role(role.counterpart)
+          target.realise_role(counterpart)
         end
       end
 

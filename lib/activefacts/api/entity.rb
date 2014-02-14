@@ -38,7 +38,7 @@ module ActiveFacts
 	    value =
 	      if key == nil
 		nil
-	      elsif role.is_unary
+	      elsif role.unary?
 		(key && true)	# Preserve nil and false
 	      else
 		role.counterpart.object_type.assert_instance(constellation, Array(key))
@@ -313,7 +313,7 @@ module ActiveFacts
 	  end.map do |role|
 	    if arg_hash.include?(n = role.name)	  # Do it this way to avoid problems where nil or false is provided
 	      value = arg_hash[n]
-	      next (value && true) if (role.is_unary)
+	      next (value && true) if (role.unary?)
 	      if value
 		klass = role.counterpart.object_type
 		value = klass.identifying_role_values(constellation, Array(value))
@@ -323,7 +323,7 @@ module ActiveFacts
 	      counterpart_class = role.counterpart && role.counterpart.object_type
 	      value = value.identifying_role_values(counterpart_class)
 	      arg_hash[n] = value # Save the value for making a new instance
-	      next value if (role.is_unary)
+	      next value if (role.unary?)
 	    else
 	      value = nil
 	    end
@@ -363,7 +363,7 @@ module ActiveFacts
 	      value =
 		if v == nil
 		  nil
-		elsif role.is_unary
+		elsif role.unary?
 		  (v && true)	# Preserve nil and false
 		else
 		  role.counterpart.object_type.assert_instance(constellation, Array(v))
