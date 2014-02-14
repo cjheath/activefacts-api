@@ -84,10 +84,6 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<ruby-debug>, [">= 0"])
       s.add_development_dependency(%q<debugger>, [">= 0"])
       s.add_development_dependency(%q<pry>, [">= 0"])
-      s.add_development_dependency(%q<rspec>, ["~> 2.3.0"])
-      s.add_development_dependency(%q<bundler>, ["~> 1.0.0"])
-      s.add_development_dependency(%q<jeweler>, ["~> 1.5.2"])
-      s.add_development_dependency(%q<rdoc>, [">= 2.4.2"])
     else
       s.add_dependency(%q<rbtree-pure>, [">= 0"])
       s.add_dependency(%q<rake>, [">= 10.1"])
@@ -96,10 +92,6 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<ruby-debug>, [">= 0"])
       s.add_dependency(%q<debugger>, [">= 0"])
       s.add_dependency(%q<pry>, [">= 0"])
-      s.add_dependency(%q<rspec>, ["~> 2.3.0"])
-      s.add_dependency(%q<bundler>, ["~> 1.0.0"])
-      s.add_dependency(%q<jeweler>, ["~> 1.5.2"])
-      s.add_dependency(%q<rdoc>, [">= 2.4.2"])
     end
   else
     s.add_dependency(%q<rbtree-pure>, [">= 0"])
@@ -109,10 +101,6 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<ruby-debug>, [">= 0"])
     s.add_dependency(%q<debugger>, [">= 0"])
     s.add_dependency(%q<pry>, [">= 0"])
-    s.add_dependency(%q<rspec>, ["~> 2.3.0"])
-    s.add_dependency(%q<bundler>, ["~> 1.0.0"])
-    s.add_dependency(%q<jeweler>, ["~> 1.5.2"])
-    s.add_dependency(%q<rdoc>, [">= 2.4.2"])
   end
 end
 

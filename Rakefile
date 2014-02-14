@@ -19,11 +19,6 @@ over the fact population.
   gem.authors = ["Clifford Heath"]
   # Include your dependencies below. Runtime dependencies are required when using your gem,
   # and development dependencies are only needed for development (ie running rake tasks, tests, etc)
-  gem.add_development_dependency "rspec", "~> 2.3.0"
-  gem.add_development_dependency "bundler", "~> 1.0.0"
-  gem.add_development_dependency "jeweler", "~> 1.5.2"
-  # gem.add_development_dependency "rcov", ">= 0"
-  gem.add_development_dependency "rdoc", ">= 2.4.2"
 end
 Jeweler::RubygemsDotOrgTasks.new
 
