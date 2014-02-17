@@ -57,7 +57,6 @@ describe "In a vocabulary" do
 
   Cases =
     ValueClasses.map do |klass| # [String, Date, DateTime, Int, Real, AutoCounter, Decimal, Guid]
-      x=
       { :name => "a #{klass}",
 	:definition => %Q{
 	  class T < #{klass}
@@ -82,8 +81,6 @@ describe "In a vocabulary" do
 	  end
 	).compact
       }
-      debugger if x[:constructor_args].empty?
-      x
     end + [
       { :name => "a Value Sub Type",
 	:definition => %q{

@@ -19,10 +19,12 @@ describe "Value Type class definitions" do
         value_type
         has_one :name
       end
+      class GivenName < Name
+      end
     end
 
-    @classes = [Mod::Name, Mod::Year, Mod::Weight]
-    @attrs = [:name, :name, :name]
+    @classes = [Mod::Name, Mod::GivenName, Mod::Year, Mod::Weight]
+    @attrs = [:name, :name, :name, :name]
 
   end
 
@@ -34,7 +36,9 @@ describe "Value Type class definitions" do
 
   it "should not pollute the value class" do
     @classes.each { |klass|
-        klass.superclass.respond_to?(:verbalise).should_not be_true
+	if !@classes.include?(klass.superclass)
+	  klass.superclass.respond_to?(:verbalise).should_not be_true
+	end
       }
   end
 
@@ -74,9 +78,15 @@ describe "Value Type class definitions" do
   end
 
   it "should contain only the added role definitions" do
-    Mod::Name.roles.size.should == 4
-    (@classes-[Mod::Name]).each { |klass|
-        klass.roles.size.should == 1
+    @classes.each { |klass|
+	num_roles = klass.roles.size
+	if klass == Mod::GivenName
+	  num_roles.should == 1
+	elsif klass == Mod::Name
+	  num_roles.should == 5
+	else
+	  num_roles.should == 1
+	end
       }
   end
 
@@ -88,9 +98,11 @@ describe "Value Type class definitions" do
         klass.roles(attr).should_not be_nil
         klass.roles(attr.to_s).should_not be_nil
         # Check the role definition may be accessed by indexing the returned array:
-        klass.roles[attr].should_not be_nil
-        # Check the role definition array by .include?
-        klass.roles.include?(attr).should be_true
+	unless @classes.include?(klass.superclass)
+	  klass.roles(attr).should_not be_nil
+	  # Check the role definition array by .include?
+	  klass.roles.include?(attr).should be_true
+	end
       }
   end
 

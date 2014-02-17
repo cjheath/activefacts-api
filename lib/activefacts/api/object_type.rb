@@ -61,7 +61,7 @@ module ActiveFacts
       def maybe(role_name, options = {})
 	raise UnrecognisedOptionsException.new("role", role_name, options.keys) unless options.empty?
 	fact_type = FactType.new
-        realise_role(roles[role_name] = Role.new(fact_type, self, role_name, false, true))
+        realise_role(Role.new(fact_type, self, role_name, false, true))
       end
 
       # Define a binary fact type relating this object_type to another,
@@ -141,6 +141,7 @@ module ActiveFacts
 	    raise InvalidSupertypeException.new("#{self} < #{supertype}: A value type may not be a supertype of an entity type, and vice versa")
 	  end
 
+	  TypeInheritanceFactType.new(supertype, self)
 	  @supertypes << supertype
 
 	  # Realise the roles (create accessors) of this supertype.
@@ -213,12 +214,12 @@ module ActiveFacts
 	  raise DuplicateRoleException.new("#{name} cannot have more than one role named #{role_name}")
 	end
 	fact_type = FactType.new
-        roles[role_name] = role = Role.new(fact_type, self, role_name, mandatory, true)
+        role = Role.new(fact_type, self, role_name, mandatory, true)
 
         # There may be a forward reference here where role_name is a Symbol,
         # and the block runs later when that Symbol is bound to the object_type.
         when_bound(related, self, role_name, related_role_name) do |target, definer, role_name, related_role_name|
-	  counterpart = target.roles[related_role_name] = Role.new(fact_type, target, related_role_name, false, one_to_one)
+	  counterpart = Role.new(fact_type, target, related_role_name, false, one_to_one)
           realise_role(role)
           target.realise_role(counterpart)
         end

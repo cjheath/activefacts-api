@@ -22,14 +22,15 @@ module ActiveFacts
       attr_reader   :value_constraint # Counterpart Instances playing this role must meet this constraint
       attr_reader   :is_identifying   # Is this an identifying role for object_type?
 
-      def initialize(fact_type, object_type, name, mandatory, unique)
+      def initialize(fact_type, object_type, role_name, mandatory, unique)
 	@fact_type = fact_type
 	@fact_type.all_role << self
         @object_type = object_type
-        @name = name
+        @name = role_name
         @mandatory = mandatory
         @unique = unique
         @is_identifying = @object_type.is_entity_type && @object_type.identifying_role_names.include?(@name)
+	object_type.roles[role_name] = self
         associate_role(@object_type)
       end
 

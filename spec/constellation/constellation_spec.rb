@@ -465,7 +465,7 @@ describe "A Constellation instance" do
         end
       end
       c = @constellation.ListedCompany("foo", :auto_counter_val => 23)
-    }.should_not raise_error(NameError)
+    }.should_not raise_error
   end
 
   it "should be able to attach a new supertype on an entity type to make it a (sub-)subtype" do

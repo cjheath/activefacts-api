@@ -241,4 +241,43 @@ describe "Roles" do
     identifier.employee.name.should == "PuppetMaster"
   end
 
+  it "should create TypeInheritance fact type and roles" do
+    module Mod
+      class GivenName < Name
+      end
+      class Document
+	identified_by :name
+	one_to_one :name
+      end
+      class Contract
+	supertypes Document
+      end
+    end
+    [Mod::GivenName, Mod::Person, Mod::Contract].each do |subtype|
+      subtype.supertypes.each do |supertype|
+	# Get the role names:
+	supertype_role_name = supertype.name.gsub(/.*::/,'').to_sym
+	subtype_role_name = subtype.name.gsub(/.*::/,'').to_sym
+
+	# Check that the roles are indexed:
+	subtype.roles.should include(supertype_role_name)
+	supertype.roles.should include(subtype_role_name)
+
+	# Get the role objects:
+	supertype_role = subtype.roles[supertype_role_name]
+	subtype_role = supertype.roles[subtype_role_name]
+
+	# Check uniqueness and mandatory:
+	supertype_role.unique.should be_true
+	subtype_role.unique.should be_true
+	supertype_role.mandatory.should be_true
+	subtype_role.mandatory.should be_false
+
+	# Check they belong to the same TypeInheritanceFactType:
+	subtype_role.fact_type.class.should be(ActiveFacts::API::TypeInheritanceFactType)
+	subtype_role.fact_type.should == supertype_role.fact_type
+      end
+    end
+  end
+
 end

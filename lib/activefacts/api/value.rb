@@ -129,6 +129,7 @@ module ActiveFacts
         def inherited(other)  #:nodoc:
           # Copy the type parameters here, etc?
           other.send :realise_supertypes, self
+	  TypeInheritanceFactType.new(self, other)
           vocabulary.__add_object_type(other)
           super
         end

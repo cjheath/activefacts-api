@@ -203,19 +203,21 @@ module ActiveFacts
                   s = "\t\t" + instance.verbalise
                   if (single_roles.size > 0)
                     role_values = 
-                      single_roles.map{|role|
+                      single_roles.map do |role_name|
+			  #p klass, klass.roles.keys; exit
+			  next nil if klass.roles(role_name).fact_type.is_a?(TypeInheritanceFactType)
 			  value =
-			    if instance.respond_to?(role)
-			      value = instance.send(role)
+			    if instance.respond_to?(role_name)
+			      value = instance.send(role_name)
 			    else
-			      instance.class.roles(role) # This role has not yet been realised
+			      instance.class.roles(role_name) # This role has not yet been realised
 			    end
-			  [ role_name = role.to_s.camelcase, value ]
-                        }.select{|role_name, value|
+			  [ role_name.to_s.camelcase, value ]
+                        end.compact.select do |role_name, value|
                           value
-                        }.map{|role_name, value|
+                        end.map do |role_name, value|
                           "#{role_name} = #{value ? value.verbalise : "nil"}"
-                        }
+                        end
                     s += " where " + role_values*", " if role_values.size > 0
                   end
                   s

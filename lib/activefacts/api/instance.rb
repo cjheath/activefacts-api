@@ -85,9 +85,15 @@ module ActiveFacts
 
 	irvks = {}  # identifying_role_values by class
 	klasses.each do |klass|
-	  if !irvks[klass] and klass.roles.detect{|_, role| role.counterpart and !role.counterpart.unique and send(role.getter) }
-	    # We will need the identifying_role_values for this role's object_type
-	    irvks[klass] = identifying_role_values(klass)
+	  if !irvks[klass]
+	    if klass.roles.detect do |_, role|
+		  role.counterpart and
+		  !role.counterpart.unique and
+		  send(role.getter)
+		end
+	      # We will need the identifying_role_values for this role's object_type
+	      irvks[klass] = identifying_role_values(klass)
+	    end
 	  end
 	end
 
@@ -99,6 +105,7 @@ module ActiveFacts
 	    # Objects being created do not have to have non-identifying mandatory roles,
 	    # so we allow retracting to the same state.
             if role.unique
+	      next if role.fact_type.is_a?(TypeInheritanceFactType)
 	      i = send(role.getter)
 	      next unless i
 	      if counterpart.is_identifying && counterpart.mandatory
@@ -117,6 +124,7 @@ module ActiveFacts
             else
               # puts "Not removing role #{role_name} from counterpart RoleValues #{counterpart.name}"
               # Duplicate the array using to_a, as the RoleValues here will be modified as we traverse it:
+	      next if role.fact_type.is_a?(TypeInheritanceFactType)
 	      counterpart_instances = send(role.name)
 	      counterpart_instances.to_a.each do |counterpart_instance|
 		# These actions deconstruct the RoleValues as we go:

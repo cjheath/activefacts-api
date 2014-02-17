@@ -420,6 +420,7 @@ module ActiveFacts
         def inherited(other) #:nodoc:
           other.identification_inherited_from = self
           subtypes << other unless subtypes.include? other
+	  TypeInheritanceFactType.new(self, other)
           vocabulary.__add_object_type(other)
         end
 
