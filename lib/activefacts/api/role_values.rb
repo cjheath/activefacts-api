@@ -8,11 +8,15 @@ module ActiveFacts
   module API
 
     class RoleValues  #:nodoc:
+      attr_accessor :object_type
       attr_accessor :sort
+      attr_accessor :index_roles
 
-      def initialize sort = false
+      def initialize object_type, index_roles = nil, sort = false
+	@object_type = object_type
 	@sort = !!(sort || ENV[@@af_sort_name ||= "ACTIVEFACTS_SORT"])
         @a = @sort ? RBTree.new : []
+	@index_roles = index_roles
       end
 
       def +(a)
@@ -20,6 +24,17 @@ module ActiveFacts
 	  @a.values.+(a.is_a?(RoleValues) ? [a] : a)
 	else
 	  @a.+(a.is_a?(RoleValues) ? [a] : a)
+	end
+      end
+
+      def [](*a)
+	if @sort
+	  # REVISIT: Consider whether to return an array when a partial key is provided.
+	  key = form_key(Array(a))
+	  @a[key]
+	else
+	  # Slow: Search the array for an element having the matching key:
+	  @a.detect{|e| index_values(e) == a}
 	end
       end
 
@@ -36,12 +51,24 @@ module ActiveFacts
       end
 
       def form_key a
-	KeyArray.new(Array(a))
+	a = Array(a)
+	if @index_roles && @index_roles.size != a.size
+	  raise "Incorrectly-sized key #{a.inspect}. Index roles are #{@index_roles.map(&:name).inspect}"
+	end
+	KeyArray.new(a)
+      end
+
+      def index_values object
+	if @index_roles
+	  @index_roles.map{|r| object.send(r.name).identifying_role_values}
+	else
+	  object.identifying_role_values
+	end
       end
 
       def add_instance(value, key)
 	if @sort
-	  @a[form_key(key)] = value
+	  @a[form_key(index_values(value))] = value
 	else
 	  @a << value
 	end
@@ -51,17 +78,8 @@ module ActiveFacts
 	if @sort
 	  deleted = @a.delete(form_key(key))
 	else
-	  deleted = @a.delete(value)
+	  deleted = @a.delete(value)  # Slow: it has to search the array
 	end
-
-	# Test code:
-	unless deleted
-	  p @a
-	  p value
-	  debugger
-	  true
-	end
-
       end
 
       def verbalise

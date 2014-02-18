@@ -47,14 +47,6 @@ describe "Multi-part identifiers" do
     @p.all_child.size.should == 3
   end
 
-  it "should allow children to be found in the instance index by the residual key" do
-    pending "RoleValues use the whole key, not the residual key" do
-      @c.Child[[0]].should == @c0
-      @c.Child[[1]].should == @c1
-      @c.Child[[2]].should == @c2
-    end
-  end
-
   it "should allow children to be found in the instance index by the whole key" do
     @c.Child[[[@p.parent_id], 0]].should == @c0
     @c.Child[[[@p.parent_id], 1]].should == @c1
@@ -68,10 +60,23 @@ describe "Multi-part identifiers" do
     @p.all_child.to_a[2].should == @c2
   end
 
-  it "should have a correct key for each child in the parent's RoleValues" do
-    pending "Key sorting is not supported in this version" if @p.all_child.instance_variable_get("@a").kind_of? Array
-    @p.all_child.keys[0].should == [[@p.parent_id], 0]
-    @p.all_child.keys[1].should == [[@p.parent_id], 1]
-    @p.all_child.keys[2].should == [[@p.parent_id], 2]
+  it "should allow children to be found in an identifying partner's RoleValues by the residual key" do
+    @p.all_child[0].should == @c0
+    @p.all_child[1].should == @c1
+    @p.all_child[2].should == @c2
+  end
+
+  it "should use the correct residual key for each child in an identifying partner's RoleValues" do
+    if @p.all_child.instance_variable_get("@a").kind_of? Array
+      pending "Key sorting is not supported in this version"
+    end
+
+    @p.all_child.keys[0].should == [0]
+    @p.all_child.keys[1].should == [1]
+    @p.all_child.keys[2].should == [2]
+
+    # @p.all_child.keys[0].should == [[@p.parent_id], 0]
+    # @p.all_child.keys[1].should == [[@p.parent_id], 1]
+    # @p.all_child.keys[2].should == [[@p.parent_id], 2]
   end
 end

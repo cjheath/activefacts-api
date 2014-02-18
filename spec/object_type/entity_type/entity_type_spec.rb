@@ -49,30 +49,30 @@ describe "Entity Type class definitions" do
     vocabulary.object_type.has_key?("Person").should be_true
   end
 
-  it "should respond to roles()" do
-    Mod::Person.respond_to?(:roles).should be_true
+  it "should respond to all_role()" do
+    Mod::Person.respond_to?(:all_role).should be_true
   end
 
   it "should contain only the added role definition" do
-    Mod::Person.roles.size.should == 1
+    Mod::Person.all_role.size.should == 1
   end
 
   it "should return the role definition" do
     # Check the role definition may be accessed by passing an index:
-    Mod::Person.roles(0).should be_nil
+    Mod::Person.all_role(0).should be_nil
 
-    role = Mod::Person.roles(:name)
+    role = Mod::Person.all_role(:name)
     role.should_not be_nil
 
-    role = Mod::Person.roles("name")
+    role = Mod::Person.all_role("name")
     role.should_not be_nil
 
     # Check the role definition may be accessed by indexing the returned hash:
-    role = Mod::Person.roles[:name]
+    role = Mod::Person.all_role[:name]
     role.should_not be_nil
 
     # Check the role definition array by .include?
-    Mod::Person.roles.include?(:name).should be_true
+    Mod::Person.all_role.include?(:name).should be_true
   end
 
   it "should fail on a ValueType" do

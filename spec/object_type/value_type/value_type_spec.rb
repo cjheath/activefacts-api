@@ -73,13 +73,13 @@ describe "Value Type class definitions" do
 
   it "should respond to roles()" do
     @classes.each { |klass|
-        klass.respond_to?(:roles).should be_true
+        klass.respond_to?(:all_role).should be_true
       }
   end
 
   it "should contain only the added role definitions" do
     @classes.each { |klass|
-	num_roles = klass.roles.size
+	num_roles = klass.all_role.size
 	if klass == Mod::GivenName
 	  num_roles.should == 1
 	elsif klass == Mod::Name
@@ -92,16 +92,16 @@ describe "Value Type class definitions" do
 
   it "should return the role definition" do
     # Check the role definition may not be accessed by passing an index:
-    Mod::Name.roles(0).should be_nil
+    Mod::Name.all_role(0).should be_nil
 
     @classes.zip(@attrs).each { |klass, attr|
-        klass.roles(attr).should_not be_nil
-        klass.roles(attr.to_s).should_not be_nil
+        klass.all_role(attr).should_not be_nil
+        klass.all_role(attr.to_s).should_not be_nil
         # Check the role definition may be accessed by indexing the returned array:
 	unless @classes.include?(klass.superclass)
-	  klass.roles(attr).should_not be_nil
+	  klass.all_role(attr).should_not be_nil
 	  # Check the role definition array by .include?
-	  klass.roles.include?(attr).should be_true
+	  klass.all_role.include?(attr).should be_true
 	end
       }
   end

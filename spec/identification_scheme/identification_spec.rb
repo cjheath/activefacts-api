@@ -5,7 +5,7 @@
 
 describe "An Entity Type" do
   before :all do
-    module Mod
+    module ModIS
       class Name < String
         value_type
       end
@@ -16,12 +16,12 @@ describe "An Entity Type" do
     end
   end
   before :each do
-    @c = ActiveFacts::API::Constellation.new(Mod)
+    @c = ActiveFacts::API::Constellation.new(ModIS)
   end
 
   describe "whose instances are identified by a single value role" do
     before :all do
-      module Mod
+      module ModIS
         class Business
           identified_by :name
           one_to_one :name
@@ -31,7 +31,7 @@ describe "An Entity Type" do
 
     it "should fail if the role isn't one-to-one" do
       proc do
-        module Mod
+        module ModIS
           class Cat
             identified_by :name
             has_one :name
@@ -48,11 +48,11 @@ describe "An Entity Type" do
       end
 
       it "should return a new instance if not previously present" do
-        @bus.should be_a(Mod::Business)
+        @bus.should be_a(ModIS::Business)
       end
 
       it "should assert the identifying value" do
-        @acme.should be_a(Mod::Name)
+        @acme.should be_a(ModIS::Name)
       end
 
       it "should be found in the constellation using the value" do
@@ -97,7 +97,7 @@ describe "An Entity Type" do
         end
 
         it "should assert the new identifier" do
-          @c.Name['Bloggs'].should be_a(Mod::Name)
+          @c.Name['Bloggs'].should be_a(ModIS::Name)
         end
 
         it "should allow the change" do
@@ -168,7 +168,7 @@ describe "An Entity Type" do
 
         describe "and the identifying value plays other roles" do
           before :all do
-            module Mod
+            module ModIS
               class Dog
                 identified_by :name
                 one_to_one :name
@@ -191,7 +191,7 @@ describe "An Entity Type" do
 
   describe "identified by two values" do
     before :all do
-      module Mod
+      module ModIS
         class Building
           identified_by :name
           one_to_one :name
@@ -222,12 +222,12 @@ describe "An Entity Type" do
     end
 
     before :each do
-      @c = ActiveFacts::API::Constellation.new(Mod)
+      @c = ActiveFacts::API::Constellation.new(ModIS)
     end
 
     it "should fail if any role is one-to-one" do
       proc do
-        module Mod
+        module ModIS
           class Floor
             identified_by :building, :number
             has_one :building
@@ -249,11 +249,11 @@ describe "An Entity Type" do
       end
 
       it "should return a new instance if not previously present" do
-        @r.should be_a(Mod::Room)
+        @r.should be_a(ModIS::Room)
       end
 
       it "should assert the identifying values" do
-        @rn.should be_a(Mod::Number)
+        @rn.should be_a(ModIS::Number)
         @c.Number[@rn.identifying_role_values].should == @rn    # Yes
         @c.Number[101].should == @rn    # No
         @c.Number[101].should be_eql 101    # No
@@ -318,6 +318,9 @@ describe "An Entity Type" do
         end
 
         it "should be found under the new identifier even on deep associations" do
+#          p @c.OwnerRoom.keys[0]
+#	  p @new_number
+#	  p [@o.identifying_role_values, @r.identifying_role_values]
           @c.OwnerRoom[[@o.identifying_role_values, @r.identifying_role_values]].should == @or
           @c.OwnerRoom[[[1_001, ['Mackay']], [['Mackay'], 103]]].should == @or
           @c.OwnerRoom[[[1_001, ['Mackay']], [['Mackay'], 101]]].should be_nil
@@ -378,7 +381,7 @@ describe "An Entity Type" do
 
   describe "which has a supertype that has separate identification" do
     before :each do
-      module Mod
+      module ModIS
         class Animal
           identified_by :number
           one_to_one :neumber

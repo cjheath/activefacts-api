@@ -48,7 +48,7 @@ describe "Roles" do
         has_one :name
       end
     end
-    role = Mod::Existing1.roles(:name)
+    role = Mod::Existing1.all_role(:name)
     role.should_not be_nil
     role.inspect.class.should == String
     role.counterpart.object_type.should == Mod::Name
@@ -138,10 +138,10 @@ describe "Roles" do
       end
     end
     # REVISIT: need to make more tests for the class's role accessor methods:
-    Mod::Name.roles(:all_existing1).should == Mod::Name.all_existing1_role
+    Mod::Name.all_role(:all_existing1).should == Mod::Name.all_existing1_role
 
-    Mod::Name.roles(:all_existing1).should_not be_nil
-    Mod::LegalEntity.roles(:all_contract_as_first).should_not be_nil
+    Mod::Name.all_role(:all_existing1).should_not be_nil
+    Mod::LegalEntity.all_role(:all_contract_as_first).should_not be_nil
   end
 
   it "should associate a role name with a matching object_type after it's created" do
@@ -151,8 +151,8 @@ describe "Roles" do
         has_one :given_name
       end
     end
-    # print "Mod::Existing2.roles = "; p Mod::Existing2.roles
-    r = Mod::Existing2.roles(:given_name)
+    # print "Mod::Existing2.all_role = "; p Mod::Existing2.all_role
+    r = Mod::Existing2.all_role(:given_name)
     r.should_not be_nil
     r.counterpart.should be_nil
     module Mod
@@ -161,7 +161,7 @@ describe "Roles" do
       end
     end
     # puts "Should resolve now:"
-    r = Mod::Existing2.roles(:given_name)
+    r = Mod::Existing2.all_role(:given_name)
     r.should_not be_nil
     r.counterpart.object_type.should == Mod::GivenName
   end
@@ -173,10 +173,10 @@ describe "Roles" do
         one_to_one :patriarch, :class => Person
       end
     end
-    r = Mod::FamilyName.roles(:patriarch)
+    r = Mod::FamilyName.all_role(:patriarch)
     r.should_not be_nil
     r.counterpart.object_type.should == Mod::Person
-    r.counterpart.object_type.roles(:family_name_as_patriarch).counterpart.object_type.should == Mod::FamilyName
+    r.counterpart.object_type.all_role(:family_name_as_patriarch).counterpart.object_type.should == Mod::FamilyName
   end
 
   it "should instantiate the matching object_type on assignment" do
@@ -260,12 +260,12 @@ describe "Roles" do
 	subtype_role_name = subtype.name.gsub(/.*::/,'').to_sym
 
 	# Check that the roles are indexed:
-	subtype.roles.should include(supertype_role_name)
-	supertype.roles.should include(subtype_role_name)
+	subtype.all_role.should include(supertype_role_name)
+	supertype.all_role.should include(subtype_role_name)
 
 	# Get the role objects:
-	supertype_role = subtype.roles[supertype_role_name]
-	subtype_role = supertype.roles[subtype_role_name]
+	supertype_role = subtype.all_role[supertype_role_name]
+	subtype_role = supertype.all_role[subtype_role_name]
 
 	# Check uniqueness and mandatory:
 	supertype_role.unique.should be_true

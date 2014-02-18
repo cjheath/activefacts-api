@@ -37,7 +37,6 @@ module ActiveFacts
         include Instance::ClassMethods
 
         def value_type *args, &block #:nodoc:
-          # REVISIT: args could be a hash, with keys :length, :scale, :unit, :allow
           options = (args[-1].is_a?(Hash) ? args.pop : {})
           options.each do |key, value|
 	    raise UnrecognisedOptionsException.new('ValueType', basename, key) unless respond_to?(key)
@@ -67,9 +66,7 @@ module ActiveFacts
 
         # verbalise this ValueType
         def verbalise
-          # REVISIT: Add length and scale here, if set
-          # REVISIT: Set vocabulary name of superclass if not same as this
-          "#{basename} = #{superclass.basename}();"
+          "#{basename} < #{superclass.basename}();"
         end
 
         def identifying_role_values(constellation, args)   #:nodoc:

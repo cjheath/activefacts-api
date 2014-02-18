@@ -30,7 +30,7 @@ module ActiveFacts
         @mandatory = mandatory
         @unique = unique
         @is_identifying = @object_type.is_entity_type && @object_type.identifying_role_names.include?(@name)
-	object_type.roles[role_name] = self
+	object_type.add_role(self)
         associate_role(@object_type)
       end
 
@@ -88,7 +88,6 @@ module ActiveFacts
     end
 
     # Every ObjectType has a Role collection
-    # REVISIT: You can enumerate the object_type's own roles, or inherited roles as well.
     class RoleCollection < Hash #:nodoc:
       def verbalise
         keys.sort_by(&:to_s).inspect

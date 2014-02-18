@@ -14,8 +14,8 @@ describe "In a vocabulary" do
 
   ObjectType_methods = [
     :has_one, :maybe, :one_to_one,
-    :roles, :subtypes, :supertypes, :vocabulary,
-    :all_roles,
+    :add_role, :all_role, :subtypes, :supertypes, :vocabulary,
+    :all_role_transitive,
     # To make private:
     :check_identifying_role_has_valid_cardinality, :realise_role, :supertypes_transitive,
   ]

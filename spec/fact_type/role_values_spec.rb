@@ -82,7 +82,7 @@ end
 describe "Roles of an Object Type" do
 
   it "should return a roles collection" do
-    roles = TestValueTypesModule::Octopus.roles
+    roles = TestValueTypesModule::Octopus.all_role
     roles.should_not be_nil
     roles.size.should == 2+VALUE_TYPES.size*5*2
 
@@ -215,7 +215,7 @@ describe "Object type role values" do
           octopus = @constellation.Octopus(0)
           octopus_role_name = :"octopus_as_one_#{object_type_name.snakecase}"
           object.send(:"#{octopus_role_name}=", octopus)
-          counterpart_name = object.class.roles[octopus_role_name].counterpart.name
+          counterpart_name = object.class.all_role[octopus_role_name].counterpart.name
 
           # Create a reference by assigning the object from a RoleProxy:
           proxy = octopus.send(counterpart_name)
@@ -239,7 +239,7 @@ describe "Object type role values" do
     before :each do
       @constellation = ActiveFacts::API::Constellation.new(TestValueTypesModule)
       @object = @constellation.Octopus(0)
-      @roles = @object.class.roles
+      @roles = @object.class.all_role
     end
 
     it "should return its constellation and vocabulary" do
@@ -249,7 +249,7 @@ describe "Object type role values" do
       @object.class.vocabulary.should == TestValueTypesModule
     end
 
-    TestValueTypesModule::Octopus.roles.each do |role_name, role|
+    TestValueTypesModule::Octopus.all_role.each do |role_name, role|
       next if role_name == :zero
 
       it "should respond to getting its #{role_name} role" do

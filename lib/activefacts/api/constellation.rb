@@ -87,8 +87,6 @@ module ActiveFacts
 	      on_admission.each do |b|
 		b.call
 	      end
-	      # REVISIT: Admission should not create new candidates, but might start a fresh list
-	      # debugger if @candidates and @candidates.length > 0
 	    end
 	  end
 	end
@@ -149,8 +147,6 @@ module ActiveFacts
 	  end
           instances[klass].delete(last_irvs)
         end
-        # REVISIT: Need to nullify all the roles this object plays.
-        # If mandatory on the counterpart side, this may/must propagate the delete (without mutual recursion!)
       end
 
       def define_class_accessor m, klass
@@ -191,10 +187,11 @@ module ActiveFacts
         vocabulary.object_type.keys.sort.map do |object_type|
             klass = vocabulary.const_get(object_type)
 
-            # REVISIT: It would be better not to rely on the role name pattern here:
-            single_roles, multiple_roles = klass.roles.keys.sort_by(&:to_s).partition{|r| r.to_s !~ /\Aall_/ }
+            single_roles, multiple_roles = klass.all_role.
+		partition{|n, r| r.unique }.
+		map{ |rs| rs.map{|n, r| n}.sort_by(&:to_s) }
+
             single_roles -= klass.identifying_role_names if (klass.is_entity_type)
-            # REVISIT: Need to include superclass roles also.
 
             instances = send(object_type.to_sym)
             next nil unless instances.size > 0
@@ -204,13 +201,13 @@ module ActiveFacts
                   if (single_roles.size > 0)
                     role_values = 
                       single_roles.map do |role_name|
-			  #p klass, klass.roles.keys; exit
-			  next nil if klass.roles(role_name).fact_type.is_a?(TypeInheritanceFactType)
+			  #p klass, klass.all_role.keys; exit
+			  next nil if klass.all_role(role_name).fact_type.is_a?(TypeInheritanceFactType)
 			  value =
 			    if instance.respond_to?(role_name)
 			      value = instance.send(role_name)
 			    else
-			      instance.class.roles(role_name) # This role has not yet been realised
+			      instance.class.all_role(role_name) # This role has not yet been realised
 			    end
 			  [ role_name.to_s.camelcase, value ]
                         end.compact.select do |role_name, value|

@@ -21,11 +21,12 @@ describe ActiveFacts::API::InstanceIndex do
       end
 
       class EntityB < EntityA
-        identified_by :value_b
-        one_to_one :value_b
+        identified_by :value_c
+        one_to_one :value_c, :class => ValueB
       end
 
       class EntityD < EntityA
+        has_one :value_d, :class => ValueB
       end
 
       class EntityC < EntityB
@@ -35,8 +36,8 @@ describe ActiveFacts::API::InstanceIndex do
 
     @constellation = ActiveFacts::API::Constellation.new(Mod)
     @a = @constellation.EntityA(:value_a => 1, :value_b => 'a')
-    @b = @constellation.EntityB(:value_a => 12, :value_b => 'ab')
-    @c = @constellation.EntityC(:value_a => 123, :value_b => 'abc')
+    @b = @constellation.EntityB(:value_a => 12, :value_b => 'ab', :value_c => 'abc')
+    @c = @constellation.EntityC(:value_a => 123, :value_b => 'abc1', :value_c => 'abc2', :value_d => 'abcd')
   end
 
   it "should index an instance under its own class" do
@@ -55,12 +56,12 @@ describe ActiveFacts::API::InstanceIndex do
     end
 
     it "should recursively try to use identifying role values within an array" do
-      value_b = @constellation.ValueB('abc')
+      value_b = @constellation.ValueB('abc2')
       @constellation.EntityC[[value_b]].should == @c
     end
 
     it "should use the value as-is if it doesn't have identifying role values" do
-      @constellation.EntityC[%w{abc}].should == @c
+      @constellation.EntityC[%w{abc2}].should == @c
     end
   end
 
@@ -79,7 +80,7 @@ describe ActiveFacts::API::InstanceIndex do
         b_index = @constellation.EntityB
         b_index.size.should == 2
         b_index.send(api) do |k, v, *a|
-          [['ab'], ['abc']].should include(k)
+          [['ab'], ['abc'], ['abc2']].should include(k)
           [@b, @c].should include v
           a.size.should == 0
           false

@@ -57,7 +57,7 @@ module ActiveFacts
       # List entities which have an identifying role played by this object.
       def related_entities(indirectly = true, instances = [])
 	# Check all roles of this instance
-        self.class.roles.each do |role_name, role|
+        self.class.all_role.each do |role_name, role|
 	  # If the counterpart role is not identifying for its object type, skip it
 	  next unless c = role.counterpart and c.is_identifying
 
@@ -83,22 +83,18 @@ module ActiveFacts
         # The counterpart roles get cleared automatically.
 	klasses = [self.class]+self.class.supertypes_transitive
 
-	irvks = {}  # identifying_role_values by class
-	klasses.each do |klass|
-	  if !irvks[klass]
-	    if klass.roles.detect do |_, role|
-		  role.counterpart and
-		  !role.counterpart.unique and
-		  send(role.getter)
-		end
-	      # We will need the identifying_role_values for this role's object_type
-	      irvks[klass] = identifying_role_values(klass)
-	    end
-	  end
+	irvrvs = {}  # identifying_role_values by RoleValues
+	self.class.all_role_transitive.each do |_, role|
+	  next unless role.counterpart and
+	    role.unique and
+	    !role.counterpart.unique and
+	    counterpart = send(role.getter)
+	  role_values = counterpart.send(role.counterpart.getter)
+	  irvrvs[role_values] = role_values.index_values(self)
 	end
 
 	klasses.each do |klass|
-          klass.roles.each do |role_name, role|
+          klass.all_role.each do |role_name, role|
             next if role.unary?
             counterpart = role.counterpart
 
@@ -117,7 +113,7 @@ module ActiveFacts
 		  i.send(counterpart.setter, nil, false)
 		else
 		  rv = i.send(role.counterpart.getter)
-		  rv.delete_instance(self, irvks[role.object_type])
+		  rv.delete_instance(self, irvrvs[rv])
 		end
 	      end
 	      instance_variable_set(role.variable, nil)

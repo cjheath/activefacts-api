@@ -33,7 +33,7 @@ module ActiveFacts
         unless (klass = self.class).identification_inherited_from
 	  irns = klass.identifying_role_names
 	  irns.each do |role_name|
-	    role = klass.roles(role_name)
+	    role = klass.all_role(role_name)
 	    key = arg_hash.delete(role_name)
 	    value =
 	      if key == nil
@@ -78,7 +78,7 @@ module ActiveFacts
       def settable_roles
         ([self.class]+self.class.supertypes_transitive).
           map do |k|
-            k.roles.
+            k.all_role.
               map do |name, role|
                 role.unique ? name : nil
               end.
@@ -91,7 +91,6 @@ module ActiveFacts
     public
       def inspect #:nodoc:
         inc = constellation ? " in #{constellation.inspect}" : ""
-        # REVISIT: Where there are one-to-one roles, this cycles
         irnv = self.class.identifying_role_names.map do |role_name|
           "@#{role_name}="+send(role_name).inspect
         end
@@ -123,7 +122,7 @@ module ActiveFacts
       def verbalise(role_name = nil)
         irnv = self.class.identifying_role_names.map do |role_sym|
             value = send(role_sym)
-            identifying_role_name = self.class.roles(role_sym).name.to_s.camelcase
+            identifying_role_name = self.class.all_role(role_sym).name.to_s.camelcase
             value ? value.verbalise(identifying_role_name) : "nil"
           end
         "#{role_name || self.class.basename}(#{ irnv*', ' })"
@@ -175,7 +174,7 @@ module ActiveFacts
 	# Now consider objects whose identifiers include this object.
 	# Find our roles in those identifiers first.
 	impacted_roles = []
-	self.class.all_roles.each do |n, role|
+	self.class.all_role_transitive.each do |n, role|
 	  if role.counterpart && role.counterpart.is_identifying
 	    # puts "Changing #{role.inspect} affects #{role.inspect}"
 	    impacted_roles << role
@@ -223,19 +222,19 @@ module ActiveFacts
         end
 
         def identifying_roles
-          # REVISIT: Should this return nil if identification_inherited_from?
           @identifying_roles ||=
             identifying_role_names.map do |role_name|
-              role = roles[role_name] || find_inherited_role(role_name)
+              role = all_role[role_name] || find_inherited_role(role_name)
+	      raise "Illegal request for identifying_roles of #{self} before they're all defined" if role == false
               role
-            end
+            end.freeze
         end
 
         def find_inherited_role(role_name)
           if !superclass.is_entity_type
             false
-          elsif superclass.roles.has_key?(role_name)
-            superclass.roles[role_name]
+          elsif superclass.all_role.has_key?(role_name)
+            superclass.all_role[role_name]
           else
             superclass.find_inherited_role(role_name)
           end
@@ -253,9 +252,8 @@ module ActiveFacts
 	      next if existing_value == new_value or existing_value.identifying_role_values(counterpart_class) == new_value
 
 	      # Coerce the new value to identifying values for the counterpart role's type:
-	      role = supertype.roles(role.name)
+	      role = supertype.all_role(role.name)
 	      new_key = role.counterpart.object_type.identifying_role_values(instance.constellation, [new_value])
-	      # REVISIT: Check that the next line actually gets hit, otherwise strip it out
 	      next if existing_value == new_key	  # This can happen when the counterpart is a value type
 
 	      existing_key = existing_value.identifying_role_values(counterpart_class)
@@ -309,7 +307,7 @@ module ActiveFacts
 	  args.push(arg_hash)
 
 	  irns.map do |role_name|
-	    roles(role_name)
+	    all_role(role_name)
 	  end.map do |role|
 	    if arg_hash.include?(n = role.name)	  # Do it this way to avoid problems where nil or false is provided
 	      value = arg_hash[n]
@@ -358,7 +356,7 @@ module ActiveFacts
 	  # An exception here leaves the object indexed,
 	  # but without the offending role (re-)assigned.
 	  arg_hash.each do |k, v|
-	    role = instance.class.roles(k)
+	    role = instance.class.all_role(k)
 	    unless role.is_identifying && role.object_type == self
 	      value =
 		if v == nil

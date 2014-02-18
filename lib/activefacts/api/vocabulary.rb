@@ -58,7 +58,7 @@ module ActiveFacts
           @object_type.keys.sort.map do |object_type|
 	    c = @object_type[object_type]
 	    __bind(c.basename)
-	    c.verbalise + "\n\t\t// Roles played: " + c.roles.verbalise
+	    c.verbalise + "\n\t\t// Roles played: " + c.all_role.verbalise
 	  end.
 	  join("\n\t")
       end

@@ -17,20 +17,20 @@ module ActiveFacts
       end
 
       # Each ObjectType maintains a list of the Roles it plays:
-      def roles(role_name = nil)
-        unless instance_variable_defined?(@@roles_name ||= "@roles")  # Avoid "instance variable not defined" warning from ||=
-          @roles = RoleCollection.new
+      def all_role(role_name = nil)
+        unless instance_variable_defined?(@@all_role_name ||= "@all_role")  # Avoid "instance variable not defined" warning from ||=
+          @all_role = RoleCollection.new
         end
         case role_name
         when nil
-          @roles
+          @all_role
         when Symbol, String
           # Search this class then all supertypes:
-          unless role = @roles[role_name.to_sym]
+          unless role = @all_role[role_name.to_sym]
             role = nil
             supertypes.each do |supertype|
                 begin
-                  role = supertype.roles(role_name)
+                  role = supertype.all_role(role_name)
                 rescue RoleNotDefinedException
                   next
                 end
@@ -46,13 +46,18 @@ module ActiveFacts
         end
       end
 
-      def all_roles
-	return @all_roles if @all_roles
-	@all_roles = roles.dup
+      def add_role(role)
+	all_role[role.name] = role
+	@all_role_transitive = nil  # Undo the caching
+      end
+
+      def all_role_transitive
+	return @all_role_transitive if @all_role_transitive
+	@all_role_transitive = all_role.dup
 	supertypes_transitive.each do |klass|
-	  @all_roles.merge!(klass.roles)
+	  @all_role_transitive.merge!(klass.all_role)
 	end
-	@all_roles
+	@all_role_transitive
       end
 
       # Define a unary fact type attached to this object_type; in essence, a boolean attribute.
@@ -145,8 +150,6 @@ module ActiveFacts
 	  @supertypes << supertype
 
 	  # Realise the roles (create accessors) of this supertype.
-	  # REVISIT: The existing accessors at the other end will need to allow this class as role counterpart
-	  # REVISIT: Need to check all superclass roles recursively, unless we hit a common supertype
 	  realise_supertypes(object_type, all_supertypes)
 	end
 	[(superclass.respond_to?(:vocabulary) ? superclass : nil), *@supertypes].compact
@@ -201,16 +204,14 @@ module ActiveFacts
 
       # Realise all the roles of a object_type on this object_type, used when a supertype is added:
       def realise_roles(object_type)
-        object_type.roles.each do |role_name, role|
+        object_type.all_role.each do |role_name, role|
           realise_role(role)
         end
       end
 
       # Shared code for both kinds of binary fact type (has_one and one_to_one)
       def define_binary_fact_type(one_to_one, role_name, related, mandatory, related_role_name)
-	# REVISIT: This should be all_roles, to catch duplicate role name in a supertype
-	# if all_roles[role_name]
-	if roles[role_name]
+	if all_role_transitive[role_name]
 	  raise DuplicateRoleException.new("#{name} cannot have more than one role named #{role_name}")
 	end
 	fact_type = FactType.new
@@ -233,7 +234,7 @@ module ActiveFacts
 	    else true
 	    end
 	  instance_variable_set(role.variable, assigned)
-	  # REVISIT: Provide a way to find all instances playing/not playing this role
+	  # REVISIT: Consider whether we want to provide a way to find all instances playing/not playing this boolean role
 	  # Analogous to true.all_thing_as_role_name...
 	  assigned
 	end
@@ -319,12 +320,15 @@ module ActiveFacts
 	    impacts = analyse_impacts(role)
 	  end
 
-	  old_key = identifying_role_values(role.object_type) if old && mutual_propagation
+	  if old && mutual_propagation
+	    old_role_values = old.send(getter = role.counterpart.getter)
+	    old_key = old_role_values.index_values(self)
+	  end
 
 	  instance_variable_set(role_var, value)
 
 	  # Remove "self" from the old counterpart:
-	  old.send(getter = role.counterpart.getter).delete_instance(self, old_key) if old_key
+	  old_role_values.delete_instance(self, old_key) if old_key
 
 	  @constellation.when_admitted do
 	    # Add "self" into the counterpart
@@ -338,10 +342,25 @@ module ActiveFacts
       end
 
       def define_many_to_one_accessor(role)
-	define_method role.getter do
+
+	define_method role.getter do |*keys|
 	  role_var = role.variable
-	  instance_variable_get(role_var) or
-	    instance_variable_set(role_var, RoleValues.new)
+	  role_values =
+	    instance_variable_get(role_var) || begin
+
+	      # Decide which roles this index will use (exclude the counterpart role from the id)
+	      if role.counterpart and
+		  counterpart = role.counterpart.object_type and
+		  counterpart.is_entity_type
+		index_roles = counterpart.identifying_roles - [role.counterpart]
+	      else
+		index_roles = nil
+	      end
+
+	      instance_variable_set(role_var, RoleValues.new(role.counterpart.object_type, index_roles))
+	    end
+	  # Look up a value by the key provided, or return the whole collection
+	  keys.size == 0 ? role_values : role_values.[](*keys)
         end
       end
 

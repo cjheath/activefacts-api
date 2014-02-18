@@ -3,12 +3,6 @@
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
 
-#require 'ruby-debug'; Debugger.start
-#trap "INT" do
-#  puts caller*"\n\t"
-#  debugger
-#end
-
 describe "An instance of every type of ObjectType" do
   before :all do
     Object.send :remove_const, :Mod if Object.const_defined?("Mod")
@@ -302,7 +296,7 @@ describe "An instance of every type of ObjectType" do
         # All identifying roles should be in the verbalisation.
         # Strictly this should be the role name, but we don't set names here.
         entity_type.identifying_role_names.each do |ir|
-            role = entity_type.roles(ir)
+            role = entity_type.all_role(ir)
             role.should_not be_nil
             counterpart_object_type = role.counterpart.object_type
             verbalisation.should =~ %r{\b#{counterpart_object_type.basename}\b}
@@ -336,7 +330,7 @@ describe "An instance of every type of ObjectType" do
         verbalisation = entity.verbalise
         verbalisation.should =~ %r{\b#{entity.class.basename}\b}
         entity.class.identifying_role_names.each do |ir|
-            role = entity.class.roles(ir)
+            role = entity.class.all_role(ir)
             role.should_not be_nil
             counterpart_object_type = role.counterpart.object_type
             verbalisation.should =~ %r{\b#{counterpart_object_type.basename}\b}
