@@ -55,7 +55,7 @@ module ActiveFacts
 	    if reason = invalid_object_type(k)
 	      raise InvalidObjectType.new(@vocabulary, k, reason)
 	    end
-	    h[k] = InstanceIndex.new(self, k, !!(@options[:sort] || ENV['ACTIVEFACTS_SORT']))
+	    h[k] = InstanceIndex.new(self, k, (@options.include?(:sort) ? @options[:sort] : API::sorted))
 	  end
       end
 
@@ -223,5 +223,13 @@ module ActiveFacts
       end
 
     end
+
+    def self.sorted
+      # Sorting defaults to true, unless you set ACTIVEFACTS_SORT to "[n]o" or [f]false"
+      @@af_sort_name ||= "ACTIVEFACTS_SORT"
+      sort = ENV[@@af_sort_name]
+      !sort or !%w{n f}.include?(sort[0])
+    end
+
   end
 end

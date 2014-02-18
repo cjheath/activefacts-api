@@ -12,9 +12,9 @@ module ActiveFacts
       attr_accessor :sort
       attr_accessor :index_roles
 
-      def initialize object_type, index_roles = nil, sort = false
+      def initialize object_type, index_roles = nil, sort = nil
 	@object_type = object_type
-	@sort = !!(sort || ENV[@@af_sort_name ||= "ACTIVEFACTS_SORT"])
+	@sort = sort == nil ? API::sorted : !!sort
         @a = @sort ? RBTree.new : []
 	@index_roles = index_roles
       end
