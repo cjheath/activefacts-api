@@ -32,6 +32,20 @@ module ActiveFacts
 	respond_to?(:__getobj__) ? __getobj__ : self
       end
 
+      def plays_no_role
+	# REVISIT: Some Value Types are independent, and so must always be regarded as playing a role
+	self.class.all_role.all? do |n, role|
+	  case
+	  when role.fact_type.is_a?(ActiveFacts::API::TypeInheritanceFactType)
+	    true  # No need to consider subtyping/supertyping roles here
+	  when role.unique
+	    send(role.getter) == nil
+	  else
+	    send(role.getter).empty?
+	  end
+	end
+      end
+
       # All ValueType classes include the methods defined here
       module ClassMethods
         include Instance::ClassMethods

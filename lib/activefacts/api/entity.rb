@@ -204,6 +204,30 @@ module ActiveFacts
 	end
       end
 
+      # If this instance's role is updated to the new value, does that cause a collision?
+      # We need to check each superclass that has a different identification pattern
+      def check_identification_change_legality(role, value)
+        return unless @constellation && role.is_identifying
+	return if @constellation.send(:instance_variable_get, :@suspend_duplicate_key_check)
+
+	klasses = [self.class] + self.class.supertypes_transitive
+	last_identity = nil
+	last_irns = nil
+	counterpart_class = role.counterpart ? role.counterpart.object_type : value.class
+        duplicate = klasses.detect do |klass|
+          next false unless klass.identifying_roles.include?(role)
+	  irns = klass.identifying_role_names
+	  if last_irns != irns
+	    last_identity = identifying_role_values(klass)
+	    role_position = irns.index(role.name)
+	    last_identity[role_position] = value.identifying_role_values(counterpart_class)
+	  end
+	  @constellation.instances[klass][last_identity]
+        end
+
+	raise DuplicateIdentifyingValueException.new(self.class, role.name, value) if duplicate
+      end
+
       # All classes that become Entity types receive the methods of this class as class methods:
       module ClassMethods
         include Instance::ClassMethods

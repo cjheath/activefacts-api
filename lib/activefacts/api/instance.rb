@@ -30,30 +30,6 @@ module ActiveFacts
         super || self.class.supertypes_transitive.include?(klass)
       end
 
-      # If this instance's role is updated to the new value, does that cause a collision?
-      # We need to check each superclass that has a different identification pattern
-      def check_identification_change_legality(role, value)
-        return unless @constellation && role.is_identifying
-	return if @constellation.send(:instance_variable_get, :@suspend_duplicate_key_check)
-
-	klasses = [self.class] + self.class.supertypes_transitive
-	last_identity = nil
-	last_irns = nil
-	counterpart_class = role.counterpart ? role.counterpart.object_type : value.class
-        duplicate = klasses.detect do |klass|
-          next false unless klass.identifying_roles.include?(role)
-	  irns = klass.identifying_role_names
-	  if last_irns != irns
-	    last_identity = identifying_role_values(klass)
-	    role_position = irns.index(role.name)
-	    last_identity[role_position] = value.identifying_role_values(counterpart_class)
-	  end
-	  @constellation.instances[klass][last_identity]
-        end
-
-	raise DuplicateIdentifyingValueException.new(self.class, role.name, value) if duplicate
-      end
-
       # List entities which have an identifying role played by this object.
       def related_entities(indirectly = true, instances = [])
 	# Check all roles of this instance
@@ -78,6 +54,7 @@ module ActiveFacts
       def retract
         # Delete from the constellation first, while we remember our identifying role values
         @constellation.deindex_instance(self) if @constellation
+	instance_variable_set(@@constellation_variable_name ||= "@constellation", nil)
 
         # Now, for all roles (from this class and all supertypes), assign nil to all functional roles
         # The counterpart roles get cleared automatically.
@@ -93,6 +70,26 @@ module ActiveFacts
 	  irvrvs[role_values] = role_values.index_values(self)
 	end
 
+	# Nullify the counterpart role of objects we identify first, before damaging our identifying_role_values:
+	klasses.each do |klass|
+          klass.all_role.each do |role_name, role|
+	    next if role.unary?
+	    next if !(counterpart = role.counterpart).is_identifying
+	    next if role.fact_type.is_a?(TypeInheritanceFactType)
+
+	    counterpart_instances = send(role.getter)
+	    counterpart_instances.to_a.each do |counterpart_instance|
+	      # Allow nullifying non-mandatory roles, as long as they're not identifying.
+	      if counterpart.mandatory
+		counterpart_instance.retract
+	      else
+		counterpart_instance.send(counterpart.setter, nil, false)
+	      end
+	    end
+	  end
+	end
+
+	# Now deal with other roles:
 	klasses.each do |klass|
           klass.all_role.each do |role_name, role|
             next if role.unary?
@@ -104,31 +101,28 @@ module ActiveFacts
 	      next if role.fact_type.is_a?(TypeInheritanceFactType)
 	      i = send(role.getter)
 	      next unless i
-	      if counterpart.is_identifying && counterpart.mandatory
-		# We play a mandatory identifying role in i; so retract that (it'll clear our instance variable)
-		i.retract
+
+	      if (counterpart.unique)
+		# REVISIT: This will incorrectly fail to propagate a key change for a non-mandatory role
+		i.send(counterpart.setter, nil, false)
 	      else
-		if (counterpart.unique)
-		  # REVISIT: This will incorrectly fail to propagate a key change for a non-mandatory role
-		  i.send(counterpart.setter, nil, false)
-		else
-		  rv = i.send(role.counterpart.getter)
-		  rv.delete_instance(self, irvrvs[rv])
+		rv = i.send(role.counterpart.getter)
+		rv.delete_instance(self, irvrvs[rv])
+
+		if (rv.empty? && !i.class.is_entity_type)
+		  i.retract if i.plays_no_role
 		end
+
 	      end
 	      instance_variable_set(role.variable, nil)
             else
               # puts "Not removing role #{role_name} from counterpart RoleValues #{counterpart.name}"
               # Duplicate the array using to_a, as the RoleValues here will be modified as we traverse it:
 	      next if role.fact_type.is_a?(TypeInheritanceFactType)
-	      counterpart_instances = send(role.name)
+	      counterpart_instances = send(role.getter)
 	      counterpart_instances.to_a.each do |counterpart_instance|
-		# These actions deconstruct the RoleValues as we go:
-                if counterpart.is_identifying && counterpart.mandatory
-                  counterpart_instance.retract
-                else
-                  counterpart_instance.send(counterpart.setter, nil, false)
-                end
+		# This action deconstructs our RoleValues as we go:
+		counterpart_instance.send(counterpart.setter, nil, false)
               end
 	      instance_variable_set(role.variable, nil)
             end

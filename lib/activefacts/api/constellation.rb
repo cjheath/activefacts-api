@@ -145,7 +145,9 @@ module ActiveFacts
 	    last_irvs = instance.identifying_role_values(klass)
 	    last_irns = n
 	  end
-          instances[klass].delete(last_irvs)
+          deleted = instances[klass].delete(last_irvs)
+	  # The RBTree class sometimes returns a different object than what was deleted! Check non-nil:
+	  raise "Internal error: deindex #{instance.class} as #{klass} failed" if deleted == nil
         end
       end
 
@@ -188,10 +190,15 @@ module ActiveFacts
             klass = vocabulary.const_get(object_type)
 
             single_roles, multiple_roles = klass.all_role.
-		partition{|n, r| r.unique }.
-		map{ |rs| rs.map{|n, r| n}.sort_by(&:to_s) }
-
-            single_roles -= klass.identifying_role_names if (klass.is_entity_type)
+		partition do |n, r|
+		  r.unique &&		    # Show only single-valued roles
+		    !r.is_identifying &&    # Unless identifying
+		    (r.unary? || !r.counterpart.is_identifying)	# Or identifies a counterpart
+		end.
+		map do |rs|
+		  rs.map{|n, r| n}.
+		    sort_by(&:to_s)
+		end
 
             instances = send(object_type.to_sym)
             next nil unless instances.size > 0

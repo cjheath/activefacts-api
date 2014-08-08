@@ -328,7 +328,12 @@ module ActiveFacts
 	  instance_variable_set(role_var, value)
 
 	  # Remove "self" from the old counterpart:
-	  old_role_values.delete_instance(self, old_key) if old_key
+	  if old_key
+	    old_role_values.delete_instance(self, old_key)
+	    if (old_role_values.empty? && !old.class.is_entity_type)
+	      old.retract if old.plays_no_role
+	    end
+	  end
 
 	  @constellation.when_admitted do
 	    # Add "self" into the counterpart

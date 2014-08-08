@@ -28,7 +28,7 @@ describe "In a vocabulary" do
   Instance_methods = [
     :constellation, :retract, :is_a?,
     # To remove or move to EntityType
-    :related_entities, :check_identification_change_legality,
+    :related_entities,
     :instance_index
   ]
   Value_methods = Instance_methods + [
@@ -52,7 +52,7 @@ describe "In a vocabulary" do
   Entity_methods = Instance_methods + [
     :verbalise, :identifying_role_values,
     # To remove hide or rewrite:
-    :identity_by, :identity_as_hash
+    :identity_by, :identity_as_hash, :check_identification_change_legality,
   ]
 
   Cases =
