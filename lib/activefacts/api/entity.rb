@@ -27,10 +27,16 @@ module ActiveFacts
       # here.
       def initialize(arg_hash)
 	raise ArgumentError.new("#{self}.new expects a hash. You should use assert instead anyhow") unless arg_hash.is_a?(Hash)
+        super(arg_hash)	# Initialise the Instance
+	initialize_existential_roles(self.class, arg_hash)
+      end
 
-        super(arg_hash)
+      def initialize_existential_roles(klass, arg_hash)
+	# If overrides_identification_of, assign those attributes too (recursively)
+	if o = klass.overrides_identification_of
+	  initialize_existential_roles(o, arg_hash)
+	end
 
-        klass = self.class
 	irns = klass.identifying_role_names
 	irns.each do |role_name|
 	  role = klass.all_role(role_name)
