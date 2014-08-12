@@ -51,9 +51,7 @@ module ActiveFacts
 	    end
 
 	  begin
-	    @constellation.send(:instance_variable_set, :@suspend_duplicate_key_check, true)
-	    send(role.setter, value)
-	    @constellation.send(:instance_variable_set, :@suspend_duplicate_key_check, false)
+	    send(role.setter, value, ObjectType::SKIP_DUPLICATE_CHECK)
 	  rescue NoMethodError => e
 	    raise settable_roles_exception(e, role_name)
 	  end
@@ -209,7 +207,6 @@ module ActiveFacts
       # We need to check each superclass that has a different identification pattern
       def check_identification_change_legality(role, value)
         return unless @constellation && role.is_identifying
-	return if @constellation.send(:instance_variable_get, :@suspend_duplicate_key_check)
 
 	klasses = [self.class] + self.class.supertypes_transitive
 	last_identity = nil

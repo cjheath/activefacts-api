@@ -85,7 +85,7 @@ module ActiveFacts
       def initialize(klass, role_name, value)
         super("Illegal attempt to assert #{klass.basename} having identifying value" +
               " (#{role_name} is #{value.verbalise})," +
-              " when #{value.related_entities(false).map(&:verbalise).join(", ")} already exists")
+              " when #{value.respond_to?(:related_entities) ? value.related_entities(false).map(&:verbalise).join(", ") : 'an equivalent entity'} already exists")
       end
     end
 

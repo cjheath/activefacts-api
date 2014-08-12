@@ -11,6 +11,9 @@ module ActiveFacts
 
     # ObjectType contains methods that are added as class methods to all Value and Entity classes.
     module ObjectType
+      SKIP_MUTUAL_PROPAGATION = 0x1
+      SKIP_DUPLICATE_CHECK = 0x2
+
       # What vocabulary (Ruby module) does this object_type belong to?
       def vocabulary
         modspace        # The module that contains this object_type.
@@ -231,16 +234,33 @@ module ActiveFacts
       end
 
       def define_unary_role_accessor(role)
-	define_method role.setter do |value|
-	  assigned = case value
+	define_method role.setter do |value, options = 0|
+	  # Normalise the value to be assigned (nil, false, true):
+	  value = case value
 	    when nil; nil
 	    when false; false
 	    else true
 	    end
-	  instance_variable_set(role.variable, assigned)
-	  # REVISIT: Consider whether we want to provide a way to find all instances playing/not playing this boolean role
-	  # Analogous to true.all_thing_as_role_name...
-	  assigned
+
+	  old = instance_variable_get(role.variable)
+	  return value if old == value
+
+	  if role.is_identifying and (options&SKIP_DUPLICATE_CHECK) == 0
+	    check_identification_change_legality(role, value)
+	    impacts = analyse_impacts(role)
+	  end
+
+	  instance_variable_set(role.variable, value)
+
+	  if impacts
+	    @constellation.when_admitted do
+	      # REVISIT: Consider whether we want to provide a way to find all instances
+	      # playing/not playing this boolean role, analogous to true.all_thing_as_role_name...
+	      apply_impacts(impacts)	# Propagate dependent key changes
+	    end
+	  end
+
+	  value
 	end
         define_single_role_getter(role)
       end
@@ -258,10 +278,7 @@ module ActiveFacts
         define_single_role_getter(role)
 
 	# What I want is the following, but it doesn't work in Ruby 1.8
-	# define_method role.setter do |value, mutual_propagation = true|
-	define_method role.setter do |*a|
-	  value, mutual_propagation = *a
-	  mutual_propagation = true if a.size < 2
+	define_method role.setter do |value, options = 0|
 	  role_var = role.variable
 
 	  # Get old value, and jump out early if it's unchanged:
@@ -274,7 +291,8 @@ module ActiveFacts
 	    return value if old == value
 	  end
 
-	  if (role.is_identifying)	# We're changing this object's key. Check legality and prepare to propagate
+	  # We're changing this object's key. Check legality and prepare to propagate
+	  if role.is_identifying and (options&SKIP_DUPLICATE_CHECK) == 0
 	    check_identification_change_legality(role, value)
 
 	    # puts "Starting to analyse impact of changing 1-1 #{role.inspect} to #{value.inspect}"
@@ -284,7 +302,9 @@ module ActiveFacts
 	  instance_variable_set(role_var, value)
 
 	  # Remove self from the old counterpart:
-	  old.send(role.counterpart.setter, nil, false) if old and mutual_propagation
+	  if old and (options&SKIP_MUTUAL_PROPAGATION) == 0
+	    old.send(role.counterpart.setter, nil, options|SKIP_MUTUAL_PROPAGATION)
+	  end
 
 	  @constellation.when_admitted do
 	    # Assign self to the new counterpart
@@ -300,11 +320,7 @@ module ActiveFacts
       def define_one_to_many_accessor(role)
         define_single_role_getter(role)
 
-	# What I want is the following, but it doesn't work in Ruby 1.8
-	# define_method role.setter do |value, mutual_propagation = true|
-	define_method role.setter do |*a|
-	  value, mutual_propagation = *a
-	  mutual_propagation = true if a.size < 2
+	define_method role.setter do |value, options = 0|
 	  role_var = role.variable
 
 	  # Get old value, and jump out early if it's unchanged:
@@ -317,14 +333,15 @@ module ActiveFacts
 	    return value if old == value	# Occurs when another instance having the same value is assigned
 	  end
 
-	  if (role.is_identifying)	# We're changing this object's key. Check legality and prepare to propagate
+	  if role.is_identifying and (options&SKIP_DUPLICATE_CHECK) == 0
+	    # We're changing this object's key. Check legality and prepare to propagate
 	    check_identification_change_legality(role, value)
 
 	    # puts "Starting to analyse impact of changing 1-N #{role.inspect} to #{value.inspect}"
 	    impacts = analyse_impacts(role)
 	  end
 
-	  if old && mutual_propagation
+	  if old and (options&SKIP_MUTUAL_PROPAGATION) == 0
 	    old_role_values = old.send(getter = role.counterpart.getter)
 	    old_key = old_role_values.index_values(self)
 	  end

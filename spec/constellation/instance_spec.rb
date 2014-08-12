@@ -433,5 +433,9 @@ describe "An instance of every type of ObjectType" do
     t.is_ok.should == true
     f.is_ok.should == false
     s.is_ok.should == true
+
+    proc { n.is_ok = false }.should raise_error(ActiveFacts::API::DuplicateIdentifyingValueException)
+    proc { t.is_ok = nil }.should raise_error(ActiveFacts::API::DuplicateIdentifyingValueException)
+    proc { f.is_ok = true }.should raise_error(ActiveFacts::API::DuplicateIdentifyingValueException)
   end
 end
