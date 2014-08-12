@@ -30,36 +30,32 @@ module ActiveFacts
 
         super(arg_hash)
 
-        unless (klass = self.class).identification_inherited_from
-	  irns = klass.identifying_role_names
-	  irns.each do |role_name|
-	    role = klass.all_role(role_name)
-	    key = arg_hash.delete(role_name)
-	    value =
-	      if key == nil
-		nil
-	      elsif role.unary?
-		(key && true)	# Preserve nil and false
-	      else
-		role.counterpart.object_type.assert_instance(constellation, Array(key))
-	      end
-
-	    begin
-	      @constellation.send(:instance_variable_set, :@suspend_duplicate_key_check, true)
-	      send(role.setter, value)
-	      @constellation.send(:instance_variable_set, :@suspend_duplicate_key_check, false)
-#	    rescue NoMethodError => e
-#	      raise settable_roles_exception(e, role_name)
+        klass = self.class
+	irns = klass.identifying_role_names
+	irns.each do |role_name|
+	  role = klass.all_role(role_name)
+	  key = arg_hash.delete(role_name)
+	  value =
+	    if key == nil
+	      nil
+	    elsif role.unary?
+	      (key && true)	# Preserve nil and false
+	    else
+	      role.counterpart.object_type.assert_instance(constellation, Array(key))
 	    end
-	    # instance_variable_set(role.setter, value)
+
+	  begin
+	    @constellation.send(:instance_variable_set, :@suspend_duplicate_key_check, true)
+	    send(role.setter, value)
+	    @constellation.send(:instance_variable_set, :@suspend_duplicate_key_check, false)
+	  rescue NoMethodError => e
+	    raise settable_roles_exception(e, role_name)
 	  end
-        end
+	end
       end
 
-=begin
-# I forget how it was possible to reproduce this exception,
-# so I can't get code coverage over it. It might not be still possible,
-# but I can't be sure so I'll leave the code here for now.
+      # This exception is raised when an entity is instantiated before the
+      # object types which play its identifying roles is defined.
       def settable_roles_exception e, role_name
         n = NoMethodError.new(
           "You cannot assert a #{self.class} until you define #{role_name}.\n" +
@@ -86,7 +82,6 @@ module ActiveFacts
             end.
           flatten
       end
-=end
 
     public
       def inspect #:nodoc:
