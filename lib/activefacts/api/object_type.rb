@@ -172,6 +172,10 @@ module ActiveFacts
         @subtypes ||= []
       end
 
+      def subtypes_transitive
+	(subtypes+subtypes.map(&:subtypes_transitive)).flatten.uniq
+      end
+
       # Every new role added or inherited comes through here:
       def realise_role(role) #:nodoc:
         if (role.unary?)
