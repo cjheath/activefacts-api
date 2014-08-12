@@ -229,6 +229,87 @@ module ActiveFacts
           end.compact*"\n"
       end
 
+      def clone
+	remaining_object_types = vocabulary.object_type.clone
+	constellation = self.class.new(vocabulary, @options)
+	correlates = {}
+	other_attribute_assignments = []
+	until remaining_object_types.empty?
+	  count = 0
+	  # Choose an object type we can clone now:
+	  name, object_type = *remaining_object_types.detect do |name, o|
+	    (count = @instances[o].size) == 0 or	# There are no instances of this object type; clone is ok
+	      !o.is_entity_type or			# It's a value type
+	      (
+		!o.subtypes_transitive.detect do |subtype|# All its subtypes have been cloned
+		    remaining_object_types.has_key?(subtype.basename)
+		end and
+		!o.identifying_roles.detect do |role|	# The players of its identifying roles have all been dumped
+		  next unless role.counterpart		    # Unary role, no player
+		  counterpart = role.counterpart.object_type  # counterpart object
+
+		  # The identifying type and its subtypes have been dumped
+		  ([counterpart]+counterpart.subtypes_transitive).detect do |subtype|
+		    remaining_object_types.has_key?(subtype.basename)
+		  end
+		end
+	      )
+	  end
+#	  puts "Cloning #{count} instances of #{name}" if count > 0
+	  remaining_object_types.delete(name)
+
+	  key_role_names =
+	    if object_type.is_entity_type
+	      ([object_type]+object_type.supertypes_transitive).map { |t| t.identifying_role_names }.flatten.uniq
+	    else
+	      nil
+	    end
+	  other_roles = object_type.all_role_transitive.map do |role_name, role|
+	      next if !role.unique or
+		role.fact_type.class == ActiveFacts::API::TypeInheritanceFactType or
+		role.fact_type.all_role[0] != role or  # Only the first role in a one-to-one pair
+		key_role_names.include?(role_name)
+	      role
+	    end.compact - Array(key_role_names)
+
+	  @instances[object_type].each do |key, object|
+	    next if object.class != object_type
+
+	    # Clone this object
+
+	    # Get the identifying values:
+	    key = object
+	    if (key_role_names)
+	      key = key_role_names.inject({}) do |h, krn|
+		  h[krn] = object.send(krn)
+		  h
+		end
+	    end
+#	    puts "\tcloning #{object.class} #{key.inspect}"
+#	    puts "\t\talso copy #{other_roles.map(&:name)*', '}"
+
+	    new_object = constellation.assert(object_type, key)
+	    correlates[object] = new_object
+
+	    other_roles.each do |role|
+	      value = object.send(role.getter)
+	      next unless value
+	      other_attribute_assignments << proc do
+		new_object.send(role.setter, correlates[value])
+	      end
+	    end
+	  end
+	end
+
+	# Now, assign all non-identifying facts
+#	puts "Assigning #{other_attribute_assignments.size} additional roles"
+	other_attribute_assignments.each do |assignment|
+	  assignment.call
+	end
+
+	constellation
+      end
+
     end
 
     def self.sorted
