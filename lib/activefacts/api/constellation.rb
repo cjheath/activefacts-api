@@ -34,6 +34,69 @@ module ActiveFacts
     class Constellation
       attr_reader :vocabulary
 
+      # Create a new empty Constellation over the given Vocabulary
+      def initialize(vocabulary, options = {})
+        @vocabulary = vocabulary
+	@options = options
+      end
+
+      def assert(klass, *args)
+	with_candidates do
+	  klass.assert_instance self, args
+	end
+      end
+
+      # Delete instances from the constellation, nullifying (or cascading) the roles each plays
+      def retract(*instances)
+        Array(instances).each do |i|
+          i.retract
+        end
+        self
+      end
+
+      # Evaluate assertions against the population of this Constellation
+      def populate &block
+        instance_eval(&block)
+        self
+      end
+
+      # If a missing method is the name of a class in the vocabulary module for this constellation,
+      # then we want to access the collection of instances of that class, and perhaps assert new ones.
+      # With no parameters, return the collection of all instances of that object_type.
+      # With parameters, assert an instance of the object_type identified by the values passed as args.
+      def method_missing(m, *args, &b)
+        klass = @vocabulary.const_get(m)
+	if invalid_object_type klass
+	  super
+        else
+	  define_class_accessor m, klass
+          send(m, *args, &b)
+        end
+      end
+
+      def define_class_accessor m, klass
+	(class << self; self; end).
+	  send(:define_method, m) do |*args|
+	    if args.size == 0
+	      # Return the collection of all instances of this class in the constellation:
+	      instances[klass]
+	    else
+	      # Assert a new ground fact (object_type instance) of the specified class, identified by args:
+	      assert(klass, *args)
+	    end
+	end
+      end
+
+      def inspect #:nodoc:
+	total = instances.values.map(&:size).inject(:+) || 0
+        "Constellation:#{object_id} over #{@vocabulary.name} with #{total}/#{instances.size}"
+      end
+
+      # Loggers is an array of callbacks
+      def loggers
+	@loggers ||= []
+      end
+
       def invalid_object_type klass
 	case
 	when !klass.is_a?(Class)
@@ -83,6 +146,7 @@ module ActiveFacts
 	      @on_admission = nil
 	      candidates.each do |instance|
 		instance.class.index_instance(self, instance)
+		loggers.each{|l| l.call(:assert, instance)}
 	      end
 	      on_admission.each do |b|
 		b.call
@@ -108,32 +172,6 @@ module ActiveFacts
 	@candidates && @candidates.detect{|c| c.is_a?(klass) && c.identifying_role_values(klass) == key }
       end
 
-      # Create a new empty Constellation over the given Vocabulary
-      def initialize(vocabulary, options = {})
-        @vocabulary = vocabulary
-	@options = options
-      end
-
-      def assert(klass, *args)
-	with_candidates do
-	  klass.assert_instance self, args
-	end
-      end
-
-      # Evaluate assertions against the population of this Constellation
-      def populate &block
-        instance_eval(&block)
-        self
-      end
-
-      # Delete instances from the constellation, nullifying (or cascading) the roles each plays
-      def retract(*instances)
-        Array(instances).each do |i|
-          i.retract
-        end
-        self
-      end
-
       # This method removes the given instance from this constellation's indexes
       # It must be called before the identifying roles get deleted or nullified.
       def deindex_instance(instance) #:nodoc:
@@ -149,37 +187,6 @@ module ActiveFacts
 	  # The RBTree class sometimes returns a different object than what was deleted! Check non-nil:
 	  raise "Internal error: deindex #{instance.class} as #{klass} failed" if deleted == nil
         end
-      end
-
-      def define_class_accessor m, klass
-	(class << self; self; end).
-	  send(:define_method, m) do |*args|
-	    if args.size == 0
-	      # Return the collection of all instances of this class in the constellation:
-	      instances[klass]
-	    else
-	      # Assert a new ground fact (object_type instance) of the specified class, identified by args:
-	      assert(klass, *args)
-	    end
-	  end
-	end
-
-      # If a missing method is the name of a class in the vocabulary module for this constellation,
-      # then we want to access the collection of instances of that class, and perhaps assert new ones.
-      # With no parameters, return the collection of all instances of that object_type.
-      # With parameters, assert an instance of the object_type identified by the values passed as args.
-      def method_missing(m, *args, &b)
-        klass = @vocabulary.const_get(m)
-	if invalid_object_type klass
-	  super
-        else
-	  define_class_accessor m, klass
-          send(m, *args, &b)
-        end
-      end
-
-      def inspect #:nodoc:
-        "Constellation:#{object_id}"
       end
 
       # Constellations verbalise all members of all classes in alphabetical order, showing

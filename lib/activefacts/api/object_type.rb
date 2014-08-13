@@ -12,7 +12,7 @@ module ActiveFacts
     # ObjectType contains methods that are added as class methods to all Value and Entity classes.
     module ObjectType
       SKIP_MUTUAL_PROPAGATION = 0x1
-      SKIP_DUPLICATE_CHECK = 0x2
+      CHECKED_IDENTIFYING_ROLE = 0x2
 
       # What vocabulary (Ruby module) does this object_type belong to?
       def vocabulary
@@ -245,7 +245,7 @@ module ActiveFacts
 	  old = instance_variable_get(role.variable)
 	  return value if old == value
 
-	  if role.is_identifying and (options&SKIP_DUPLICATE_CHECK) == 0
+	  if role.is_identifying and (options&CHECKED_IDENTIFYING_ROLE) == 0
 	    check_identification_change_legality(role, value)
 	    impacts = analyse_impacts(role)
 	  end
@@ -259,6 +259,8 @@ module ActiveFacts
 	      apply_impacts(impacts)	# Propagate dependent key changes
 	    end
 	  end
+
+	  @constellation.loggers.each{|l| l.call(:assign, self, role, old, value) } if options == 0
 
 	  value
 	end
@@ -292,7 +294,7 @@ module ActiveFacts
 	  end
 
 	  # We're changing this object's key. Check legality and prepare to propagate
-	  if role.is_identifying and (options&SKIP_DUPLICATE_CHECK) == 0
+	  if role.is_identifying and (options&CHECKED_IDENTIFYING_ROLE) == 0
 	    check_identification_change_legality(role, value)
 
 	    # puts "Starting to analyse impact of changing 1-1 #{role.inspect} to #{value.inspect}"
@@ -308,10 +310,12 @@ module ActiveFacts
 
 	  @constellation.when_admitted do
 	    # Assign self to the new counterpart
-	    value.send(role.counterpart.setter, self) if value
+	    value.send(role.counterpart.setter, self, options) if value && (options&SKIP_MUTUAL_PROPAGATION) == 0
 
 	    apply_impacts(impacts) if impacts	# Propagate dependent key changes
 	  end
+
+	  @constellation.loggers.each{|l| l.call(:assign, self, role, old, value) } if options == 0
 
 	  value
 	end
@@ -333,7 +337,7 @@ module ActiveFacts
 	    return value if old == value	# Occurs when another instance having the same value is assigned
 	  end
 
-	  if role.is_identifying and (options&SKIP_DUPLICATE_CHECK) == 0
+	  if role.is_identifying and (options&CHECKED_IDENTIFYING_ROLE) == 0
 	    # We're changing this object's key. Check legality and prepare to propagate
 	    check_identification_change_legality(role, value)
 
@@ -362,6 +366,8 @@ module ActiveFacts
 
 	    apply_impacts(impacts) if impacts	# Propagate dependent key changes
 	  end
+
+	  @constellation.loggers.each{|l| l.call(:assign, self, role, old, value) } if options == 0
 
 	  value
 	end

@@ -52,8 +52,21 @@ module ActiveFacts
 
       # De-assign all functional roles and remove from constellation, if any.
       def retract
+	return unless constellation = @constellation
+
+	identifying_role_values = {}
+	unless constellation.loggers.empty?
+	  # An object may have multiple identifiers, with potentially overlapping role sets
+	  # Get one copy of each role to use in asserting the instance
+	  ([self.class]+self.class.supertypes_transitive).each do |klass|
+	    klass.identifying_role_names.zip(identifying_role_values(klass)).each do |name, value|
+	      identifying_role_values[name] = value
+	    end
+	  end
+	end
+
         # Delete from the constellation first, while we remember our identifying role values
-        @constellation.deindex_instance(self) if @constellation
+        constellation.deindex_instance(self)
 	instance_variable_set(@@constellation_variable_name ||= "@constellation", nil)
 
         # Now, for all roles (from this class and all supertypes), assign nil to all functional roles
@@ -128,6 +141,9 @@ module ActiveFacts
             end
           end
         end
+
+	constellation.loggers.each{|l| l.call(:retract, self.class, identifying_role_values) }
+
       end
 
       module ClassMethods #:nodoc:

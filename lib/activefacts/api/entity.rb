@@ -51,7 +51,9 @@ module ActiveFacts
 	    end
 
 	  begin
-	    send(role.setter, value, ObjectType::SKIP_DUPLICATE_CHECK)
+	    unless instance_variable_get(role.variable) != nil	# Not if it was set by a superclass identifier
+	      send(role.setter, value, ObjectType::CHECKED_IDENTIFYING_ROLE)
+	    end
 	  rescue NoMethodError => e
 	    raise settable_roles_exception(e, role_name)
 	  end
