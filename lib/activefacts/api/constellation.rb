@@ -146,7 +146,7 @@ module ActiveFacts
 	      @on_admission = nil
 	      candidates.each do |instance|
 		instance.class.index_instance(self, instance)
-		loggers.each{|l| l.call(:assert, instance)}
+		loggers.each{|l| l.call(:assert, instance.class, instance.identifying_role_values)}
 	      end
 	      on_admission.each do |b|
 		b.call

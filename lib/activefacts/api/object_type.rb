@@ -260,7 +260,10 @@ module ActiveFacts
 	    end
 	  end
 
-	  @constellation.loggers.each{|l| l.call(:assign, self, role, old, value) } if options == 0
+	  unless @constellation.loggers.empty? or options != 0
+	    sv = self.identifying_role_values(role.object_type)
+	    @constellation.loggers.each{|l| l.call(:assign, role.object_type, role, sv, old, value) }
+	  end
 
 	  value
 	end
@@ -315,7 +318,12 @@ module ActiveFacts
 	    apply_impacts(impacts) if impacts	# Propagate dependent key changes
 	  end
 
-	  @constellation.loggers.each{|l| l.call(:assign, self, role, old, value) } if options == 0
+	  unless @constellation.loggers.empty? or options != 0
+	    sv = self.identifying_role_values(role.object_type)
+	    ov = old.identifying_role_values
+	    nv = value.identifying_role_values
+	    @constellation.loggers.each{|l| l.call(:assign, role.object_type, role, sv, ov, nv) }
+	  end
 
 	  value
 	end
@@ -367,7 +375,12 @@ module ActiveFacts
 	    apply_impacts(impacts) if impacts	# Propagate dependent key changes
 	  end
 
-	  @constellation.loggers.each{|l| l.call(:assign, self, role, old, value) } if options == 0
+	  unless @constellation.loggers.empty? or options != 0
+	    sv = self.identifying_role_values(role.object_type)
+	    ov = old.identifying_role_values
+	    nv = value.identifying_role_values
+	    @constellation.loggers.each{|l| l.call(:assign, role.object_type, role, sv, ov, nv) }
+	  end
 
 	  value
 	end

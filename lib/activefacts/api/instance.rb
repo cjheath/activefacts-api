@@ -54,14 +54,18 @@ module ActiveFacts
       def retract
 	return unless constellation = @constellation
 
-	identifying_role_values = {}
 	unless constellation.loggers.empty?
 	  # An object may have multiple identifiers, with potentially overlapping role sets
 	  # Get one copy of each role to use in asserting the instance
-	  ([self.class]+self.class.supertypes_transitive).each do |klass|
-	    klass.identifying_role_names.zip(identifying_role_values(klass)).each do |name, value|
-	      identifying_role_values[name] = value
+	  if self.class.is_entity_type
+	    identifying_role_values = {}
+	    ([self.class]+self.class.supertypes_transitive).each do |klass|
+	      klass.identifying_role_names.zip(identifying_role_values(klass)).each do |name, value|
+		identifying_role_values[name] = value
+	      end
 	    end
+	  else
+	    identifying_role_values = self
 	  end
 	end
 
