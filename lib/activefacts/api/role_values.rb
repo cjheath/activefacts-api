@@ -8,15 +8,20 @@ module ActiveFacts
   module API
 
     class RoleValues  #:nodoc:
-      attr_accessor :object_type
+      attr_accessor :role
       attr_accessor :sort
       attr_accessor :index_roles
+      def object_type
+	@role.object_type
+      end
 
-      def initialize object_type, index_roles = nil, sort = nil
-	@object_type = object_type
-	@sort = sort == nil ? API::sorted : !!sort
+      def initialize role, excluded_role = nil
+	@role = role
+	# Can't control sorting from the constructor API: @sort = sort == nil ? API::sorted : !!sort
+	@sort = API::sorted
+	@excluded_role = excluded_role
         @a = @sort ? RBTree.new : []
-	@index_roles = index_roles
+	(@index_roles = role.object_type.identifying_roles.dup).delete_at(@excluded_role) if @excluded_role
       end
 
       def +(a)
@@ -60,7 +65,10 @@ module ActiveFacts
 
       def index_values object
 	if @index_roles
-	  @index_roles.map{|r| object.send(r.name).identifying_role_values}
+	  @index_roles.map{|r|
+	    role_value = object.send(r.name)
+	    role_value.identifying_role_values((c = r.counterpart) ? c.object_type : role_value.class)
+	  }
 	else
 	  object.identifying_role_values
 	end
@@ -68,7 +76,10 @@ module ActiveFacts
 
       def add_instance(value, key)
 	if @sort
-	  @a[form_key(index_values(value))] = value
+	  # Exclude the excluded role, if any:
+	  (key = key.dup).delete_at(@excluded_role) if @excluded_role
+	  @a[form_key(key)] = value
+	  # Old slow way:  @a[form_key(index_values(value))] = value
 	else
 	  @a << value
 	end

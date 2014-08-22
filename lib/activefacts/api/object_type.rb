@@ -400,12 +400,12 @@ module ActiveFacts
 	      if role.counterpart and
 		  counterpart = role.counterpart.object_type and
 		  counterpart.is_entity_type
-		index_roles = counterpart.identifying_roles - [role.counterpart]
+		excluded_role = counterpart.identifying_roles.index(role.counterpart)
 	      else
 		index_roles = nil
 	      end
 
-	      instance_variable_set(role_var, RoleValues.new(role.counterpart.object_type, index_roles))
+	      instance_variable_set(role_var, RoleValues.new(role.counterpart, excluded_role))
 	    end
 	  # Look up a value by the key provided, or return the whole collection
 	  keys.size == 0 ? role_values : role_values.[](*keys)
