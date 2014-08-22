@@ -370,7 +370,10 @@ module ActiveFacts
 
 	  @constellation.when_admitted do
 	    # Add "self" into the counterpart
-	    value.send(getter ||= role.counterpart.getter).add_instance(self, identifying_role_values(role.object_type)) if value
+	    if value
+	      rv = value.send(getter ||= role.counterpart.getter)
+	      rv.add_instance(self, identifying_role_values(role.object_type))
+	    end
 
 	    apply_impacts(impacts) if impacts	# Propagate dependent key changes
 	  end
