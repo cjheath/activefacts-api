@@ -1,15 +1,13 @@
 source 'https://rubygems.org'
 
-gem 'rake', '~> 10.1', :group => [:development, :test]
 gem 'rbtree-pure', '~> 0'
 
 group :development do
-  gem 'jeweler', '~> 0'
+  gem 'rake', '~> 10.1'
+  gem 'jeweler', '~> 2'
   gem 'rspec', '~> 2.6', '>= 2.6.0'
   gem 'ruby-debug', '~> 0', :platforms => [:mri_18]
-  gem 'debugger', '~> 0', :platforms => [:mri_19,
-    (['1.8.7', '1.9.2'].include?(RUBY_VERSION) || RUBY_PLATFORM == 'java') ? nil : :mri_20
-  ].compact
+  gem 'debugger', '~> 1', :platforms => [:mri_19, :mri_20]
   gem 'pry', '~> 0', :platforms => [:jruby, :rbx]
 end
 
