@@ -327,7 +327,7 @@ describe "An Entity Type" do
         end
 
         it "should be in the constellation's index under the new identifier" do
-          @c.Room.keys[0].should == [['Mackay'], @r.number]
+          @c.Room(['Mackay'], @r.number).should_not be_nil
         end
 
         it "should be included in the counterparts of the new identifier roles" do

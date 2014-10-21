@@ -47,6 +47,10 @@ module ActiveFacts
 	@sort ? @a.values : @a
       end
 
+      def to_ary
+	to_a
+      end
+
       def keys
 	@sort ? @a.keys : @a
       end

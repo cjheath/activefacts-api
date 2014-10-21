@@ -27,6 +27,11 @@ module ActiveFacts
 	"KeyArray"+super
       end
 
+      # This is used by RBTree for searching, and we need it to use eql? semantics to be like a Hash
+      def ==(other)
+	self.eql? other
+      end
+
       def <=>(other)
 	unless other.is_a?(Array)	# Any kind of Array, not just KeyArray
 	  return 1
