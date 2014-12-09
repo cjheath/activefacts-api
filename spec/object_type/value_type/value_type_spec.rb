@@ -30,14 +30,14 @@ describe "Value Type class definitions" do
 
   it "should respond_to verbalise" do
     @classes.each { |klass|
-        klass.respond_to?(:verbalise).should be_true
+        klass.respond_to?(:verbalise).should be true
       }
   end
 
   it "should not pollute the value class" do
     @classes.each { |klass|
 	if !@classes.include?(klass.superclass)
-	  klass.superclass.respond_to?(:verbalise).should_not be_true
+	  klass.superclass.respond_to?(:verbalise).should_not be true
 	end
       }
   end
@@ -52,7 +52,7 @@ describe "Value Type class definitions" do
 
   it "should respond_to vocabulary" do
     @classes.each { |klass|
-        klass.respond_to?(:vocabulary).should be_true
+        klass.respond_to?(:vocabulary).should be true
       }
   end
 
@@ -66,14 +66,14 @@ describe "Value Type class definitions" do
   it "should return a vocabulary that knows about this object_type" do
     @classes.each { |klass|
         vocabulary = klass.vocabulary
-        vocabulary.respond_to?(:object_type).should be_true
-        vocabulary.object_type.has_key?(klass.basename).should be_true
+        vocabulary.respond_to?(:object_type).should be true
+        vocabulary.object_type.has_key?(klass.basename).should be true
       }
   end
 
   it "should respond to roles()" do
     @classes.each { |klass|
-        klass.respond_to?(:all_role).should be_true
+        klass.respond_to?(:all_role).should be true
       }
   end
 
@@ -101,7 +101,7 @@ describe "Value Type class definitions" do
 	unless @classes.include?(klass.superclass)
 	  klass.all_role(attr).should_not be_nil
 	  # Check the role definition array by .include?
-	  klass.all_role.include?(attr).should be_true
+	  klass.all_role.include?(attr).should be true
 	end
       }
   end

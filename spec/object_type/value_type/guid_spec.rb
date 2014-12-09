@@ -29,7 +29,7 @@ describe "Guid Value Type instances" do
   end
 
   it "should respond to verbalise" do
-    @thing_id.respond_to?(:verbalise).should be_true
+    @thing_id.respond_to?(:verbalise).should be true
   end
 
   it "should verbalise correctly" do
@@ -37,11 +37,11 @@ describe "Guid Value Type instances" do
   end
 
   it "should respond to constellation" do
-    @thing_id.respond_to?(:constellation).should be_true
+    @thing_id.respond_to?(:constellation).should be true
   end
 
   it "should respond to its roles" do
-    @thing_id.respond_to?(:thing).should be_true
+    @thing_id.respond_to?(:thing).should be true
   end
 
   it "should allow prevent invalid role assignment" do

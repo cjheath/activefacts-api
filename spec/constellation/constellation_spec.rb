@@ -295,7 +295,7 @@ describe "A Constellation instance" do
 
     it "should support detect" do
       baz = @constellation.Name("baz")
-      @constellation.Name.detect { |rv| true }.should be_true
+      @constellation.Name.detect { |rv| true }.should be_truthy
     end
   end
 

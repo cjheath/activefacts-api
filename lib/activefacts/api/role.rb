@@ -20,16 +20,20 @@ module ActiveFacts
       attr_reader   :unique           # Is this role played by at most one instance, or more?
       attr_reader   :mandatory        # In a valid fact population, is this role required to be played?
       attr_reader   :value_constraint # Counterpart Instances playing this role must meet this constraint
-      attr_reader   :is_identifying   # Is this an identifying role for object_type?
 
-      def initialize(fact_type, object_type, role_name, mandatory, unique)
+      def is_identifying # Is this an identifying role for object_type?
+	return @is_identifying unless @is_identifying == nil
+        @is_identifying = !!(@object_type.is_entity_type && @object_type.identifying_role_names.include?(@name))
+      end
+
+      def initialize(fact_type, object_type, role_name, mandatory, unique, restrict = nil)
 	@fact_type = fact_type
 	@fact_type.all_role << self
         @object_type = object_type
         @name = role_name
         @mandatory = mandatory
         @unique = unique
-        @is_identifying = @object_type.is_entity_type && @object_type.identifying_role_names.include?(@name)
+	@value_constraint = restrict
 	object_type.add_role(self)
         associate_role(@object_type)
       end
@@ -38,6 +42,11 @@ module ActiveFacts
       def unary?
         # N.B. A role with a forward reference looks unary until it is resolved.
 	@fact_type.all_role.size == 1
+      end
+
+      def make_mandatory
+	# Sometimes a role has already been defined from the other end
+	@mandatory = true
       end
 
       def counterpart
@@ -70,7 +79,7 @@ module ActiveFacts
 
     private
       # Create a class method to access the Role object.
-      # This seems to add *significantly* to the runtime of the tests,
+      # This seems to add *significantly* to the runtime of the tests (method cache flushing?),
       # but it's load-time, not execution-time, so it's staying!
       def associate_role(klass)
         role = self

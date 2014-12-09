@@ -279,7 +279,7 @@ describe "An instance of every type of ObjectType" do
     it "if a value type, should verbalise" do
       @value_types.each do |value_type|
         #puts "#{value_type} verbalises as #{value_type.verbalise}"
-        value_type.respond_to?(:verbalise).should be_true
+        value_type.respond_to?(:verbalise).should be true
         verbalisation = value_type.verbalise
         verbalisation.should =~ %r{\b#{value_type.basename}\b}
         verbalisation.should =~ %r{\b#{value_type.superclass.basename}\b}
@@ -289,7 +289,7 @@ describe "An instance of every type of ObjectType" do
     it "if an entity type, should verbalise" do
       @entity_types.each do |entity_type|
         #puts entity_type.verbalise
-        entity_type.respond_to?(:verbalise).should be_true
+        entity_type.respond_to?(:verbalise).should be true
         verbalisation = entity_type.verbalise
         verbalisation.should =~ %r{\b#{entity_type.basename}\b}
 
@@ -318,7 +318,7 @@ describe "An instance of every type of ObjectType" do
     it "if a value, should verbalise" do
       @value_instances.each do |value|
         #puts value.verbalise
-        value.respond_to?(:verbalise).should be_true
+        value.respond_to?(:verbalise).should be true
         verbalisation = value.verbalise
         verbalisation.should =~ %r{\b#{value.class.basename}\b}
       end
@@ -326,7 +326,7 @@ describe "An instance of every type of ObjectType" do
 
     it "if an entity, should respond to verbalise" do
       (@entities+@entities_by_entity).each do |entity|
-        entity.respond_to?(:verbalise).should be_true
+        entity.respond_to?(:verbalise).should be true
         verbalisation = entity.verbalise
         verbalisation.should =~ %r{\b#{entity.class.basename}\b}
         entity.class.identifying_role_names.each do |ir|
@@ -342,7 +342,7 @@ describe "An instance of every type of ObjectType" do
   it "should respond to constellation" do
     (@value_instances+@entities+@entities_by_entity).each do |instance|
       next if instance == nil
-      instance.respond_to?(:constellation).should be_true
+      instance.respond_to?(:constellation).should be true
     end
   end
 

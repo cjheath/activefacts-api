@@ -193,9 +193,9 @@ describe "Roles" do
     c = ActiveFacts::API::Constellation.new(Mod)
     foo = c.Name("Foo")
     le = c.LegalEntity(foo)
-    le.respond_to?(:name).should be_true
+    le.respond_to?(:name).should be true
     name = le.name
-    name.respond_to?(:legal_entity).should be_true
+    name.respond_to?(:legal_entity).should be true
 
     #pending
     [name.legal_entity].should === [le]
@@ -268,10 +268,10 @@ describe "Roles" do
 	subtype_role = supertype.all_role[subtype_role_name]
 
 	# Check uniqueness and mandatory:
-	supertype_role.unique.should be_true
-	subtype_role.unique.should be_true
-	supertype_role.mandatory.should be_true
-	subtype_role.mandatory.should be_false
+	supertype_role.unique.should be true
+	subtype_role.unique.should be true
+	supertype_role.mandatory.should be true
+	subtype_role.mandatory.should be false
 
 	# Check they belong to the same TypeInheritanceFactType:
 	subtype_role.fact_type.class.should be(ActiveFacts::API::TypeInheritanceFactType)

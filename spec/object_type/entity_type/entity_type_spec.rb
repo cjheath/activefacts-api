@@ -20,12 +20,12 @@ describe "Entity Type class definitions" do
   end
 
   it "should respond_to verbalise" do
-    Mod::Person.respond_to?(:verbalise).should be_true
+    Mod::Person.respond_to?(:verbalise).should be true
   end
 
   it "should not pollute the superclass" do
-    Mod::LegalEntity.respond_to?(:verbalise).should_not be_true
-    Class.respond_to?(:verbalise).should_not be_true
+    Mod::LegalEntity.respond_to?(:verbalise).should_not be true
+    Class.respond_to?(:verbalise).should_not be true
   end
 
   it "should return a string from verbalise" do
@@ -35,7 +35,7 @@ describe "Entity Type class definitions" do
   end
 
   it "should respond_to vocabulary" do
-    Mod::Person.respond_to?(:vocabulary).should be_true
+    Mod::Person.respond_to?(:vocabulary).should be true
   end
 
   it "should return the parent module as the vocabulary" do
@@ -45,12 +45,12 @@ describe "Entity Type class definitions" do
 
   it "should return a vocabulary that knows about this object_type" do
     vocabulary = Mod::Person.vocabulary
-    vocabulary.respond_to?(:object_type).should be_true
-    vocabulary.object_type.has_key?("Person").should be_true
+    vocabulary.respond_to?(:object_type).should be true
+    vocabulary.object_type.has_key?("Person").should be_truthy
   end
 
   it "should respond to all_role()" do
-    Mod::Person.respond_to?(:all_role).should be_true
+    Mod::Person.respond_to?(:all_role).should be true
   end
 
   it "should contain only the added role definition" do
@@ -72,7 +72,7 @@ describe "Entity Type class definitions" do
     role.should_not be_nil
 
     # Check the role definition array by .include?
-    Mod::Person.all_role.include?(:name).should be_true
+    Mod::Person.all_role.include?(:name).should be true
   end
 
   it "should fail on a ValueType" do

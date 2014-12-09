@@ -21,8 +21,8 @@ describe Int do
   end
 
   it "should also know that it's a delegator" do
-    @i.is_a?(SimpleDelegator).should be_true
-    @i.is_a?(Int).should be_true
+    @i.is_a?(SimpleDelegator).should be true
+    @i.is_a?(Int).should be true
   end
 end
 
@@ -39,13 +39,13 @@ describe Real do
     1.0.should == @r
     @r.should == 1.0
     @r.to_s.should == "1.0"
-    @r.eql?(1.0).should be_true
-    @r.is_a?(Float).should be_true
+    @r.eql?(1.0).should be true
+    @r.is_a?(Float).should be true
   end
 
   it "should also know that it's a delegator" do
-    @r.is_a?(SimpleDelegator).should be_true
-    @r.is_a?(Real).should be_true
+    @r.is_a?(SimpleDelegator).should be true
+    @r.is_a?(Real).should be true
   end
 end
 

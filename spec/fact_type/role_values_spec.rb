@@ -268,7 +268,7 @@ describe "Object type role values" do
           @object.has_a_unary = 23
           @object.has_a_unary.should == true
           @object.has_a_unary = false
-          @object.has_a_unary.should be_false
+          @object.has_a_unary.should be false
           @object.has_a_unary = nil
           @object.has_a_unary.should be_nil
         end

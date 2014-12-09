@@ -83,9 +83,9 @@ module ActiveFacts
       # * :reading - for verbalisation. Not used yet.
       # * :restrict - a list of values or ranges which this role may take. Not used yet.
       def has_one(role_name, options = {})
-        role_name, related, mandatory, related_role_name = extract_binary_params(false, role_name, options)
+        role_name, related, mandatory, related_role_name, restrict = extract_binary_params(role_name, false, options)
         check_identifying_role_has_valid_cardinality(:has_one, role_name)
-        define_binary_fact_type(false, role_name, related, mandatory, related_role_name)
+        define_binary_fact_type(false, role_name, related, mandatory, related_role_name, restrict)
       end
 
       # Define a binary fact type joining this object_type to another,
@@ -99,10 +99,10 @@ module ActiveFacts
       # * :reading - for verbalisation. Not used yet.
       # * :restrict - a list of values or ranges which this role may take. Not used yet.
       def one_to_one(role_name, options = {})
-        role_name, related, mandatory, related_role_name =
-          extract_binary_params(true, role_name, options)
+        role_name, related, mandatory, related_role_name, restrict =
+          extract_binary_params(role_name, true, options)
         check_identifying_role_has_valid_cardinality(:one_to_one, role_name)
-        define_binary_fact_type(true, role_name, related, mandatory, related_role_name)
+        define_binary_fact_type(true, role_name, related, mandatory, related_role_name, restrict)
       end
 
       def check_identifying_role_has_valid_cardinality(type, role)
@@ -217,12 +217,25 @@ module ActiveFacts
       end
 
       # Shared code for both kinds of binary fact type (has_one and one_to_one)
-      def define_binary_fact_type(one_to_one, role_name, related, mandatory, related_role_name)
-	if all_role_transitive[role_name]
+      def define_binary_fact_type(one_to_one, role_name, related, mandatory, related_role_name, restrict)
+	if r = all_role_transitive[role_name]
+	  # Allow a one-to-one to be defined identically from both ends:
+	  if one_to_one and
+	      r.unique and
+	      !r.unary? and
+	      r.object_type == self and	  # Cannot be an inherited role
+	      r.counterpart.unique and
+	      related == r.counterpart.object_type
+	      # and related_role_name == r.counterpart.name
+	    # REVISIT: Cannot add a value constraint here yet
+	    r.make_mandatory if mandatory && !r.mandatory # This was impossible
+	    return
+	  end
+
 	  raise DuplicateRoleException.new("#{name} cannot have more than one role named #{role_name}")
 	end
 	fact_type = FactType.new
-        role = Role.new(fact_type, self, role_name, mandatory, true)
+        role = Role.new(fact_type, self, role_name, mandatory, true, restrict)
 
         # There may be a forward reference here where role_name is a Symbol,
         # and the block runs later when that Symbol is bound to the object_type.
@@ -421,13 +434,10 @@ module ActiveFacts
       # :counterpart => Symbol/String. The name of the counterpart role. Will be to_s.snakecase'd and maybe augmented with "all_" and/or "_as_<role_name>"
       # LATER:
       # :order => :local_role OR lambda{} (for sort_by)
-      # :restrict => Range or Array of Range/value or respond_to?(include?)
+      # :restrict => Range or Array of Range/value/Regexp or respond_to?(include?)
       #
       # This function returns an array:
-      # [ role_name,
-      # related,
-      # mandatory,
-      # related_role_name ]
+      # [ role_name, related, mandatory, related_role_name, restrict ]
       #
       # Role naming rule:
       #   "all_" if there may be more than one (only ever on related end)
@@ -439,55 +449,57 @@ module ActiveFacts
       #   Role counterpart object_type name (not role name)
       #   Trailing Adjective
       # "_as_<other_role_name>" if other_role_name != this role's counterpart' object_type name, and not other_player_this_player
-      def extract_binary_params(one_to_one, role_name, options)
-        # Options:
-        #   mandatory (:mandatory)
-        #   other end role name if any (Symbol),
-        related = nil
-        mandatory = false
-        related_role_name = nil
-        role_player = self.basename.snakecase
+      def extract_binary_params(role_name, one_to_one, options)
+        role_name = role_name.to_sym
 
-        role_name = (Class === role_name ? a.name.snakecase : role_name).to_sym
-
-        # The related class might be forward-referenced, so handle a Symbol/String instead of a Class.
-        specified_class = related_name = options.delete(:class)
-        case related_name
-        when nil
-          related = role_name # No :class provided, assume it matches the role_name
-          related_name ||= role_name.to_s
-        when Class
-          related = related_name
-          related_name = related_name.basename.to_s.snakecase
-        when Symbol, String
-          related = related_name
-          related_name = related_name.to_s.snakecase
+        # The counterpart class (type) might be forward-referenced, so handle a Symbol/String instead of a Class.
+        specified_class = options.delete(:class)
+        case specified_class
+        when Class		# Preferred and most common case
+          counterpart_type_or_name = specified_class
+          counterpart_type_default_role_name = specified_class.basename.to_s.snakecase
+        when Symbol, String	# Use this to handle forward references
+          counterpart_type_or_name = specified_class.to_s.camelcase
+          counterpart_type_default_role_name = specified_class.to_s.snakecase
+        when nil		# No :class provided, assume it matches the role_name
+          counterpart_type_or_name = role_name.to_s.camelcase
+          counterpart_type_default_role_name = role_name.to_s
         else
-          raise ArgumentError.new("Invalid type #{related_name.class} for :class option on :#{role_name}, must be a Class, Symbol or String")
+          raise ArgumentError.new("Invalid type #{counterpart_type_default_role_name.class} for :class option on :#{role_name}, must be a Class, Symbol or String")
         end
 
-        # resolve the Symbol to a Class now if possible:
-        resolved = vocabulary.object_type(related)
-        related = resolved if resolved
-        if related.is_a?(Class)
-          unless related.respond_to?(:vocabulary) and related.vocabulary == self.vocabulary
-            raise CrossVocabularyRoleException.new(related, vocabulary)
+        # resolve the Symbol or String to a Class now if possible:
+        unless counterpart_type_or_name.is_a?(Class)
+	  resolved = vocabulary.object_type(counterpart_type_or_name)
+	  counterpart_type_or_name = resolved if resolved
+	end
+
+	# If the role is played by a known Class, check it's in the same vocabulary:
+        if counterpart_type_or_name.is_a?(Class)
+          unless counterpart_type_or_name.respond_to?(:vocabulary) and counterpart_type_or_name.vocabulary == self.vocabulary
+            raise CrossVocabularyRoleException.new(counterpart_type_or_name, vocabulary)
           end
         end
 
+        mandatory = false
         if options.delete(:mandatory) == true
           mandatory = true
         end
 
-        related_role_name = related_role_name.to_s if related_role_name = options.delete(:counterpart)
+        restrict = options.delete(:restrict)  # REVISIT: Stored but not used yet
+
+        default_role_name = self.basename.snakecase  # Default name of counterpart role (played by self)
+        counterpart_role_name = options.delete(:counterpart)
+        counterpart_role_name = counterpart_role_name.to_s if counterpart_role_name
+	counterpart_role_name ||= default_role_name
 
 	raise UnrecognisedOptionsException.new("role", role_name, options.keys) unless options.empty?
 
         # If you have a role "supervisor" and a sub-class "Supervisor", this'll bitch.
         if !specified_class and		# No specified :class was provided
-	    related.is_a?(Class) and
+	    counterpart_type_or_name.is_a?(Class) and
 	    (indicated = vocabulary.object_type(role_name)) and
-	    indicated != related
+	    indicated != counterpart_type_or_name
           raise "Role name #{role_name} indicates a different counterpart object_type #{indicated} than specified"
         end
 
@@ -497,16 +509,17 @@ module ActiveFacts
         # Note that oo.rb names things from the opposite end, so you wind up in a maze of mirrors.
         other_role_method =
           (one_to_one ? "" : "all_") +
-          (related_role_name || role_player)
-        if role_name.to_s != related_name and
-            (!related_role_name || related_role_name == role_player)
+          counterpart_role_name
+        if counterpart_role_name == default_role_name and
+	    role_name.to_s != counterpart_type_default_role_name
           other_role_method += "_as_#{role_name}"
         end
 
         [ role_name,
-          related,
+          counterpart_type_or_name,
           mandatory,
-          other_role_method.to_sym 
+          other_role_method.to_sym,
+	  restrict
         ]
       end
 
