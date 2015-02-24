@@ -31,6 +31,7 @@ module ActiveFacts
           (
 	    [ENV["DEBUG_PREFERENCE"]].compact +
 	    [
+	      'byebug',
 	      'pry',
 	      'debugger',
 	      'ruby-debug'
@@ -39,6 +40,11 @@ module ActiveFacts
             begin
               require debugger
               puts "Loaded "+debugger
+	      if debugger == 'byebug'
+		Kernel.class_eval do
+		  alias_method :byebug, :debugger
+		end
+	      end
               success = true
               break
             rescue LoadError => e

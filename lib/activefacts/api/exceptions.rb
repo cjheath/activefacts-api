@@ -65,7 +65,7 @@ module ActiveFacts
 
     class RoleNotDefinedException < RuntimeException
       def initialize klass, role_name
-        super "Role #{klass.basename}.#{role_name} is not defined"
+        super "Role #{klass.basename}.#{role_name} is not defined in #{klass.all_role.keys.map(&:to_s).sort.inspect}"
       end
     end
 

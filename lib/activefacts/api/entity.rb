@@ -390,7 +390,9 @@ module ActiveFacts
 		else
 		  role.counterpart.object_type.assert_instance(constellation, Array(v))
 		end
-	      instance.send(:"#{k}=", value)
+	      constellation.when_admitted {
+		instance.send(:"#{k}=", value)
+	      }
 	    end
 	  end
 

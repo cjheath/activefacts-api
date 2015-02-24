@@ -114,10 +114,12 @@ module ActiveFacts
 	  end
 
 	  # Assign any extra roles that may have been passed.
-	  # An exception here leaves the object as a candidate,
-	  # but without the offending role (re-)assigned.
+          # These assignments only take effect after the candidate object have been asserted.
+          # An exception here means the object is asserted but the role not assigned.
 	  arg_hash.each do |k, v|
-	    instance.send(:"#{k}=", v)
+	    constellation.when_admitted {
+	      instance.send(:"#{k}=", v)
+	    }
 	  end
 
 	  instance
