@@ -22,7 +22,7 @@ module ActiveFacts
         e.split(/[^_a-zA-Z0-9]/).each{|k| enable(k) }
         if @keys[:help]
           at_exit {
-            @stderr.puts "---\nDebugging keys available: #{@available.keys.map{|s| s.to_s}.sort*", "}"
+            $stderr.puts "---\nDebugging keys available: #{@available.keys.map{|s| s.to_s}.sort*", "}"
           }
         end
         if @keys[:debug]
