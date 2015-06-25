@@ -79,7 +79,7 @@ module ActiveFacts
       def_single_delegator :@hash, :size
       def_single_delegator :@hash, :empty?
       def_single_delegator :@hash, :each, 1, 2, -3
-      def_single_delegator :@hash, :map, 1, 2, -3
+      def_single_delegator :@hash, :map, 1, 2, -3, -1
       def_single_delegator :@hash, :detect, 1
       def_single_delegator :@hash, :values
       def_single_delegator :@hash, :keys

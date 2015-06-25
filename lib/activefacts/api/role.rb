@@ -22,35 +22,35 @@ module ActiveFacts
       attr_reader   :value_constraint # Counterpart Instances playing this role must meet this constraint
 
       def is_identifying # Is this an identifying role for object_type?
-	return @is_identifying unless @is_identifying == nil
+        return @is_identifying unless @is_identifying == nil
         @is_identifying = !!(@object_type.is_entity_type && @object_type.identifying_role_names.include?(@name))
       end
 
       def initialize(fact_type, object_type, role_name, mandatory, unique, restrict = nil)
-	@fact_type = fact_type
-	@fact_type.all_role << self
+        @fact_type = fact_type
+        @fact_type.all_role << self
         @object_type = object_type
         @name = role_name
         @mandatory = mandatory
         @unique = unique
-	@value_constraint = restrict
-	object_type.add_role(self)
+        @value_constraint = restrict
+        object_type.add_role(self)
         associate_role(@object_type)
       end
 
       # Is this role a unary (created by maybe)?
       def unary?
         # N.B. A role with a forward reference looks unary until it is resolved.
-	@fact_type.all_role.size == 1
+        @fact_type.all_role.size == 1
       end
 
       def make_mandatory
-	# Sometimes a role has already been defined from the other end
-	@mandatory = true
+        # Sometimes a role has already been defined from the other end
+        @mandatory = true
       end
 
       def counterpart
-	@counterpart ||= (@fact_type.all_role - [self])[0]
+        @counterpart ||= (@fact_type.all_role - [self])[0]
       end
 
       # Return the name of the getter method
@@ -73,8 +73,8 @@ module ActiveFacts
       end
 
       def verbalise
-	"Role #{name} of #{object_type}, " +
-	  (unary? ? 'unary' : (counterpart ? 'played by' + counterpart.object_type : 'undefined'))
+        "Role #{name} of #{object_type}, " +
+          (unary? ? 'unary' : (counterpart ? 'played by' + counterpart.object_type : 'undefined'))
       end
 
     private

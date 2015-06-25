@@ -28,22 +28,22 @@ module ActiveFacts
 
       # A value is its own key, unless it's a delegate for a raw value
       def identifying_role_values(klass = nil) #:nodoc:
-	# The identifying role value for the supertype of a value type is always the same as for the subtype
-	respond_to?(:__getobj__) ? __getobj__ : self
+        # The identifying role value for the supertype of a value type is always the same as for the subtype
+        respond_to?(:__getobj__) ? __getobj__ : self
       end
 
       def plays_no_role
-	# REVISIT: Some Value Types are independent, and so must always be regarded as playing a role
-	self.class.all_role.all? do |n, role|
-	  case
-	  when role.fact_type.is_a?(ActiveFacts::API::TypeInheritanceFactType)
-	    true  # No need to consider subtyping/supertyping roles here
-	  when role.unique
-	    send(role.getter) == nil
-	  else
-	    send(role.getter).empty?
-	  end
-	end
+        # REVISIT: Some Value Types are independent, and so must always be regarded as playing a role
+        self.class.all_role.all? do |n, role|
+          case
+          when role.fact_type.is_a?(ActiveFacts::API::TypeInheritanceFactType)
+            true  # No need to consider subtyping/supertyping roles here
+          when role.unique
+            send(role.getter) == nil
+          else
+            send(role.getter).empty?
+          end
+        end
       end
 
       # All ValueType classes include the methods defined here
@@ -53,7 +53,7 @@ module ActiveFacts
         def value_type *args, &block #:nodoc:
           options = (args[-1].is_a?(Hash) ? args.pop : {})
           options.each do |key, value|
-	    raise UnrecognisedOptionsException.new('ValueType', basename, key) unless respond_to?(key)
+            raise UnrecognisedOptionsException.new('ValueType', basename, key) unless respond_to?(key)
             send(key, value)
           end
         end
@@ -84,49 +84,49 @@ module ActiveFacts
         end
 
         def identifying_role_values(constellation, args)   #:nodoc:
-	  # Normalise positional arguments into an arguments hash (this changes the passed parameter)
-	  arg_hash = args[-1].is_a?(Hash) ? args.pop : {}
+          # Normalise positional arguments into an arguments hash (this changes the passed parameter)
+          arg_hash = args[-1].is_a?(Hash) ? args.pop : {}
 
           # If a single arg is already the correct class or a subclass,
-	  # use it directly, otherwise create one.
-	  # This appears to be the only way to handle e.g. Date correctly
+          # use it directly, otherwise create one.
+          # This appears to be the only way to handle e.g. Date correctly
           unless args.size == 1 and instance = args[0] and instance.is_a?(self)
-	    instance = new_instance(constellation, *args)
+            instance = new_instance(constellation, *args)
           end
-	  args.replace([arg_hash])
-	  instance.identifying_role_values(self)
+          args.replace([arg_hash])
+          instance.identifying_role_values(self)
         end
 
-	def assert_instance(constellation, args)
-	  new_identifier = args == [:new]
-	  key = identifying_role_values(constellation, args)
-	  # args are now normalized to an array containing a single Hash element
-	  arg_hash = args[0]
+        def assert_instance(constellation, args)
+          new_identifier = args == [:new]
+          key = identifying_role_values(constellation, args)
+          # args are now normalized to an array containing a single Hash element
+          arg_hash = args[0]
 
-	  if new_identifier
-	    instance = key  # AutoCounter is its own key
-	  else
-	    instance_index = constellation.instances[self]
-	    unless instance = constellation.has_candidate(self, key) || instance_index[key]
-	      instance = new_instance(constellation, key)
-	      constellation.candidate(instance)
-	    end
-	  end
+          if new_identifier
+            instance = key  # AutoCounter is its own key
+          else
+            instance_index = constellation.instances[self]
+            unless instance = constellation.has_candidate(self, key) || instance_index[key]
+              instance = new_instance(constellation, key)
+              constellation.candidate(instance)
+            end
+          end
 
-	  # Assign any extra roles that may have been passed.
+          # Assign any extra roles that may have been passed.
           # These assignments only take effect after the candidate object have been asserted.
           # An exception here means the object is asserted but the role not assigned.
-	  arg_hash.each do |k, v|
-	    constellation.when_admitted {
-	      instance.send(:"#{k}=", v)
-	    }
-	  end
+          arg_hash.each do |k, v|
+            constellation.when_admitted {
+              instance.send(:"#{k}=", v)
+            }
+          end
 
-	  instance
-	end
+          instance
+        end
 
         def index_instance(constellation, instance) #:nodoc:
-	  # Index the instance in the constellation's InstanceIndex for this class:
+          # Index the instance in the constellation's InstanceIndex for this class:
           instances = constellation.instances[self]
           key = instance.identifying_role_values(self)
           instances[key] = instance
@@ -142,7 +142,7 @@ module ActiveFacts
         def inherited(other)  #:nodoc:
           # Copy the type parameters here, etc?
           other.send :realise_supertypes, self
-	  TypeInheritanceFactType.new(self, other)
+          TypeInheritanceFactType.new(self, other)
           vocabulary.__add_object_type(other)
           super
         end
