@@ -3,31 +3,39 @@
 #
 # The trace() method supports indented tracing.
 #
+# Trace keys:
 # The first argument is normally a symbol which is the key for related trace calls.
 # Set the TRACE environment variable to enable it, or add trace.enable(:key) to a CLI.
+# A call to trace without a first symbol argument is always enabled (as if by :all)
 #
+# Message arguments:
 # Each subsequent argument is either
 #  - a String (or anything that can be join()ed), or
 #  - a Proc (or anything that can be called) that returns such a string.
 # Proc arguments will be called only if the trace key is enabled.
 # If the key is enabled (or not present) the Trace strings will be joined and emitted.
 #
+# Trace blocks:
 # A block passed to the trace method will always be called, and trace will always return its value.
 # Any trace emitted from within such a block will be indented if the current trace key is enabled.
 #
-# As a special case, a call to trace with a key ending in _ is enabled if the base key is
-# enabled, but enabled all nested calls to trace whether or not their key is enabled.
+# Special trace key options for nesting blocks:
+# - A trace key ending in _ is enabled if the base key is enabled, but enables all
+#   nested trace calls whether or not their key is enabled.
+# - A trace key ending in ? is enabled if the base key is enabled, but is emitted
+#   only if (and just before) the nested block emits a trace message
 # 
+# Testing whether a trace key is enabled:
 # A call to trace with a key but without a block will return true if the key is enabled
 #
 # A call to trace with no arguments returns the Tracer object itself.
 #
-# Built-in trace key behaviour:
+# Built-in trace keys and behaviour:
 #   help - list (at exit) all trace keys that became available during the run
 #   all - enable all trace keys
-#   keys - display trace keys on every trace message (automatically enabled by :all)
+#   keys - display the trace key for every trace message (automatically enabled by :all)
 #   debug - prepare a Ruby debugger at the start of the run, so it has the full context available
-#   firstaid - stop inside the constructor for any exception so you can inspect the local context of the cause
+#   firstaid - enter the debugger inside the Exception constructor so you can inspect the local context
 #   trap - trap SIGINT (^C) in a block that allows inspecting or continuing execution (not all debuggers support this)
 #   flame - use ruby-prof-flamegraph to display the performance profile as a flame graph using SVG
 #
@@ -45,6 +53,7 @@ module ActiveFacts
       @indent = 0	# Current nesting level of enabled trace blocks
       @nested = false   # Set when a block enables all enclosed tracing
       @available = {}	# Hash of available trace keys, accumulated during the run
+      @delayed = nil	# A delayed message, emitted only if the enclosed block emits tracing
 
       @keys = {}
       if (e = ENV["TRACE"])
@@ -54,11 +63,11 @@ module ActiveFacts
 
     def trace(*args, &block)
       begin
-	old_indent, old_nested, enabled = @indent, @nested, show(*args)
-	# Apologies for this monstrosity, but it reduces the steps when single-stepping:
-	block ? yield : (args.size == 0 ? self : (enabled == 1 ? true : false))
+	old_indent, old_nested, old_delayed, enabled = @indent, @nested, @delayed, show(*args)
+	# This monstrosity reduces the steps when single-stepping:
+	block ? yield : (args.size == 0 ? self : enabled)
       ensure
-	@indent, @nested = old_indent, old_nested
+	@indent, @nested, @delayed = old_indent, old_nested, old_delayed
       end
     end
 
@@ -179,18 +188,28 @@ module ActiveFacts
 
   private
     def show(*args)
-      enabled, key_to_show = selected?(args)
+      enabled_prefix = selected?(args)
 
       # Emit the message if enabled or a parent is:
-      if args.size > 0 && enabled == 1
-	puts "\##{key_to_show} " +
+      if enabled_prefix && args.size > 0
+	message =
+	  "\##{enabled_prefix} " +
 	  '  '*@indent +
 	  args.
-            map{|a| a.respond_to?(:call) ? a.call : a}.
+	    map{|a| a.respond_to?(:call) ? a.call : a}.
 	    join(' ')
+
+	if @delayed == true
+	  @delayed = message	# Arrange to display this message later, if necessary
+	elsif @delayed
+	  puts @delayed		# Display a delayed message, then the current one
+	  puts message
+	else
+	  puts message
+	end
       end
-      @indent += enabled
-      enabled
+      @indent += (enabled_prefix ? 1 : 0)
+      !!enabled_prefix
     end
 
     def selected?(args)
@@ -198,9 +217,13 @@ module ActiveFacts
       key =
 	if Symbol === args[0]
 	  control = args.shift
-	  if (s = control.to_s) =~ /_\Z/
+	  case s = control.to_s
+	  when /_\Z/		# Enable all nested trace calls
 	    nested = true
-	    s.sub(/_\Z/, '').to_sym     # Avoid creating new strings willy-nilly
+	    s.sub(/_\Z/, '').to_sym
+	  when /\?\Z/		# Delay this message until a nested active trace
+	    @delayed = true
+	    s.sub(/\?\Z/, '').to_sym
 	  else
 	    control
 	  end
@@ -208,15 +231,20 @@ module ActiveFacts
 	  :all
 	end
 
-      @available[key] ||= key   # Remember that this trace was requested, for help
-      enabled = @nested ||      # This trace is enabled because it's in a nested block
-		@keys[key] ||   # This trace is enabled in its own right
-		@keys[:all]     # This trace is enabled because all are
-      @nested = nested
-      [
-	(enabled ? 1 : 0),
-	@keys[:keys] || @keys[:all] ? " %-15s"%control : nil
-      ]
+      @available[key] ||= key		# Remember that this trace was requested, for help
+      @nested ||= nested		# Activate nesting, if requested
+      if @nested ||			# This trace is enabled because it's in a nested block
+	  @keys[key] ||			# This trace is enabled in its own right
+	  @keys[:all]			# This trace is enabled because all are
+	if @keys[:keys] || @keys[:all]	# Use a formatting prefix?
+	  enabled_prefix = " %-15s"%key
+	  @keys[key] = enabled_prefix if @keys[key] == true # Save the formatting prefix
+	else
+	  enabled_prefix = ''
+	end
+      end
+
+      enabled_prefix
     end
 
   end
