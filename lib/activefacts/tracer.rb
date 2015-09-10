@@ -203,6 +203,7 @@ module ActiveFacts
 	  @delayed = message	# Arrange to display this message later, if necessary
 	elsif @delayed
 	  puts @delayed		# Display a delayed message, then the current one
+	  @delayed = nil
 	  puts message
 	else
 	  puts message
