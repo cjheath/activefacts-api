@@ -1,32 +1,8 @@
-require 'rubygems'
-require 'rake'
-
-require 'jeweler'
-Jeweler::Tasks.new do |gem|
-  # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-  gem.name = "activefacts-api"
-  gem.homepage = "http://github.com/cjheath/activefacts-api"
-  gem.license = "MIT"
-  gem.summary = "A fact-based data model DSL and API"
-  gem.description = %q{
-The ActiveFacts API is a Ruby DSL for managing constellations of elementary facts.
-Each fact is either existential (a value or an entity), characteristic (boolean) or
-binary relational (A rel B). Relational facts are consistently co-referenced, so you
-can traverse them efficiently in any direction. Each constellation maintains constraints
-over the fact population.
-}
-  gem.email = "clifford.heath@gmail.com"
-  gem.authors = ["Clifford Heath"]
-  # Include your dependencies below. Runtime dependencies are required when using your gem,
-  # and development dependencies are only needed for development (ie running rake tasks, tests, etc)
-end
-Jeweler::RubygemsDotOrgTasks.new
-
-require 'rspec/core'
-require 'rspec/core/rake_task'
+require "bundler/gem_tasks"
+require "rspec/core/rake_task"
 require 'rdoc/task'
 
-gem "rspec", :require => "spec/rake/spectask"
+RSpec::Core::RakeTask.new(:spec)
 
 task :default => :spec
 

@@ -1,6 +1,9 @@
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-$LOAD_PATH.unshift(File.dirname(__FILE__))
-require 'rspec'
+ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../../Gemfile', __FILE__)
+
+require 'bundler/setup' # Set up gems listed in the Gemfile.
+
+$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
+
 require 'activefacts/api'
 
 # Requires supporting files with custom matchers and macros, etc,
