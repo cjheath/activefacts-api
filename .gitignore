@@ -26,3 +26,6 @@ spec/*log
 
 .DS_Store
 *.swp
+*.rej
+*.orig
+*.diff

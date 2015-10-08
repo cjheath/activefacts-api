@@ -136,6 +136,15 @@ module ActiveFacts
 	# Ok, no debugger, tough luck.
       end
 
+      if trace :trap
+	trap('SIGINT') do
+	  puts "Stopped at:\n\t"+caller*"\n\t"
+	  debugger
+	  true	# Stopped on SIGINT
+	end
+      end
+
+      errors = []
       (
 	[ENV["DEBUG_PREFERENCE"]].compact +
 	[
@@ -149,23 +158,18 @@ module ActiveFacts
 	  require debugger
 	  if debugger == 'byebug'
 	    Kernel.class_eval do
-	      alias_method :byebug, :debugger
+	      alias_method :debugger, :byebug
 	    end
 	  end
 	  ::Debugger.start if (const_get(::Debugger) rescue nil)
-	  break
+	  return
 	rescue LoadError => e
 	  errors << e
 	end
       end
 
-      if trace :trap
-	trap('SIGINT') do
-	  puts "Stopped at:\n\t"+caller*"\n\t"
-	  debugger
-	  true	# Stopped on SIGINT
-	end
-      end
+      # Report when we couldn't load any debugger
+      $stderr.p errors
     end
 
     def setup_firstaid
