@@ -79,6 +79,10 @@ module ActiveFacts
       !key.empty? && @keys[key.to_sym]
     end
 
+    def enabled
+      @keys.keys
+    end
+
     def enable key
       if !key.empty? && !@keys[s = key.to_sym]
 	@keys[s] = true
@@ -190,9 +194,13 @@ module ActiveFacts
       end
     end
 
+    def display key, msg
+      puts msg
+    end
+
   private
     def show(*args)
-      enabled_prefix = selected?(args)
+      key, enabled_prefix = *selected?(args)
 
       # Emit the message if enabled or a parent is:
       if enabled_prefix && args.size > 0
@@ -206,11 +214,11 @@ module ActiveFacts
 	if @delayed == true
 	  @delayed = message	# Arrange to display this message later, if necessary
 	elsif @delayed
-	  puts @delayed		# Display a delayed message, then the current one
+	  display key, @delayed		# Display a delayed message, then the current one
 	  @delayed = nil
-	  puts message
+	  display key, message
 	else
-	  puts message
+	  display key, message
 	end
       end
       @indent += (enabled_prefix ? 1 : 0)
@@ -249,7 +257,7 @@ module ActiveFacts
 	end
       end
 
-      enabled_prefix
+      [key, enabled_prefix]
     end
 
   end
