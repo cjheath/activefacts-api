@@ -50,6 +50,10 @@ module ActiveFacts
 
   class Tracer
     def initialize
+      reinitialize
+    end
+
+    def reinitialize
       @indent = 0	# Current nesting level of enabled trace blocks
       @nested = false   # Set when a block enables all enclosed tracing
       @available = {}	# Hash of available trace keys, accumulated during the run
@@ -254,8 +258,8 @@ module ActiveFacts
 	else
 	  enabled_prefix = ''
 	end
+	@nested ||= nested		# Activate nesting, if requested
       end
-      @nested ||= nested		# Activate nesting, if requested
 
       [key, enabled_prefix]
     end
