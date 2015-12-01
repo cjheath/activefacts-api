@@ -245,7 +245,6 @@ module ActiveFacts
 	end
 
       @available[key] ||= key		# Remember that this trace was requested, for help
-      @nested ||= nested		# Activate nesting, if requested
       if @nested ||			# This trace is enabled because it's in a nested block
 	  @keys[key] ||			# This trace is enabled in its own right
 	  @keys[:all]			# This trace is enabled because all are
@@ -256,6 +255,7 @@ module ActiveFacts
 	  enabled_prefix = ''
 	end
       end
+      @nested ||= nested		# Activate nesting, if requested
 
       [key, enabled_prefix]
     end
