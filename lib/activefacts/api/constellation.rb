@@ -236,6 +236,27 @@ module ActiveFacts
           end.compact*"\n"
       end
 
+      # Make a new instance like "instance", but with some new attributes assigned.
+      # All identifiers should overall be different from the forked instance, and
+      # all one-to-ones must be assigned new values (otherwise we change old objects)
+      def fork instance, attrs = {}
+	object_type = instance.class
+
+	role_value_map =
+	  object_type.all_role_transitive.inject({}) do |hash, (role_name, role)|
+	    next hash if !role.unique
+	    next hash if role.fact_type.class == ActiveFacts::API::TypeInheritanceFactType
+	    if role.counterpart && role.counterpart.unique && !attrs.include?(role.name) && instance.send(role.getter) != nil
+	      raise "#{object_type.basename} cannot be forked unless a replacement value for #{role.name} is provided"
+	    end
+	    value = attrs[role_name] || instance.send(role.getter)
+	    hash[role_name] = value if value != nil
+	    hash
+	  end
+
+	  assert(object_type, role_value_map)
+      end
+
       def clone
 	remaining_object_types = vocabulary.object_type.clone
 	constellation = self.class.new(vocabulary, @options)
