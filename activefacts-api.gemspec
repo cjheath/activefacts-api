@@ -27,8 +27,7 @@ over the fact population.
 
   spec.extra_rdoc_files = [
     "LICENSE.txt",
-    "README.rdoc",
-    "TODO"
+    "README.rdoc"
   ]
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
 
