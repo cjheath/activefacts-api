@@ -246,10 +246,17 @@ module ActiveFacts
 	  object_type.all_role_transitive.inject({}) do |hash, (role_name, role)|
 	    next hash if !role.unique
 	    next hash if role.fact_type.class == ActiveFacts::API::TypeInheritanceFactType
-	    if role.counterpart && role.counterpart.unique && !attrs.include?(role.name) && instance.send(role.getter) != nil
-	      raise "#{object_type.basename} cannot be forked unless a replacement value for #{role.name} is provided"
+	    old_value = instance.send(role.getter)
+	    if role.counterpart && role.counterpart.unique && old_value != nil
+	      # It's a one-to-one which is populated. We must not change the counterpart
+	      if role.mandatory && !attrs.include?(role.name)
+		# and cannot just nullify the value
+		raise "#{object_type.basename} cannot be forked unless a replacement value for #{role.name} is provided"
+	      end
+	      value = attrs[role_name]
+	    else
+	      value = attrs[role_name] || instance.send(role.getter)
 	    end
-	    value = attrs[role_name] || instance.send(role.getter)
 	    hash[role_name] = value if value != nil
 	    hash
 	  end

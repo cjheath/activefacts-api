@@ -31,15 +31,11 @@ over the fact population.
   ]
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
 
-  spec.add_runtime_dependency(%q<rbtree-pure>, [">= 0.1.1", "~> 0"])
+  spec.add_runtime_dependency 'rbtree-pure', [">= 0.1.1", "~> 0"]
+  spec.add_runtime_dependency 'tracing', ["~> 2"]
 
   spec.add_development_dependency "bundler", ">= 1.10", "~> 1.10.6"
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency "rspec", "~> 3.3"
-
-  spec.add_runtime_dependency(%q<ruby-debug>, ["~> 0"]) if RUBY_VERSION < "1.9"
-  spec.add_runtime_dependency(%q<debugger>, ["~> 1"]) if RUBY_VERSION =~ /^1\.9/ or RUBY_VERSION =~ /^2\.0/
-  spec.add_runtime_dependency(%q<byebug>, ["~> 1"]) if RUBY_VERSION =~ /^2\.1/
-  # spec.add_development_dependency(%q<pry>, ["~> 0"]) # rbx, jruby
 end
 
