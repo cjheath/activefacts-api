@@ -34,8 +34,9 @@ module ActiveFacts
 
       def [](*a)
 	if @sort
+	  #puts "Indexing #{object_type.name}.#{role.name} using #{a.inspect}:\n\t" + caller*"\n\t" + "\n\t---\n"
+	  key = form_key(a.map{|a| a.respond_to?(:identifying_role_values) ? a.identifying_role_values : a})
 	  # REVISIT: Consider whether to return an array when a partial key is provided.
-	  key = form_key(Array(a))
 	  @a[key]
 	else
 	  # Slow: Search the array for an element having the matching key:
