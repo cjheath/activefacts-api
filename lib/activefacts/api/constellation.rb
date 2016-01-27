@@ -255,7 +255,7 @@ module ActiveFacts
 	      end
 	      value = attrs[role_name]
 	    else
-	      value = attrs[role_name] || instance.send(role.getter)
+	      value = attrs.include?(role_name) ? attrs[role_name] : instance.send(role.getter)
 	    end
 	    hash[role_name] = value if value != nil
 	    hash

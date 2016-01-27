@@ -128,20 +128,21 @@ module ActiveFacts
 	end
       end
 
-      def_single_delegator :@a, :all?, 1
+      # Arity of -1 is needed when a block is passed using to_proc, e.g. map(&:some_method).
+      def_single_delegator :@a, :all?, -1, 1
       def_single_delegator :@a, :empty?
       def_single_delegator :@a, :include?
       def_single_delegator :@a, :inject, 2
-      def_single_delegator :@a, :select, 1
-      def_single_delegator :@a, :reject, 1
+      def_single_delegator :@a, :select, -1, 1
+      def_single_delegator :@a, :reject, -1, 1
       def_single_delegator :@a, :size
-      def_single_delegator :@a, :sort_by, 1, -1
+      def_single_delegator :@a, :sort_by, -1, 1
       def_single_delegator :@a, :to_a
       def_single_delegator :@a, :-
       # These delegators allow a negative arity in RSpec because the tests test it (to make sure the code doesn't pass too many args)
-      def_single_delegator :@a, :each, *([1] + Array(defined?(::RSpec) ? -2 : nil))
-      def_single_delegator :@a, :detect, 1, *([1] + Array(defined?(::RSpec) ? -2 : nil))
-      def_single_delegator :@a, :map, 1, -1
+      def_single_delegator :@a, :each, *([-1, 1] + Array(defined?(::RSpec) ? -2 : nil))
+      def_single_delegator :@a, :detect, 1, *([-1, 1] + Array(defined?(::RSpec) ? -2 : nil))
+      def_single_delegator :@a, :map, -1, 1
     end
   end
 end
