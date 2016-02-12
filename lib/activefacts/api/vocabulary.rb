@@ -32,15 +32,8 @@ module ActiveFacts
           __bind(camel)
           c
         else
-	  if const_defined?(camel)
-	    begin
-	      const_get(camel)
-	    rescue NameError
-	      nil
-	    end
-	  else
-	    nil
-	  end
+	  klass = const_get(camel) rescue nil	# NameError if undefined
+	  klass && klass.modspace == self ? klass : nil
         end
       end
 
