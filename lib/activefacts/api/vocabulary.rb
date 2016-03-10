@@ -32,8 +32,14 @@ module ActiveFacts
           __bind(camel)
           c
         else
-	  klass = const_get(camel) rescue nil	# NameError if undefined
-	  klass && klass.modspace == self ? klass : nil
+          if constants.include?(camel.to_sym)
+            if klass = const_get(camel) and !klass.respond_to?(:vocabulary)
+              raise CrossVocabularyRoleException.new(name, self)
+            end
+            klass
+          else
+            nil
+          end
         end
       end
 
@@ -49,11 +55,11 @@ module ActiveFacts
       def verbalise
         "Vocabulary #{name}:\n\t" +
           @object_type.keys.sort.map do |object_type|
-	    c = @object_type[object_type]
-	    __bind(c.basename)
-	    c.verbalise + "\n\t\t// Roles played: " + c.all_role.verbalise
-	  end.
-	  join("\n\t")
+            c = @object_type[object_type]
+            __bind(c.basename)
+            c.verbalise + "\n\t\t// Roles played: " + c.all_role.verbalise
+          end.
+          join("\n\t")
       end
 
       def __add_object_type(klass)  #:nodoc:
