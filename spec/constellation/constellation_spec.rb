@@ -27,7 +27,7 @@ describe "A Constellation instance" do
       class Name < StringVal
         value_type
         #has_one :attr, Name
-	has_one :undefined_role		# This will be unsatisfied with the non-existence of the UndefinedRole class
+        has_one :undefined_role         # This will be unsatisfied with the non-existence of the UndefinedRole class
       end
 
       class LegalEntity
@@ -45,8 +45,8 @@ describe "A Constellation instance" do
       end
 
       class Person < LegalEntity
-        identified_by :name, :family_name	# REVISIT: want a way to role_alias :name, :given_name
-        supertypes :surrogate			# Use a Symbol binding this time
+        identified_by :name, :family_name       # REVISIT: want a way to role_alias :name, :given_name
+        supertypes :surrogate                   # Use a Symbol binding this time
 
         has_one :family_name, :class => Name
         has_one :employer, :class => Company
@@ -169,8 +169,8 @@ describe "A Constellation instance" do
   describe "re-assertion with any one of multiple identifiers" do
     before :each do
       # Create some instances:
-      @name1 = @constellation.Name("foo")		# Value type
-      @foo1 = @constellation.LegalEntity("foo")	# Entity Type with simple identifier
+      @name1 = @constellation.Name("foo")               # Value type
+      @foo1 = @constellation.LegalEntity("foo") # Entity Type with simple identifier
       @acme1 = @constellation.Company("Acme, Inc", :auto_counter_val => :new)
       @acme1_id = @acme1.auto_counter_val
     end
@@ -181,8 +181,8 @@ describe "A Constellation instance" do
       @foo2 = @constellation.LegalEntity("foo")
       @acme2 = nil
       lambda {
-	# Without the auto_counter_val
-	@acme2 = @constellation.Company("Acme, Inc")
+        # Without the auto_counter_val
+        @acme2 = @constellation.Company("Acme, Inc")
       }.should_not raise_error
 
       # This creates a new auto_counter_val, changing the acme instance (and hence, both references to it)
@@ -368,10 +368,14 @@ describe "A Constellation instance" do
 
     @constellation.retract(fred)
 
-    @constellation.Person.size.should == 1	  # Fred is gone, George still exists
+    @constellation.Person.size.should == 1        # Fred is gone, George still exists
     @constellation.Person.values[0].name.should == 'George'
     fred.family_name.should be_nil
     smith.all_person_as_family_name.size.should == 1
+  end
+
+  it "should retract linked sets of instances (cascading)" do
+    skip "Test not yet written"
   end
 
   it "should fail to recognise references to unresolved forward referenced classes" do

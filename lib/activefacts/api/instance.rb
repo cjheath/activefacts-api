@@ -116,18 +116,18 @@ module ActiveFacts
             # so we allow retracting to the same state.
             if role.unique
               next if role.fact_type.is_a?(TypeInheritanceFactType)
-              i = send(role.getter)
-              next unless i
+              counterpart_instance = send(role.getter)
+              next unless counterpart_instance && counterpart_instance.constellation
 
               if (counterpart.unique)
                 # REVISIT: This will incorrectly fail to propagate a key change for a non-mandatory role
-                i.send(counterpart.setter, nil, false)
+                counterpart_instance.send(counterpart.setter, nil, false)
               else
-                rv = i.send(role.counterpart.getter)
+                rv = counterpart_instance.send(role.counterpart.getter)
                 rv.delete_instance(self, irvrvs[rv])
 
-                if (rv.empty? && !i.class.is_entity_type)
-                  i.retract if i.plays_no_role
+                if (rv.empty? && !counterpart_instance.class.is_entity_type)
+                  counterpart_instance.retract if counterpart_instance.plays_no_role
                 end
 
               end
@@ -138,8 +138,13 @@ module ActiveFacts
               next if role.fact_type.is_a?(TypeInheritanceFactType)
               counterpart_instances = send(role.getter)
               counterpart_instances.to_a.each do |counterpart_instance|
+                next unless counterpart_instance.constellation
                 # This action deconstructs our RoleValues as we go:
-                counterpart_instance.send(counterpart.setter, nil, false)
+                if counterpart.mandatory
+                  counterpart_instance.retract
+                else
+                  counterpart_instance.send(counterpart.setter, nil, false)
+                end
               end
               instance_variable_set(role.variable, nil)
             end
