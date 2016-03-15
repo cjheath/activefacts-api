@@ -24,17 +24,17 @@ class Guid
     if i == :new
       case @@sequence
       when 'fixed'
-	@@counter ||= 0
-	@value = SecureRandom.format_uuid('%032x' % (@@counter += 1))
+        @@counter ||= 0
+        @value = SecureRandom.format_uuid('%032x' % (@@counter += 1))
       when 'record'
-	@@sequence_file ||= File.open(SEQ_FILE_NAME, 'w')
-	@value = SecureRandom.uuid.freeze
-	@@sequence_file.puts(@value)
+        @@sequence_file ||= File.open(SEQ_FILE_NAME, 'w')
+        @value = SecureRandom.uuid.freeze
+        @@sequence_file.puts(@value)
       when 'replay'
-	@@sequence_file ||= File.open(SEQ_FILE_NAME, 'r')
-	@value = @@sequence_file.gets.chomp
+        @@sequence_file ||= File.open(SEQ_FILE_NAME, 'r')
+        @value = @@sequence_file.gets.chomp
       else
-	@value = SecureRandom.uuid.freeze
+        @value = SecureRandom.uuid.freeze
       end
     elsif (v = i.to_s).length == 36 and !(v !~ /[^0-9a-f]/i)
       @value = v.clone.freeze
@@ -68,7 +68,7 @@ class Guid
     to_s.eql?(o.to_s)
   end
 
-  def <=>(o)				#:nodoc:
+  def <=>(o)                            #:nodoc:
     to_s.<=>(o.to_s)
   end
 

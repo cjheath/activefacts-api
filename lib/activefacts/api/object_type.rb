@@ -50,25 +50,25 @@ module ActiveFacts
       end
 
       def add_role(role)
-	all_role[role.name] = role
-	@all_role_transitive = nil  # Undo the caching
+        all_role[role.name] = role
+        @all_role_transitive = nil  # Undo the caching
       end
 
       def all_role_transitive
-	return @all_role_transitive if @all_role_transitive
-	@all_role_transitive = all_role.dup
-	supertypes_transitive.each do |klass|
-	  @all_role_transitive.merge!(klass.all_role)
-	end
-	@all_role_transitive
+        return @all_role_transitive if @all_role_transitive
+        @all_role_transitive = all_role.dup
+        supertypes_transitive.each do |klass|
+          @all_role_transitive.merge!(klass.all_role)
+        end
+        @all_role_transitive
       end
 
       # Define a unary fact type attached to this object_type; in essence, a boolean attribute.
       #
       # Example: maybe :is_ceo
       def maybe(role_name, options = {})
-	raise UnrecognisedOptionsException.new("role", role_name, options.keys) unless options.empty?
-	fact_type = FactType.new
+        raise UnrecognisedOptionsException.new("role", role_name, options.keys) unless options.empty?
+        fact_type = FactType.new
         realise_role(Role.new(fact_type, self, role_name, false, true))
       end
 
@@ -110,11 +110,11 @@ module ActiveFacts
           case type
           when :has_one
             if identifying_role_names.size == 1
-	      raise InvalidIdentificationException.new(self, role, true)
+              raise InvalidIdentificationException.new(self, role, true)
             end
           when :one_to_one
             if identifying_role_names.size > 1
-	      raise InvalidIdentificationException.new(self, role, false)
+              raise InvalidIdentificationException.new(self, role, false)
             end
           end
         end
@@ -127,48 +127,48 @@ module ActiveFacts
       # Without parameters, it returns the array of ObjectType supertypes
       # (one by Ruby inheritance, any others as defined using this method)
       def supertypes(*object_types)
-	@supertypes ||= []
-	all_supertypes = supertypes_transitive
-	object_types.each do |object_type|
-	  next if all_supertypes.include? object_type
-	  supertype =
-	    case object_type
-	    when Class
-	      object_type
-	    when Symbol
-	      # No late binding here:
-	      (object_type = vocabulary.const_get(object_type.to_s.camelcase))
-	    else
-	      raise InvalidSupertypeException.new("Illegal supertype #{object_type.inspect} for #{self.class.basename}")
-	    end
-	  unless supertype.respond_to?(:vocabulary) and supertype.vocabulary == self.vocabulary
-	    raise InvalidSupertypeException.new("#{supertype.name} must be an object type in #{vocabulary.name}")
-	  end
+        @supertypes ||= []
+        all_supertypes = supertypes_transitive
+        object_types.each do |object_type|
+          next if all_supertypes.include? object_type
+          supertype =
+            case object_type
+            when Class
+              object_type
+            when Symbol
+              # No late binding here:
+              (object_type = vocabulary.const_get(object_type.to_s.camelcase))
+            else
+              raise InvalidSupertypeException.new("Illegal supertype #{object_type.inspect} for #{self.class.basename}")
+            end
+          unless supertype.respond_to?(:vocabulary) and supertype.vocabulary == self.vocabulary
+            raise InvalidSupertypeException.new("#{supertype.name} must be an object type in #{vocabulary.name}")
+          end
 
-	  if is_entity_type != supertype.is_entity_type
-	    raise InvalidSupertypeException.new("#{self} < #{supertype}: A value type may not be a supertype of an entity type, and vice versa")
-	  end
+          if is_entity_type != supertype.is_entity_type
+            raise InvalidSupertypeException.new("#{self} < #{supertype}: A value type may not be a supertype of an entity type, and vice versa")
+          end
 
-	  TypeInheritanceFactType.new(supertype, self)
-	  @supertypes << supertype
+          TypeInheritanceFactType.new(supertype, self)
+          @supertypes << supertype
 
-	  # Realise the roles (create accessors) of this supertype.
-	  realise_supertypes(object_type, all_supertypes)
-	end
-	[(superclass.respond_to?(:vocabulary) ? superclass : nil), *@supertypes].compact
+          # Realise the roles (create accessors) of this supertype.
+          realise_supertypes(object_type, all_supertypes)
+        end
+        [(superclass.respond_to?(:vocabulary) ? superclass : nil), *@supertypes].compact
       end
 
       # Return the array of all ObjectType supertypes, transitively.
       def supertypes_transitive
-	supertypes = []
-	v = superclass.respond_to?(:vocabulary) ? superclass.vocabulary : nil
-	supertypes << superclass if v.kind_of?(Module)
-	supertypes += (@supertypes ||= [])
-	sts = supertypes.inject([]) do |a, t|
-	  next if a.include?(t)
-	  a += [t] + t.supertypes_transitive
-	end.uniq
-	sts # The local variable unconfuses rcov
+        supertypes = []
+        v = superclass.respond_to?(:vocabulary) ? superclass.vocabulary : nil
+        supertypes << superclass if v.kind_of?(Module)
+        supertypes += (@supertypes ||= [])
+        sts = supertypes.inject([]) do |a, t|
+          next if a.include?(t)
+          a += [t] + t.supertypes_transitive
+        end.uniq
+        sts # The local variable unconfuses rcov
       end
 
       def subtypes
@@ -176,7 +176,7 @@ module ActiveFacts
       end
 
       def subtypes_transitive
-	(subtypes+subtypes.map(&:subtypes_transitive)).flatten.uniq
+        (subtypes+subtypes.map(&:subtypes_transitive)).flatten.uniq
       end
 
       # Every new role added or inherited comes through here:
@@ -218,210 +218,210 @@ module ActiveFacts
 
       # Shared code for both kinds of binary fact type (has_one and one_to_one)
       def define_binary_fact_type(one_to_one, role_name, related, mandatory, related_role_name, restrict)
-	if r = all_role_transitive[role_name]
-	  # Allow a one-to-one to be defined identically from both ends:
-	  if one_to_one and
-	      r.unique and
-	      !r.unary? and
-	      r.object_type == self and	  # Cannot be an inherited role
-	      r.counterpart.unique and
-	      related == r.counterpart.object_type
-	      # and related_role_name == r.counterpart.name
-	    # REVISIT: Cannot add a value constraint here yet
-	    r.make_mandatory if mandatory && !r.mandatory # This was impossible
-	    return
-	  end
+        if r = all_role_transitive[role_name]
+          # Allow a one-to-one to be defined identically from both ends:
+          if one_to_one and
+              r.unique and
+              !r.unary? and
+              r.object_type == self and   # Cannot be an inherited role
+              r.counterpart.unique and
+              related == r.counterpart.object_type
+              # and related_role_name == r.counterpart.name
+            # REVISIT: Cannot add a value constraint here yet
+            r.make_mandatory if mandatory && !r.mandatory # This was impossible
+            return
+          end
 
-	  raise DuplicateRoleException.new("#{name} cannot have more than one role named #{role_name}")
-	end
-	fact_type = FactType.new
+          raise DuplicateRoleException.new("#{name} cannot have more than one role named #{role_name}")
+        end
+        fact_type = FactType.new
         role = Role.new(fact_type, self, role_name, mandatory, true, restrict)
 
         # There may be a forward reference here where role_name is a Symbol,
         # and the block runs later when that Symbol is bound to the object_type.
         when_bound(related, self, role_name, related_role_name) do |target, definer, role_name, related_role_name|
-	  counterpart = Role.new(fact_type, target, related_role_name, false, one_to_one)
+          counterpart = Role.new(fact_type, target, related_role_name, false, one_to_one)
           realise_role(role)
           target.realise_role(counterpart)
         end
       end
 
       def define_unary_role_accessor(role)
-	define_method role.setter do |value, options = 0|
-	  # Normalise the value to be assigned (nil, false, true):
-	  value = case value
-	    when nil; nil
-	    when false; false
-	    else true
-	    end
+        define_method role.setter do |value, options = 0|
+          # Normalise the value to be assigned (nil, false, true):
+          value = case value
+            when nil; nil
+            when false; false
+            else true
+            end
 
-	  old = instance_variable_get(role.variable)
-	  return value if old == value
+          old = instance_variable_get(role.variable)
+          return value if old == value
 
-	  if role.is_identifying and (options&CHECKED_IDENTIFYING_ROLE) == 0
-	    check_identification_change_legality(role, value)
-	    impacts = analyse_impacts(role)
-	  end
+          if role.is_identifying and (options&CHECKED_IDENTIFYING_ROLE) == 0
+            check_identification_change_legality(role, value)
+            impacts = analyse_impacts(role)
+          end
 
-	  instance_variable_set(role.variable, value)
+          instance_variable_set(role.variable, value)
 
-	  if impacts
-	    @constellation.when_admitted do
-	      # REVISIT: Consider whether we want to provide a way to find all instances
-	      # playing/not playing this boolean role, analogous to true.all_thing_as_role_name...
-	      apply_impacts(impacts)	# Propagate dependent key changes
-	    end
-	  end
+          if impacts
+            @constellation.when_admitted do
+              # REVISIT: Consider whether we want to provide a way to find all instances
+              # playing/not playing this boolean role, analogous to true.all_thing_as_role_name...
+              apply_impacts(impacts)    # Propagate dependent key changes
+            end
+          end
 
-	  unless @constellation.loggers.empty? or options != 0
-	    sv = self.identifying_role_values(role.object_type)
-	    @constellation.loggers.each{|l| l.call(:assign, role.object_type, role, sv, old, value) }
-	  end
+          unless @constellation.loggers.empty? or options != 0
+            sv = self.identifying_role_values(role.object_type)
+            @constellation.loggers.each{|l| l.call(:assign, role.object_type, role, sv, old, value) }
+          end
 
-	  value
-	end
+          value
+        end
         define_single_role_getter(role)
       end
 
       def define_single_role_getter(role)
-	define_method role.getter do |*a|
-	  if a.size > 0
-	    raise ArgumentError.new("wrong number of arguments (#{a.size} for 0)")
-	  end
-	  instance_variable_get(role.variable)
-	end
+        define_method role.getter do |*a|
+          if a.size > 0
+            raise ArgumentError.new("wrong number of arguments (#{a.size} for 0)")
+          end
+          instance_variable_get(role.variable)
+        end
       end
 
       def define_one_to_one_accessor(role)
         define_single_role_getter(role)
 
-	# What I want is the following, but it doesn't work in Ruby 1.8
-	define_method role.setter do |value, options = 0|
-	  role_var = role.variable
+        # What I want is the following, but it doesn't work in Ruby 1.8
+        define_method role.setter do |value, options = 0|
+          role_var = role.variable
 
-	  # Get old value, and jump out early if it's unchanged:
-	  old = instance_variable_get(role_var)
-	  return value if old == value
+          # Get old value, and jump out early if it's unchanged:
+          old = instance_variable_get(role_var)
+          return value if old == value
 
-	  # assert a new instance for the role value if necessary
-	  if value and o = role.counterpart.object_type and (!value.is_a?(o) || value.constellation != @constellation)
-	    value = @constellation.assert(o, *Array(value))
-	    return value if old == value
-	  end
+          # assert a new instance for the role value if necessary
+          if value and o = role.counterpart.object_type and (!value.is_a?(o) || value.constellation != @constellation)
+            value = @constellation.assert(o, *Array(value))
+            return value if old == value
+          end
 
-	  # We're changing this object's key. Check legality and prepare to propagate
-	  if role.is_identifying and (options&CHECKED_IDENTIFYING_ROLE) == 0
-	    check_identification_change_legality(role, value)
+          # We're changing this object's key. Check legality and prepare to propagate
+          if role.is_identifying and (options&CHECKED_IDENTIFYING_ROLE) == 0
+            check_identification_change_legality(role, value)
 
-	    # puts "Starting to analyse impact of changing 1-1 #{role.inspect} to #{value.inspect}"
-	    impacts = analyse_impacts(role)
-	  end
+            # puts "Starting to analyse impact of changing 1-1 #{role.inspect} to #{value.inspect}"
+            impacts = analyse_impacts(role)
+          end
 
-	  instance_variable_set(role_var, value)
+          instance_variable_set(role_var, value)
 
-	  # Remove self from the old counterpart:
-	  if old and (options&SKIP_MUTUAL_PROPAGATION) == 0
-	    old.send(role.counterpart.setter, nil, options|SKIP_MUTUAL_PROPAGATION)
-	  end
+          # Remove self from the old counterpart:
+          if old and (options&SKIP_MUTUAL_PROPAGATION) == 0
+            old.send(role.counterpart.setter, nil, options|SKIP_MUTUAL_PROPAGATION)
+          end
 
-	  @constellation.when_admitted do
-	    # Assign self to the new counterpart
-	    value.send(role.counterpart.setter, self, options) if value && (options&SKIP_MUTUAL_PROPAGATION) == 0
+          @constellation.when_admitted do
+            # Assign self to the new counterpart
+            value.send(role.counterpart.setter, self, options) if value && (options&SKIP_MUTUAL_PROPAGATION) == 0
 
-	    apply_impacts(impacts) if impacts	# Propagate dependent key changes
-	  end
+            apply_impacts(impacts) if impacts   # Propagate dependent key changes
+          end
 
-	  unless @constellation.loggers.empty? or options != 0
-	    sv = self.identifying_role_values(role.object_type)
-	    ov = old.identifying_role_values
-	    nv = value.identifying_role_values
-	    @constellation.loggers.each{|l| l.call(:assign, role.object_type, role, sv, ov, nv) }
-	  end
+          unless @constellation.loggers.empty? or options != 0
+            sv = self.identifying_role_values(role.object_type)
+            ov = old.identifying_role_values
+            nv = value.identifying_role_values
+            @constellation.loggers.each{|l| l.call(:assign, role.object_type, role, sv, ov, nv) }
+          end
 
-	  value
-	end
+          value
+        end
       end
 
       def define_one_to_many_accessor(role)
         define_single_role_getter(role)
 
-	define_method role.setter do |value, options = 0|
-	  role_var = role.variable
+        define_method role.setter do |value, options = 0|
+          role_var = role.variable
 
-	  # Get old value, and jump out early if it's unchanged:
-	  old = instance_variable_get(role_var)
-	  return value if old == value
+          # Get old value, and jump out early if it's unchanged:
+          old = instance_variable_get(role_var)
+          return value if old == value
 
-	  # assert a new instance for the role value if necessary
-	  if value and o = role.counterpart.object_type and (!value.is_a?(o) || value.constellation != @constellation)
-	    value = @constellation.assert(o, *Array(value))
-	    return value if old == value	# Occurs when another instance having the same value is assigned
-	  end
+          # assert a new instance for the role value if necessary
+          if value and o = role.counterpart.object_type and (!value.is_a?(o) || value.constellation != @constellation)
+            value = @constellation.assert(o, *Array(value))
+            return value if old == value        # Occurs when another instance having the same value is assigned
+          end
 
-	  if role.is_identifying and (options&CHECKED_IDENTIFYING_ROLE) == 0
-	    # We're changing this object's key. Check legality and prepare to propagate
-	    check_identification_change_legality(role, value)
+          if role.is_identifying and (options&CHECKED_IDENTIFYING_ROLE) == 0
+            # We're changing this object's key. Check legality and prepare to propagate
+            check_identification_change_legality(role, value)
 
-	    # puts "Starting to analyse impact of changing 1-N #{role.inspect} to #{value.inspect}"
-	    impacts = analyse_impacts(role)
-	  end
+            # puts "Starting to analyse impact of changing 1-N #{role.inspect} to #{value.inspect}"
+            impacts = analyse_impacts(role)
+          end
 
-	  if old and (options&SKIP_MUTUAL_PROPAGATION) == 0
-	    old_role_values = old.send(getter = role.counterpart.getter)
-	    old_key = old_role_values.index_values(self)
-	  end
+          if old and (options&SKIP_MUTUAL_PROPAGATION) == 0
+            old_role_values = old.send(getter = role.counterpart.getter)
+            old_key = old_role_values.index_values(self)
+          end
 
-	  instance_variable_set(role_var, value)
+          instance_variable_set(role_var, value)
 
-	  # Remove "self" from the old counterpart:
-	  if old_key
-	    old_role_values.delete_instance(self, old_key)
-	    if (old_role_values.empty? && !old.class.is_entity_type)
-	      old.retract if old.plays_no_role
-	    end
-	  end
+          # Remove "self" from the old counterpart:
+          if old_key
+            old_role_values.delete_instance(self, old_key)
+            if (old_role_values.empty? && !old.class.is_entity_type)
+              old.retract if old.plays_no_role
+            end
+          end
 
-	  @constellation.when_admitted do
-	    # Add "self" into the counterpart
-	    if value
-	      rv = value.send(getter ||= role.counterpart.getter)
-	      rv.add_instance(self, identifying_role_values(role.object_type))
-	    end
+          @constellation.when_admitted do
+            # Add "self" into the counterpart
+            if value
+              rv = value.send(getter ||= role.counterpart.getter)
+              rv.add_instance(self, identifying_role_values(role.object_type))
+            end
 
-	    apply_impacts(impacts) if impacts	# Propagate dependent key changes
-	  end
+            apply_impacts(impacts) if impacts   # Propagate dependent key changes
+          end
 
-	  unless @constellation.loggers.empty? or options != 0
-	    sv = self.identifying_role_values(role.object_type)
-	    ov = old.identifying_role_values
-	    nv = value.identifying_role_values
-	    @constellation.loggers.each{|l| l.call(:assign, role.object_type, role, sv, ov, nv) }
-	  end
+          unless @constellation.loggers.empty? or options != 0
+            sv = self.identifying_role_values(role.object_type)
+            ov = old.identifying_role_values
+            nv = value.identifying_role_values
+            @constellation.loggers.each{|l| l.call(:assign, role.object_type, role, sv, ov, nv) }
+          end
 
-	  value
-	end
+          value
+        end
       end
 
       def define_many_to_one_accessor(role)
 
-	define_method role.getter do |*keys|
-	  role_var = role.variable
-	  role_values =
-	    instance_variable_get(role_var) || begin
+        define_method role.getter do |*keys|
+          role_var = role.variable
+          role_values =
+            instance_variable_get(role_var) || begin
 
-	      # Decide which roles this index will use (exclude the counterpart role from the id)
-	      if role.counterpart and
-		  counterpart = role.counterpart.object_type and
-		  counterpart.is_entity_type
-		excluded_role = counterpart.identifying_roles.index(role.counterpart)
-	      else
-		index_roles = nil
-	      end
+              # Decide which roles this index will use (exclude the counterpart role from the id)
+              if role.counterpart and
+                  counterpart = role.counterpart.object_type and
+                  counterpart.is_entity_type
+                excluded_role = counterpart.identifying_roles.index(role.counterpart)
+              else
+                index_roles = nil
+              end
 
-	      instance_variable_set(role_var, RoleValues.new(role.counterpart, excluded_role))
-	    end
-	  # Look up a value by the key provided, or return the whole collection
-	  keys.size == 0 ? role_values : role_values.[](*keys)
+              instance_variable_set(role_var, RoleValues.new(role.counterpart, excluded_role))
+            end
+          # Look up a value by the key provided, or return the whole collection
+          keys.size == 0 ? role_values : role_values.[](*keys)
         end
       end
 
@@ -455,13 +455,13 @@ module ActiveFacts
         # The counterpart class (type) might be forward-referenced, so handle a Symbol/String instead of a Class.
         specified_class = options.delete(:class)
         case specified_class
-        when Class		# Preferred and most common case
+        when Class              # Preferred and most common case
           counterpart_type_or_name = specified_class
           counterpart_type_default_role_name = specified_class.basename.to_s.snakecase
-        when Symbol, String	# Use this to handle forward references
+        when Symbol, String     # Use this to handle forward references
           counterpart_type_or_name = specified_class.to_s.camelcase
           counterpart_type_default_role_name = specified_class.to_s.snakecase
-        when nil		# No :class provided, assume it matches the role_name
+        when nil                # No :class provided, assume it matches the role_name
           counterpart_type_or_name = role_name.to_s.camelcase
           counterpart_type_default_role_name = role_name.to_s
         else
@@ -470,11 +470,11 @@ module ActiveFacts
 
         # resolve the Symbol or String to a Class now if possible:
         unless counterpart_type_or_name.is_a?(Class)
-	  resolved = vocabulary.object_type(counterpart_type_or_name)
-	  counterpart_type_or_name = resolved if resolved
-	end
+          resolved = vocabulary.object_type(counterpart_type_or_name)
+          counterpart_type_or_name = resolved if resolved
+        end
 
-	# If the role is played by a known Class, check it's in the same vocabulary:
+        # If the role is played by a known Class, check it's in the same vocabulary:
         if counterpart_type_or_name.is_a?(Class)
           unless counterpart_type_or_name.respond_to?(:vocabulary) and counterpart_type_or_name.vocabulary == self.vocabulary
             raise CrossVocabularyRoleException.new(counterpart_type_or_name, vocabulary)
@@ -491,15 +491,15 @@ module ActiveFacts
         default_role_name = self.basename.snakecase  # Default name of counterpart role (played by self)
         counterpart_role_name = options.delete(:counterpart)
         counterpart_role_name = counterpart_role_name.to_s if counterpart_role_name
-	counterpart_role_name ||= default_role_name
+        counterpart_role_name ||= default_role_name
 
-	raise UnrecognisedOptionsException.new("role", role_name, options.keys) unless options.empty?
+        raise UnrecognisedOptionsException.new("role", role_name, options.keys) unless options.empty?
 
         # If you have a role "supervisor" and a sub-class "Supervisor", this'll bitch.
-        if !specified_class and		# No specified :class was provided
-	    counterpart_type_or_name.is_a?(Class) and
-	    (indicated = vocabulary.object_type(role_name)) and
-	    indicated != counterpart_type_or_name
+        if !specified_class and         # No specified :class was provided
+            counterpart_type_or_name.is_a?(Class) and
+            (indicated = vocabulary.object_type(role_name)) and
+            indicated != counterpart_type_or_name
           raise "Role name #{role_name} indicates a different counterpart object_type #{indicated} than specified"
         end
 
@@ -511,7 +511,7 @@ module ActiveFacts
           (one_to_one ? "" : "all_") +
           counterpart_role_name
         if counterpart_role_name == default_role_name and
-	    role_name.to_s != counterpart_type_default_role_name
+            role_name.to_s != counterpart_type_default_role_name
           other_role_method += "_as_#{role_name}"
         end
 
@@ -519,7 +519,7 @@ module ActiveFacts
           counterpart_type_or_name,
           mandatory,
           other_role_method.to_sym,
-	  restrict
+          restrict
         ]
       end
 

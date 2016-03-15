@@ -16,7 +16,7 @@ module ActiveFacts
     # Adapter module to add value_type to all potential value classes
     module ValueClass #:nodoc:
       def value_type *args, &block #:nodoc:
-	# The inclusion of instance methods triggers ClassMethods to be included in the class too
+        # The inclusion of instance methods triggers ClassMethods to be included in the class too
         include ActiveFacts::API::Value
         value_type(*args, &block)
       end

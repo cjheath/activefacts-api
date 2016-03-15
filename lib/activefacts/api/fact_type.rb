@@ -13,7 +13,7 @@ module ActiveFacts
       # invariant { self.all_role.each {|role| self.is_a?(ObjectifiedFactType) ? role.counterpart.object_type == self.objectified_as : role.fact_type == self } }
 
       def initialize
-	@all_role ||= []
+        @all_role ||= []
       end
     end
 
@@ -30,11 +30,11 @@ module ActiveFacts
       attr_reader :supertype_role, :subtype_role
     
       def initialize(supertype, subtype)
-	super()
+        super()
 
-	# The supertype role is not mandatory, but the subtype role is. Both are unique.
-	@supertype_role = Role.new(self, supertype, subtype.name.gsub(/.*::/,'').to_sym, false, true)
-	@subtype_role = Role.new(self, subtype, supertype.name.gsub(/.*::/,'').to_sym, true, true)
+        # The supertype role is not mandatory, but the subtype role is. Both are unique.
+        @supertype_role = Role.new(self, supertype, subtype.name.gsub(/.*::/,'').to_sym, false, true)
+        @subtype_role = Role.new(self, subtype, supertype.name.gsub(/.*::/,'').to_sym, true, true)
       end
     end
   end

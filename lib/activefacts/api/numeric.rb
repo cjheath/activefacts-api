@@ -98,14 +98,14 @@ module ActiveFacts
     def identifying_role_values(constellation, args)
       arg_hash = args[-1].is_a?(Hash) ? args.pop : {}
       n = 
-	case
-	when args == [:new]	# A new object has no identifying_role_values
-	  :new
-	when args.size == 1 && args[0].is_a?(AutoCounter)
-	  args[0]		# An AutoCounter is its own key
-	else
-	  new(*args)
-	end
+        case
+        when args == [:new]     # A new object has no identifying_role_values
+          :new
+        when args.size == 1 && args[0].is_a?(AutoCounter)
+          args[0]               # An AutoCounter is its own key
+        else
+          new(*args)
+        end
       args.replace([arg_hash])
       n
     end
@@ -125,10 +125,10 @@ class AutoCounter
       @place_holder_number = (@@place_holder+=1)
     when AutoCounter
       if i.defined?
-	@value = i.to_i
+        @value = i.to_i
       else
-	@place_holder_number = i.place_holder_number
-	@value = nil
+        @place_holder_number = i.place_holder_number
+        @value = nil
       end
     else
       @place_holder_number = @value = i.to_i;
@@ -191,12 +191,12 @@ class AutoCounter
     to_s.eql?(o.to_s)
   end
 
-  def <=>(o)				#:nodoc:
+  def <=>(o)                            #:nodoc:
     if self.defined? && !o == [] && o.defined?
       if (c = (self.class <=> o.class.name)) != 0
-	return c
+        return c
       else
-	return to_i <=> o.to_i
+        return to_i <=> o.to_i
       end
     else
       to_s.<=>(o.to_s)

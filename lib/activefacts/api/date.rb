@@ -17,13 +17,13 @@ class ::Date
     elsif (a.size == 1)
       case a[0]
       when DateTime
-	d = civil(a[0].year, a[0].month, a[0].day, a[0].start)
+        d = civil(a[0].year, a[0].month, a[0].day, a[0].start)
       when Date
-	d = civil(a[0].year, a[0].month, a[0].day, a[0].start)
+        d = civil(a[0].year, a[0].month, a[0].day, a[0].start)
       when NilClass
-	d = civil()
+        d = civil()
       else
-	d = civil(*a, &b)
+        d = civil(*a, &b)
       end
     else
       d = civil(*a, &b)
@@ -42,13 +42,13 @@ class ::DateTime
     elsif (a.size == 1)
       case a[0]
       when DateTime
-	dt = civil(a[0].year, a[0].month, a[0].day, a[0].hour, a[0].min, a[0].sec, a[0].start)
+        dt = civil(a[0].year, a[0].month, a[0].day, a[0].hour, a[0].min, a[0].sec, a[0].start)
       when Date
-	dt = civil(a[0].year, a[0].month, a[0].day, 0, 0, 0, a[0].start)
+        dt = civil(a[0].year, a[0].month, a[0].day, 0, 0, 0, a[0].start)
       when NilClass
-	dt = civil()
+        dt = civil()
       else
-	dt = civil(*a, &b)
+        dt = civil(*a, &b)
       end
     else
       dt = civil(*a, &b)

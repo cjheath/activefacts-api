@@ -23,31 +23,31 @@ module ActiveFacts
 
     class InvalidEntityException < SchemaException
       def initialize klass
-	super "#{klass.basename} may not be an entity type"
+        super "#{klass.basename} may not be an entity type"
       end
     end
 
     class InvalidIdentificationException < SchemaException
       def initialize object_type, role, is_single
-	msg =
-	  if is_single
-	    "#{object_type} has a single identifying role '#{role}' which is has_one, but must be one_to_one"
-	  else
-	    "#{object_type} has an identifying role '#{role}' which is one_to_one, but must be has_one"
-	  end
-	super msg
+        msg =
+          if is_single
+            "#{object_type} has a single identifying role '#{role}' which is has_one, but must be one_to_one"
+          else
+            "#{object_type} has an identifying role '#{role}' which is one_to_one, but must be has_one"
+          end
+        super msg
       end
     end
 
     class MissingIdentificationException < SchemaException
       def initialize klass
-	super "You must list the roles which will identify #{klass.basename}"
+        super "You must list the roles which will identify #{klass.basename}"
       end
     end
 
     class InvalidObjectType < SchemaException
       def initialize vocabulary, klass, reason
-	super "A constellation over #{vocabulary.name} cannot index instances of #{klass} because it #{reason}"
+        super "A constellation over #{vocabulary.name} cannot index instances of #{klass} because it #{reason}"
       end
     end
 
@@ -71,7 +71,7 @@ module ActiveFacts
 
     class UnexpectedIdentifyingValueException < RuntimeException
       def initialize object_type, identifying_role_names, extra_args
-	super "#{object_type.basename} expects only (#{identifying_role_names*', '}) for its identifier, but you provided additional values #{extra_args.inspect}"
+        super "#{object_type.basename} expects only (#{identifying_role_names*', '}) for its identifier, but you provided additional values #{extra_args.inspect}"
       end
     end
 
@@ -92,14 +92,14 @@ module ActiveFacts
     # When an existing object having multiple identification patterns is re-asserted, all the keys must match the existing object
     class TypeConflictException < RuntimeException
       def initialize(klass, supertype, key, existing)
-	super "#{klass} cannot be asserted to have #{supertype} identifier #{key.inspect} because the existing object has #{existing.inspect}"
+        super "#{klass} cannot be asserted to have #{supertype} identifier #{key.inspect} because the existing object has #{existing.inspect}"
       end
     end
 
     # When a new entity is asserted, but a supertype identifier matches an existing object of a different type, type migration is implied but unfortunately is impossible in Ruby
     class TypeMigrationException < RuntimeException
       def initialize(klass, supertype, key)
-	super "#{klass} cannot be asserted due to the prior existence of a conflicting #{supertype} identified by #{key.inspect}"
+        super "#{klass} cannot be asserted due to the prior existence of a conflicting #{supertype} identified by #{key.inspect}"
       end
     end
 
