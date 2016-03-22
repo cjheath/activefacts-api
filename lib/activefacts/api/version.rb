@@ -1,5 +1,5 @@
 module ActiveFacts
   module API
-    VERSION = "1.9.6"
+    VERSION = "1.9.8"
   end
 end
