@@ -86,10 +86,9 @@ module ActiveFacts
         klass.class_eval do
           role_accessor_name = "#{role.name}_role"
           unless respond_to?(role_accessor_name)
-            (class << self; self; end).
-              send(:define_method, role_accessor_name) do
-                role
-              end
+            singleton_class.send(:define_method, role_accessor_name) do
+              role
+            end
           # else we can't create such a method without creating mayhem, so don't.
           end
         end
