@@ -89,7 +89,7 @@ describe "identity" do
       it "should fail and make no change" do
         proc {
           @p3.name = "Juliar Gillard"    # Must fail; must leave @p3 untouched.
-        }.should raise_error # (ActiveFacts::API::AmbiguousIdentityChange)
+        }.should raise_error(ActiveFacts::API::DuplicateIdentifyingValueException)
 
         @p3.name.should == @tony
       end

@@ -91,11 +91,10 @@ module ActiveFacts
 
     public
       def inspect #:nodoc:
-        inc = constellation ? " in #{constellation.inspect}" : ""
         irnv = self.class.identifying_role_names.map do |role_name|
-          "@#{role_name}="+send(role_name).inspect
+          "#{role_name}: "+send(role_name).inspect
         end
-        "\#<#{self.class.basename}:#{object_id}#{inc} #{ irnv*' ' }>"
+        "<#{self.class.name} #{ irnv*', ' }>"
       end
 
       # When used as a hash key, the hash key of this entity instance is calculated

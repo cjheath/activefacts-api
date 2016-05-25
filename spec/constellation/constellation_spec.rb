@@ -135,17 +135,17 @@ describe "A Constellation instance" do
 
     foo.class.should == Mod::LegalEntity
     foo.constellation.should == @constellation
-    foo.inspect.should =~ / in Conste/
+    foo.inspect.should =~ /<Mod::LegalEntity name: "foo">/
     foo.verbalise.should =~ /LegalEntity\(/
 
     acme.class.should == Mod::Company
     acme.constellation.should == @constellation
-    acme.inspect.should =~ / in Conste/
+    acme.inspect.should =~ /<Mod::Company name: "Acme, Inc">/
     acme.verbalise.should =~ /Company\(/
 
     fred_fly.class.should == Mod::Person
     fred_fly.constellation.should == @constellation
-    fred_fly.inspect.should =~ / in Conste/
+    fred_fly.inspect.should =~ /^<Mod::Person name:/
     fred_fly.verbalise.should =~ /Person\(/
   end
 
