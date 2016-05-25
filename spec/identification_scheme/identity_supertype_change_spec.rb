@@ -58,6 +58,7 @@ describe 'identity change on subtype' do
     it "should allow the change when the value doesn't exist" do
       @c.value_a = 987
       @c.value_a.should == 987
+      @c.value_b.all_entitya.keys[0].should == [987]
     end
   end
 end

@@ -62,6 +62,7 @@ module ActiveFacts
     #
     class InstanceIndex
       attr_reader :sort
+      attr_reader :object_type
 
       # Should be in module ForwardableWithArityChecking
       def self.def_single_delegator(accessor, method, *expected_arities)
@@ -84,15 +85,23 @@ module ActiveFacts
       def_single_delegator :@hash, :values
       def_single_delegator :@hash, :keys
 
-      def initialize(constellation, klass, sort)
+      def initialize(constellation, object_type, sort)
         @constellation = constellation
-        @klass = klass
+        @object_type = object_type
         @sort = sort
         @hash = sort ? RBTree.new : {}
       end
 
       def inspect
-        "<InstanceIndex for #{@klass.name} in #{@constellation.inspect}>"
+        "<InstanceIndex for #{@object_type.name} in #{@constellation.inspect}>"
+      end
+
+      def add_instance(instance, k)
+        self[k] = instance
+      end
+
+      def delete_instance(instance, k)
+        @hash.delete(@sort ? form_key(k) : k)
       end
 
       def delete(k)
@@ -114,7 +123,7 @@ module ActiveFacts
 
       def refresh_key(old_key)
         value = @hash.delete(@sort ? form_key(old_key) : old_key)
-        new_key = value.identifying_role_values(@klass)
+        new_key = value.identifying_role_values(@object_type)
         @hash[@sort ? form_key(new_key) : new_key] = value if value
       end
 

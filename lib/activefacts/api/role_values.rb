@@ -84,7 +84,6 @@ module ActiveFacts
           # Exclude the excluded role, if any:
           (key = key.dup).delete_at(@excluded_role) if @excluded_role
           @a[form_key(key)] = value
-          # Old slow way:  @a[form_key(index_values(value))] = value
         else
           @a << value
         end
@@ -92,6 +91,8 @@ module ActiveFacts
 
       def delete_instance(value, key)
         if @sort
+          # Exclude the excluded role, if any:
+          (key = key.dup).delete_at(@excluded_role) if @excluded_role
           deleted = @a.delete(form_key(key))
         else
           deleted = @a.delete(value)  # Slow: it has to search the array

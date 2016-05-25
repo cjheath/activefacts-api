@@ -161,6 +161,7 @@ module ActiveFacts
       # This function is transitive!
       def analyse_impacts role
         impacts = []
+        impacted_roles = []
 
         # Consider the object itself and all its supertypes
         ([self.class]+self.class.supertypes_transitive).map do |supertype|
@@ -168,21 +169,28 @@ module ActiveFacts
 
           old_key = identifying_role_values(supertype)
           # puts "Need to reindex #{self.class} as #{supertype} from #{old_key.inspect}"
-          impacts << [supertype, self, old_key]
-        end
+          impacts << [constellation.instances[supertype], self, old_key]
 
-        # Now consider objects whose identifiers include this object.
-        # Find our roles in those identifiers first.
-        impacted_roles = []
-        self.class.all_role_transitive.each do |n, role|
-          if role.counterpart && role.counterpart.is_identifying
-            # puts "Changing #{role.inspect} affects #{role.inspect}"
-            impacted_roles << role
+          supertype.
+          all_role.
+          each do |role_name, propagation_role|
+            next if role == propagation_role  # Propagation has already been taken care of
+            next unless counterpart = propagation_role.counterpart  # And the role is not unary
+            if counterpart.is_identifying                         # This object identifies another
+              # puts "Changing #{propagation_role.inspect} affects #{counterpart.inspect}"
+              impacted_roles << propagation_role
+            else
+              next if counterpart.unique                          # But a one-to-many
+              next unless value = send(propagation_role.getter)   # A value is set
+              role_values = value.send(counterpart.getter)        # This is the index we have to change
+              # puts "Changing #{role.inspect} of a #{self.class} requires updating #{propagation_role.counterpart.inspect}"
+              impacts << [role_values, self, old_key]
+            end
           end
         end
 
         impacted_roles.each do |role|
-          affected_instances = Array(instance_variable_get(role.variable))
+          affected_instances = Array(send(role.getter))
           # puts "considering #{affected_instances.size} #{role.object_type.name} instances that include #{role.inspect}: #{affected_instances.map(&:identifying_role_values).inspect}"
           affected_instances.each do |counterpart|
             impacts.concat(counterpart.analyse_impacts(role.counterpart))
@@ -192,14 +200,13 @@ module ActiveFacts
       end
 
       def apply_impacts impacts
-        impacts.each do |klass, entity, old_key|
-          instance_index = entity.constellation.instances[klass]
-          new_key = entity.identifying_role_values(klass)
+        impacts.each do |index, entity, old_key|
+          new_key = entity.identifying_role_values(index.object_type)
           # puts "Reindexing #{klass} from #{old_key.inspect} to #{new_key.inspect}"
 
           if new_key != old_key
-            instance_index.delete(old_key)
-            instance_index[new_key] = entity
+            index.delete_instance(entity, old_key)
+            index.add_instance(entity, new_key)
           end
         end
       end

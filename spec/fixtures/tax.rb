@@ -40,6 +40,7 @@ module Tax
     identified_by :australian_tax_payer, :year
     has_one :australian_tax_payer
     has_one :year
+    has_one :reviewer, class: Person
   end
 
 end

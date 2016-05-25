@@ -240,7 +240,7 @@ describe "An Entity Type" do
     describe "when asserted" do
       before :each do
         @b = @c.Building('Mackay')
-        @mackay = @c.Name['Mackay']
+        @mackay = @b.name
         @r = @c.Room(@b, 101)
         @rn = @r.number
 
@@ -310,6 +310,10 @@ describe "An Entity Type" do
         it "should allow the change" do
           @r.number.should == @new_number
           @r.number.should be_eql(103)
+
+          # Check that counterpart role value lists have been updated:
+          @b.all_room.keys[0].should == [103]
+          @o.all_owner_room.keys[0].should == [[["Mackay"], 103]]
         end
 
         it "should be found under the new identifier" do
@@ -319,8 +323,8 @@ describe "An Entity Type" do
 
         it "should be found under the new identifier even on deep associations" do
 #          p @c.OwnerRoom.keys[0]
-#	  p @new_number
-#	  p [@o.identifying_role_values, @r.identifying_role_values]
+#          p @new_number
+#          p [@o.identifying_role_values, @r.identifying_role_values]
           @c.OwnerRoom[[@o.identifying_role_values, @r.identifying_role_values]].should == @or
           @c.OwnerRoom[[[1_001, ['Mackay']], [['Mackay'], 103]]].should == @or
           @c.OwnerRoom[[[1_001, ['Mackay']], [['Mackay'], 101]]].should be_nil

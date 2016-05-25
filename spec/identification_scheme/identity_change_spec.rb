@@ -3,7 +3,7 @@
 # Copyright (c) 2008 Clifford Heath. Read the LICENSE file.
 #
 
-require 'fixtures/tax'
+require_relative '../fixtures/tax'
 include ActiveFacts::API
 
 describe "identity" do
@@ -29,17 +29,25 @@ describe "identity" do
       @p3 = @c1.AustralianTaxPayer(:tfn => 123, :name => @tony)
 
       @r1 = @c1.AustralianTaxReturn(@p3, 2010)
+      @eyeballs = "Eyeballs"
+      @tax_return_year = @r1.year
+      @r1.reviewer = @eyeballs
+      @reviewer = @r1.reviewer
+
       @c1.AustralianTaxReturn.keys.should == [[[123], [2010]]]
       @c1.AustralianTaxReturn.values.should == [@r1]
 
-      @c1.Name.keys.should =~ [@juliar, @tony]
-      @c1.Name.values.should =~ [@juliar, @tony]
-      @c1.Person.keys.should =~ [[@juliar], [@tony]]
-      @c1.Person.values.should =~ [@p1, @p3]
+      @c1.Name.keys.should =~ [@eyeballs, @juliar, @tony]
+      @c1.Name.values.should =~ [@eyeballs, @juliar, @tony]
+      @c1.Person.keys.should =~ [[@eyeballs], [@juliar], [@tony]]
+      @c1.Person.values.should =~ [@reviewer, @p1, @p3]
       @c1.Australian.keys.should =~ [[@juliar], [@tony]]
       @c1.Australian.values.should =~ [@p1, @p3]
       @c1.AustralianTaxPayer.keys.should =~ [[123]]
       @c1.AustralianTaxPayer.values.should =~ [@p3]
+      @c1.TFN.keys.should =~ [123]
+      @reviewer.all_australian_tax_return_as_reviewer.size.should == 1
+      @reviewer.all_australian_tax_return_as_reviewer.keys[0].should == [[123], [2010]]
     end
 
     describe "that implies change of subtype" do
@@ -62,15 +70,15 @@ describe "identity" do
         begin
           @change.call
         rescue TypeMigrationException => e
-	  # Now check that no unexpected change occurred
+          # Now check that no unexpected change occurred
         end
 
         @p2.should be_nil
-        @c1.Name.values.should =~ [@juliar, @tony]
-        @c1.Name.keys.should =~ [@juliar, @tony]
+        @c1.Name.values.should =~ [@eyeballs, @juliar, @tony]
+        @c1.Name.keys.should =~ [@eyeballs, @juliar, @tony]
         @c1.TFN.keys.should =~ [123]
-        @c1.Person.values.should =~ [@p1, @p3]
-        @c1.Person.keys.should =~ [[@juliar],[@tony]]
+        @c1.Person.values.should =~ [@reviewer, @p1, @p3]
+        @c1.Person.keys.should =~ [[@eyeballs], [@juliar], [@tony]]
         @c1.Australian.values.should =~ [@p1, @p3]
       end
 
@@ -97,11 +105,19 @@ describe "identity" do
 
     describe "without conflict" do
       before :each do
+        # Changing the TFN changes the identity of the AustralianTaxpayer,
+        # and hence of any AustralianTaxReturns,
+        # and the indexing for the return by a reviewer.
         @p3.tfn = 456
       end
 
       it "should be allowed" do
         @p3.identifying_role_values.should == [456]
+      end
+
+      it "should propagate key change to roles played" do
+        @reviewer.all_australian_tax_return_as_reviewer.keys[0].should == [[456], [2010]]
+        @tax_return_year.all_australian_tax_return.keys[0].should == [[456]]
       end
 
       it "should be re-indexed" do
