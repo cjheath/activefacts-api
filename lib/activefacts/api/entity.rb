@@ -32,8 +32,8 @@ module ActiveFacts
       end
 
       def initialize_existential_roles(klass, arg_hash)
-        # If overrides_identification_of, assign those attributes too (recursively)
-        if o = klass.overrides_identification_of
+        # Assign the identifying attributes of all superclasses first
+        klass.supertypes_transitive.each do |o|
           initialize_existential_roles(o, arg_hash)
         end
 

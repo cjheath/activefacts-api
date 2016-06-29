@@ -75,7 +75,8 @@ module ActiveFacts
       end
 
       def define_class_accessor m, klass
-        singleton_class.send(:define_method, m) do |*args|
+        singleton_class.
+          send(:define_method, m) do |*args|
             if args.size == 0
               # Return the collection of all instances of this class in the constellation:
               instances[klass]
