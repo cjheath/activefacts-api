@@ -11,12 +11,6 @@ unless Object.const_defined?("Infinity")
   Infinity = 1.0/0.0
 end
 
-class Symbol #:nodoc:
-  def to_proc
-    Proc.new{|*args| args.shift.__send__(self, *args)}
-  end
-end
-
 class String #:nodoc:
   # This may be overridden by a version from ActiveSupport. For our purposes, either will work.
   def camelcase(first_letter = :upper)
