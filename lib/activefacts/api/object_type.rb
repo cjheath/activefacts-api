@@ -260,16 +260,16 @@ module ActiveFacts
 
           if role.is_identifying and (options&CHECKED_IDENTIFYING_ROLE) == 0
             check_identification_change_legality(role, value)
-            impacts = analyse_impacts(role)
+            instance_index_updates = collect_instance_index_updates(role)
           end
 
           instance_variable_set(role.variable, value)
 
-          if impacts
+          if instance_index_updates
             @constellation.when_admitted do
               # REVISIT: Consider whether we want to provide a way to find all instances
               # playing/not playing this boolean role, analogous to true.all_thing_as_role_name...
-              apply_impacts(impacts)    # Propagate dependent key changes
+              apply_instance_index_updates(instance_index_updates)    # Propagate dependent key changes
             end
           end
 
@@ -314,7 +314,7 @@ module ActiveFacts
             check_identification_change_legality(role, value)
 
             # puts "Starting to analyse impact of changing 1-1 #{role.inspect} to #{value.inspect}"
-            impacts = analyse_impacts(role)
+            instance_index_updates = collect_instance_index_updates(role)
           end
 
           instance_variable_set(role_var, value)
@@ -328,7 +328,7 @@ module ActiveFacts
             # Assign self to the new counterpart
             value.send(role.counterpart.setter, self, options) if value && (options&SKIP_MUTUAL_PROPAGATION) == 0
 
-            apply_impacts(impacts) if impacts   # Propagate dependent key changes
+            apply_instance_index_updates(instance_index_updates) if instance_index_updates   # Propagate dependent key changes
           end
 
           unless @constellation.loggers.empty? or options != 0
@@ -363,7 +363,7 @@ module ActiveFacts
             check_identification_change_legality(role, value)
 
             # puts "Starting to analyse impact of changing 1-N #{role.inspect} to #{value.inspect}"
-            impacts = analyse_impacts(role)
+            instance_index_updates = collect_instance_index_updates(role)
           end
 
           if old and (options&SKIP_MUTUAL_PROPAGATION) == 0
@@ -388,7 +388,7 @@ module ActiveFacts
               rv.add_instance(self, identifying_role_values(role.object_type))
             end
 
-            apply_impacts(impacts) if impacts   # Propagate dependent key changes
+            apply_instance_index_updates(instance_index_updates) if instance_index_updates   # Propagate dependent key changes
           end
 
           unless @constellation.loggers.empty? or options != 0
