@@ -77,14 +77,14 @@ module ActiveFacts
         # The counterpart roles get cleared automatically.
         klasses = [self.class]+self.class.supertypes_transitive
 
-        irvrvs = {}  # identifying_role_values by RoleValues
+        key_by_type = {}
         self.class.all_role_transitive.each do |_, role|
           next unless role.counterpart and
             role.unique and
             !role.counterpart.unique and
             counterpart = send(role.getter)
           role_values = counterpart.send(role.counterpart.getter)
-          irvrvs[role_values] = role_values.index_values(self)
+          key_by_type[role.object_type] ||= identifying_role_values(role.object_type)
         end
 
         # Nullify the counterpart role of objects we identify first, before damaging our identifying_role_values:
@@ -124,7 +124,7 @@ module ActiveFacts
                 counterpart_instance.send(counterpart.setter, nil, false)
               else
                 rv = counterpart_instance.send(role.counterpart.getter)
-                rv.delete_instance(self, irvrvs[rv])
+                rv.delete_instance(self, key_by_type[role.object_type])
 
                 if (rv.empty? && !counterpart_instance.class.is_entity_type)
                   counterpart_instance.retract if counterpart_instance.plays_no_role

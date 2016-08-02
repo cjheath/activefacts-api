@@ -368,7 +368,7 @@ module ActiveFacts
 
           if old and (options&SKIP_MUTUAL_PROPAGATION) == 0
             old_role_values = old.send(getter = role.counterpart.getter)
-            old_key = old_role_values.index_values(self)
+            old_key = identifying_role_values(role.object_type)
           end
 
           instance_variable_set(role_var, value)

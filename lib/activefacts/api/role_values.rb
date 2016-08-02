@@ -11,6 +11,7 @@ module ActiveFacts
       attr_accessor :role
       attr_accessor :sort
       attr_accessor :index_roles
+
       def object_type
         @role.object_type
       end
@@ -21,7 +22,11 @@ module ActiveFacts
         @sort = API::sorted
         @excluded_role = excluded_role
         @a = @sort ? RBTree.new : []
-        (@index_roles = role.object_type.identifying_roles.dup).delete_at(@excluded_role) if @excluded_role
+        if @excluded_role
+          @index_roles = role.object_type.identifying_roles.dup
+          @index_roles.delete_at(@excluded_role)
+          @index_roles.freeze
+        end
       end
 
       def +(a)
@@ -68,17 +73,19 @@ module ActiveFacts
         KeyArray.new(a)
       end
 
+      # Return the full key for the object according to the object_type of this role
       def index_values object
-        if @index_roles
-          @index_roles.map{|r|
+        if @excluded_role
+          @index_roles.map do |r|
             role_value = object.send(r.name)
             role_value.identifying_role_values((c = r.counterpart) ? c.object_type : role_value.class)
-          }
+          end
         else
-          object.identifying_role_values
+          object.identifying_role_values(role.object_type)
         end
       end
 
+      # The key must include the excluded role, if any
       def add_instance(value, key)
         if @sort
           # Exclude the excluded role, if any:
@@ -89,9 +96,12 @@ module ActiveFacts
         end
       end
 
+      # The key must include the excluded role, if any
       def delete_instance(value, key)
         if @sort
-          # Exclude the excluded role, if any:
+          if key.size != role.object_type.identifying_roles.size
+            raise "Internal error: incorrectly-sized key #{key.inspect} to delete_instance"
+          end
           (key = key.dup).delete_at(@excluded_role) if @excluded_role
           deleted = @a.delete(form_key(key))
         else
