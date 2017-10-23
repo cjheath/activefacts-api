@@ -1,11 +1,13 @@
 require 'delegate'
 require 'securerandom'
 
-def SecureRandom.format_uuid hex32
-  hex32.sub(
-    @@format_pattern ||= /(........)(....)(....)(....)(............)/,
-    @@format_string ||= '\1-\2-\3-\4-\5'
-  )
+module SecureRandom
+  def self.format_uuid hex32
+    hex32.sub(
+      @@format_pattern ||= /(........)(....)(....)(....)(............)/,
+      @@format_string ||= '\1-\2-\3-\4-\5'
+    )
+  end
 end
 
 unless defined? SecureRandom.uuid
