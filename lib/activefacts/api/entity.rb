@@ -390,6 +390,7 @@ module ActiveFacts
             unless role.is_identifying && role.object_type == self
               value =
                 if v == nil
+                  raise "nil value passed for mandatory #{role.name} of #{role.object_type.name}" if role.mandatory
                   nil
                 elsif role.unary?
                   (v && true)   # Preserve nil and false
