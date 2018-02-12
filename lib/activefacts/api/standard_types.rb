@@ -17,7 +17,7 @@ module ActiveFacts
     module ValueClass #:nodoc:
       def value_type *args, &block #:nodoc:
         # The inclusion of instance methods triggers ClassMethods to be included in the class too
-        include ActiveFacts::API::Value
+        include ::ActiveFacts::API::Value
         value_type(*args, &block)
       end
     end
