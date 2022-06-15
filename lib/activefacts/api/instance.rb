@@ -26,6 +26,10 @@ module ActiveFacts
         end
       end
 
+      def constellation_variable_name
+        @@constellation_variable_name ||= "@constellation"
+      end
+
       def is_a? klass
         super || self.class.supertypes_transitive.include?(klass)
       end
@@ -158,6 +162,10 @@ module ActiveFacts
       module ClassMethods #:nodoc:
         include ObjectType
         # Add Instance class methods here
+
+        def constellation_variable_name
+          @@constellation_variable_name ||= "@constellation"
+        end
       end
     end
   end

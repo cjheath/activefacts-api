@@ -4,6 +4,8 @@
 #
 require 'activefacts/api'
 
+MethodPattern = /#<Method: #<[:a-zA-Z_0-9]*>\((defined in )?[:A-Za-z]*[() ]|Method: Class(#[a-z_0-9]*[?=]? )?\((defined in )?ActiveFacts::API::Entity::ClassMethods[) ]|#<Method: ([A-Z][a-zA-Z0-9_]*::)*[A-Z][a-zA-Z0-9_]*\.[a-z_0-9]*[?=]?>/
+
 describe "In a vocabulary" do
   before :each do
     Object.send :remove_const, :Mod if Object.const_defined?("Mod")
@@ -21,7 +23,9 @@ describe "In a vocabulary" do
   ]
 
   ValueType_methods = [
-    :assert_instance, :identifying_role_values, :index_instance,
+    :assert_instance,
+    :constellation_variable_name,
+    :identifying_role_values, :index_instance,
     :inherited, :length, :restrict, :scale, :value_type, :verbalise
   ]
 
@@ -42,6 +46,7 @@ describe "In a vocabulary" do
     :verbalise,
     # To make private:
     :check_no_supertype_instance_exists, :check_supertype_identifiers_match,
+    :constellation_variable_name,
     :identification_inherited_from, :identification_inherited_from=,
     :find_inherited_role,
     :overrides_identification_of, :overrides_identification_of=,
@@ -63,7 +68,7 @@ describe "In a vocabulary" do
 	    value_type
 	  end
 	},
-	:pattern => /Method: Class(#[a-z_0-9]*[?=]? )?\((defined in )?ActiveFacts::API::Value::ClassMethods[) ]/,
+	:pattern => MethodPattern,
 	:class_methods => ValueType_methods,
 	:instance_methods => Value_methods,
 	:constructor_args => Array(
@@ -90,7 +95,7 @@ describe "In a vocabulary" do
 	  class T < V
 	  end
 	},
-	:pattern => /Method: Class(#[a-z_0-9]*[?=]? )?\((defined in )?ActiveFacts::API::Value::ClassMethods[) ]/,
+	:pattern => MethodPattern,
 	:class_methods => ValueType_methods,
 	:instance_methods => Value_methods,
 	:constructor_args => [ 'foo' ]
@@ -106,7 +111,7 @@ describe "In a vocabulary" do
 	    one_to_one :foo, :class => V
 	  end
 	},
-	:pattern => /Method: Class(#[a-z_0-9]*[?=]? )?\((defined in )?ActiveFacts::API::Entity::ClassMethods[) ]/,
+	:pattern => MethodPattern,
 	:class_methods => EntityType_methods,
 	:instance_methods => Entity_methods,
 	:constructor_args => [ 'foo' ]
@@ -124,7 +129,7 @@ describe "In a vocabulary" do
 	  class T < E
 	  end
 	},
-	:pattern => /Method: Class(#[a-z_0-9]*[?=]? )?\((defined in )?ActiveFacts::API::Entity::ClassMethods[) ]/,
+	:pattern => MethodPattern,
 	:class_methods => EntityType_methods,
 	:instance_methods => Entity_methods,
 	:constructor_args => [ 'foo' ]
@@ -144,7 +149,7 @@ describe "In a vocabulary" do
 	    one_to_one :bar, :class => V
 	  end
 	},
-	:pattern => /Method: Class(#[a-z_0-9]*[?=]? )?\((defined in )?ActiveFacts::API::Entity::ClassMethods[) ]/,
+	:pattern => MethodPattern,
 	:class_methods => EntityType_methods,
 	:instance_methods => Entity_methods,
 	:constructor_args => [ 'bar', {:foo => 'foo'} ]
@@ -168,7 +173,7 @@ describe "In a vocabulary" do
 	    one_to_one :bar, :class => V
 	  end
 	},
-	:pattern => /Method: Class(#[a-z_0-9]*[?=]? )?\((defined in )?ActiveFacts::API::Entity::ClassMethods[) ]/,
+	:pattern => MethodPattern,
 	:class_methods => EntityType_methods,
 	:instance_methods => Entity_methods,
 	:constructor_args => [ 'bar', {:foo => 'foo', :baz => 'baz'} ]
@@ -187,22 +192,23 @@ describe "In a vocabulary" do
     describe "#{case_name}" do
       before :each do
 	eval definition
-	all_T_methods = Mod::T.methods.select{|m| Mod::T.method(m).inspect =~ /ActiveFacts/}.map(&:to_s).sort
+	all_T_methods = Mod::T.methods.select{|m| Mod::T.method(m).owner.to_s =~ /^ActiveFacts:/}.map(&:to_s).sort
 	@object_type_methods, @value_type_methods =
-	  *all_T_methods.partition do |m|
-	    Mod::T.method(m).inspect =~ /Method: Class(#[a-z_0-9]*[?=]? )?\((defined in )?ActiveFacts::API::ObjectType[) ]/
+	  all_T_methods.partition do |m|
+	    method = Mod::T.method(m)
+	    method.owner.to_s =~ /^ActiveFacts::API::ObjectType/
 	  end
       end
 
       describe "as an ObjectType" do
 	it "should have the appropriate class methods" do
-	  @object_type_methods.should == ObjectType_methods.map(&:to_s).sort
+	  expect(@object_type_methods).to eql ObjectType_methods.map(&:to_s).sort
 	end
 
 	ObjectType_methods.each do |m|
 	  it "should respond to ObjectType.#{m}" do
 	    Mod::T.should respond_to(m)
-	    Mod::T.method(m).inspect.should =~ /Method: Class(#[a-z_0-9]*[?=]? )?\((defined in )?ActiveFacts::API::ObjectType[) ]/
+	    Mod::T.method(m).inspect.should =~ MethodPattern
 	  end
 	end
       end

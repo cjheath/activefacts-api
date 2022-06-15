@@ -448,7 +448,7 @@ describe "A Constellation instance" do
     lambda {
       module Mod
         class LegalEntity
-          supertypes Bignum
+          supertypes Integer
         end
       end
     }.should raise_error(ActiveFacts::API::InvalidSupertypeException)

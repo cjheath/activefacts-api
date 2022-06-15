@@ -144,16 +144,16 @@ module ActiveFacts
       def_single_delegator :@a, :empty?
       def_single_delegator :@a, :include?
       def_single_delegator :@a, :inject, 2
-      def_single_delegator :@a, :select, -1, 1
-      def_single_delegator :@a, :reject, -1, 1
+      def_single_delegator :@a, :select, -2, 1
+      def_single_delegator :@a, :reject, -2, 1
       def_single_delegator :@a, :size
-      def_single_delegator :@a, :sort_by, -1, 1
+      def_single_delegator :@a, :sort_by, -2, 1
       def_single_delegator :@a, :to_a
       def_single_delegator :@a, :-
       # These delegators allow a negative arity in RSpec because the tests test it (to make sure the code doesn't pass too many args)
-      def_single_delegator :@a, :each, *([-1, 1] + Array(defined?(::RSpec) ? -2 : nil))
+      def_single_delegator :@a, :each, *([-2, 1] + Array(defined?(::RSpec) ? -2 : nil))
       def_single_delegator :@a, :detect, 1, *([-1, 1] + Array(defined?(::RSpec) ? -2 : nil))
-      def_single_delegator :@a, :map, -1, 1
+      def_single_delegator :@a, :map, -2, 1
     end
   end
 end

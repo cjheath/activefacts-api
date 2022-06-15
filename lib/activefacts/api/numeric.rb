@@ -62,7 +62,9 @@ class Decimal < SimpleDelegator #:nodoc:
   include ActiveFacts::API::SimpleDelegation
 
   def delegate_new(v)
-    if v.is_a?(BigDecimal) || v.is_a?(Integer)
+    if RUBY_VERSION >= "3"
+      BigDecimal(v)
+    elsif v.is_a?(BigDecimal) || v.is_a?(Integer)
       BigDecimal.new(v.to_s)
     else
       BigDecimal.new(v)

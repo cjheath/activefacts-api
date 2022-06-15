@@ -94,7 +94,11 @@ describe "An instance of every type of ObjectType" do
     @string = "zero"
     @date = [2008, 04, 19]
     @date_time = [2008, 04, 19, 10, 28, 14]
-    @decimal = BigDecimal.new('98765432109876543210')
+    @decimal = if RUBY_VERSION >= "3"
+              BigDecimal('98765432109876543210')
+            else
+              BigDecimal.new('98765432109876543210')
+            end
     @guid = '01234567-89ab-cdef-0123-456789abcdef'
 
     # Value Type instances
@@ -109,7 +113,11 @@ describe "An instance of every type of ObjectType" do
     d = ::Date.civil(2008, 04, 20)
     @date_time_value = Mod::DateTimeVal.civil(2008, 04, 20, 10, 28, 14)
     # This next isn't in the same pattern; it makes a Decimal from a BigDecimal rather than a String (coverage reasons)
-    @decimal_value = @constellation.DecimalVal(BigDecimal.new('98765432109876543210'))
+    @decimal_value = if RUBY_VERSION >= "3"
+                    @constellation.DecimalVal(BigDecimal('98765432109876543210'))
+                  else
+                    @constellation.DecimalVal(BigDecimal.new('98765432109876543210'))
+                  end
     @guid_value = @constellation.GuidVal(:new)
     @guid_as_value = @constellation.GuidVal(@guid)
 
@@ -271,7 +279,7 @@ describe "An instance of every type of ObjectType" do
         @constellation.StringSubVal("seven"),
         @constellation.DateSubVal(2008,4,29), @constellation.DateTimeSubVal(2008,4,30,10,28,16),
         @constellation.DecimalSubVal('98765432109876543210'),
-        @constellation.DecimalSubVal('01234567-89ab-cdef-0123-456789abcdef'),
+        @constellation.GuidSubVal('01234567-89ab-cdef-0123-456789abcdef'),
       ]
   end
 
@@ -358,7 +366,7 @@ describe "An instance of every type of ObjectType" do
     a = c.AutoCounterVal(:new)
     lambda {
       b = 2 + a
-    }.should raise_error(TypeError)
+    }.should raise_error(ArgumentError)
     a.assign(3)
     lambda {
       b = 2 + a

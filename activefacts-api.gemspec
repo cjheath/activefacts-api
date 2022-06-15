@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.version       = ActiveFacts::API::VERSION
   spec.authors       = ["Clifford Heath"]
   spec.email         = ["clifford.heath@gmail.com"]
-  spec.date = "2015-10-02"
+  spec.date          = "2022-06-15"
 
   spec.summary = "A fact-based data model DSL and API"
   spec.description   = %q{
@@ -35,7 +35,7 @@ over the fact population.
   spec.add_runtime_dependency 'tracing', ["~> 2", ">= 2.0.4"]
 
   spec.add_development_dependency "bundler", ">= 1.10"
-  spec.add_development_dependency "rake", "> 10"
+  spec.add_development_dependency "rake", ">= 10"
   spec.add_development_dependency "rspec", "~> 3.3"
 end
 

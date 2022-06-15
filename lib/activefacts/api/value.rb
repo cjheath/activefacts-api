@@ -155,7 +155,7 @@ module ActiveFacts
           class << klass
             def new_instance constellation, *args
               instance = allocate
-              instance.instance_variable_set(@@constellation_variable_name ||= "@constellation", constellation)
+              instance.instance_variable_set(constellation_variable_name, constellation)
               instance.send(:initialize, *args)
               instance
             end

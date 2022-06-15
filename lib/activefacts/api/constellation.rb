@@ -65,7 +65,7 @@ module ActiveFacts
       # With no parameters, return the collection of all instances of that object_type.
       # With parameters, assert an instance of the object_type identified by the values passed as args.
       def method_missing(m, *args, &b)
-        klass = @vocabulary.const_get(m)
+        klass = @vocabulary.const_get(m) rescue nil   # Catch missing lower-case names (wrong constant) and use super
         if invalid_object_type klass
           super
         else
